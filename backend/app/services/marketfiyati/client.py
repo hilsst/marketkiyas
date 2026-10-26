@@ -70,11 +70,38 @@ class MarketFiyatiClient(PoliteClient):
             body["menuCategory"] = menu_category
         return SearchPage.from_raw(await self._request("POST", "/api/v2/search", body) or {})
 
-    async def search_all(self, max_pages: int = 20, **kwargs) -> list:
-        """Tüm sayfaları dolaşır (max_pages güvenlik sınırı)."""
+    async def search_category(
+        self,
+        menu_category: str,
+        *,
+        latitude: float,
+        longitude: float,
+        distance_km: int,
+        depot_ids: Sequence[str] = (),
+        page: int = 0,
+        size: int = MAX_PAGE_SIZE,
+    ) -> SearchPage:
+        """Sitenin kategori menüsündeki bir kategorinin tüm ürünleri (anahtar kelime gerekmez)."""
+        body: dict[str, Any] = {
+            "keywords": menu_category,
+            "menuCategory": True,
+            "pages": page,
+            "size": min(size, MAX_PAGE_SIZE),
+            "latitude": latitude,
+            "longitude": longitude,
+            "distance": distance_km,
+            "depots": list(depot_ids),
+        }
+        return SearchPage.from_raw(await self._request("POST", "/api/v2/searchByCategories", body) or {})
+
+    async def search_all(self, max_pages: int = 20, *, menu_category: str | None = None, **kwargs) -> list:
+        """Tüm sayfaları dolaşır (max_pages güvenlik sınırı). menu_category verilirse o kategori taranır."""
         products = []
         for page in range(max_pages):
-            result = await self.search(page=page, **kwargs)
+            if menu_category:
+                result = await self.search_category(menu_category, page=page, **kwargs)
+            else:
+                result = await self.search(page=page, **kwargs)
             products.extend(result.products)
             if not result.products or len(products) >= result.total:
                 break

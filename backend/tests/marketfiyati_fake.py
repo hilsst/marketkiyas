@@ -27,7 +27,7 @@ class FakeMarketFiyati:
             return httpx.Response(self.fail_with)
         if request.url.path == "/api/v2/nearest":
             return httpx.Response(200, json=self.nearest)
-        if request.url.path == "/api/v2/search":
+        if request.url.path in ("/api/v2/search", "/api/v2/searchByCategories"):
             body = json.loads(request.content)
             # tek sayfa: ikinci sayfa boş
             return httpx.Response(200, json=self.search if body["pages"] == 0 else {"numberOfFound": 0, "content": []})

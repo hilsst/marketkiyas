@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models import (
+    Category,
     GroupMember,
     Market,
     PriceHistory,
@@ -48,6 +49,30 @@ DEFAULT_KEYWORDS = (
     "tuvalet kağıdı", "kağıt havlu", "şampuan", "diş macunu", "sabun", "bebek bezi",
 )
 
+# Sitenin kategori menüsü: bir şubenin tüm ürünleri bu kategoriler taranarak çekilir
+MENU_CATEGORIES = (
+    "Meyve ve Sebze", "Et, Tavuk ve Balık", "Süt Ürünleri ve Kahvaltılık", "Temel Gıda", "İçecek",
+    "Atıştırmalık ve Tatlı", "Temizlik Ürünleri", "Kişisel Bakım", "Diğer Ürünler",
+)
+# Menü kategorisi -> uygulamanın kategori slug'ı (anahtarlar normalize_text ile, boşluksuz)
+MENU_CATEGORY_SLUGS = {
+    "meyvevesebze": "meyve-sebze",
+    "ettavukvebalik": "et-tavuk-balik",
+    "suturunlerivekahvaltilik": "sut-kahvaltilik",
+    "temelgida": "temel-gida",
+    "icecek": "icecek",
+    "atistirmalikvetatli": "atistirmalik",
+    "temizlikurunleri": "temizlik",
+    "kisiselbakim": "kisisel-bakim",
+}
+# Alt kategori adında geçerse menü kategorisinden önce gelir ("Bebek Mamaları" Temel Gıda'da olsa da Bebek)
+MAIN_CATEGORY_SLUGS = (
+    ("bebek", "bebek"),
+    ("dondurulmus", "dondurulmus"),
+    ("ekmek", "firin"),
+    ("unlu mamul", "firin"),
+)
+
 MARKET_ALIASES = {
     "sok": "sok",
     "sokmarket": "sok",
@@ -74,8 +99,21 @@ MARKET_DISPLAY_NAMES = {
 }
 
 
+def _compact(text: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", normalize_text(text))
+
+
+def category_slug(product: SearchProduct) -> str | None:
+    """marketfiyati kategorisini uygulamanın kategorisine çevirir; eşleşmezse None ("Pet Shop" gibi)."""
+    main = normalize_text(product.main_category or "")
+    for needle, slug in MAIN_CATEGORY_SLUGS:
+        if needle in main:
+            return slug
+    return MENU_CATEGORY_SLUGS.get(_compact(product.menu_category or ""))
+
+
 def market_slug(market_name: str) -> str:
-    compact = re.sub(r"[^a-z0-9]", "", normalize_text(market_name))
+    compact = _compact(market_name)
     return MARKET_ALIASES.get(compact) or re.sub(r"[^a-z0-9]+", "_", normalize_text(market_name)).strip("_")
 
 
@@ -122,6 +160,7 @@ class Ingestor:
         self._markets: dict[str, int] = {}
         self._stores: dict[str, int] = {}
         self._groups: dict[tuple, int] = {}
+        self._categories: dict[str, int] | None = None
         self._now = datetime.now(timezone.utc)
 
     async def market_id(self, market_name: str) -> int:
@@ -166,7 +205,13 @@ class Ingestor:
     async def upsert_depots(self, depots: Iterable[Depot]) -> list[int]:
         return [await self.store_id(d) for d in depots]
 
-    async def group_id(self, product: SearchProduct) -> int:
+    async def category_id(self, product: SearchProduct) -> int | None:
+        if self._categories is None:
+            self._categories = dict((await self.db.execute(select(Category.slug, Category.id))).all())
+        slug = category_slug(product)
+        return self._categories.get(slug) if slug else None
+
+    async def group_id(self, product: SearchProduct, category_id: int | None = None) -> int:
         display, key, qty = group_key(product)
         quantity, unit = qty if qty else (None, None)
         cache_key = (key, quantity, unit)
@@ -182,12 +227,24 @@ class Ingestor:
         group_id = await self.db.scalar(stmt.order_by(similarity.desc()).limit(1))
         if group_id is None:
             group = ProductGroup(
-                name=display, normalized_name=key, quantity=quantity, unit=unit, image_url=product.image_url
+                name=display,
+                normalized_name=key,
+                quantity=quantity,
+                unit=unit,
+                image_url=product.image_url,
+                category_id=category_id,
             )
             self.db.add(group)
             await self.db.flush()
             group_id = group.id
             self.stats.groups_created += 1
+        elif category_id is not None:
+            # Anahtar kelimeyle eklenmiş, kategorisi olmayan gruplar kategori taramasında yerine oturur
+            await self.db.execute(
+                ProductGroup.__table__.update()
+                .where(ProductGroup.id == group_id, ProductGroup.category_id.is_(None))
+                .values(category_id=category_id)
+            )
         self._groups[cache_key] = group_id
         return group_id
 
@@ -196,7 +253,8 @@ class Ingestor:
         if not product.prices:
             return
         _, _, qty = group_key(product)
-        group_id = await self.group_id(product)
+        category_id = await self.category_id(product)
+        group_id = await self.group_id(product, category_id)
 
         by_market: dict[int, list] = defaultdict(list)
         for depot_price in product.prices:
@@ -212,6 +270,7 @@ class Ingestor:
                 quantity=qty[0] if qty else None,
                 unit=qty[1] if qty else None,
                 image_url=product.image_url,
+                category_id=category_id,
                 is_available=True,
                 last_seen_at=self._now,
             )
@@ -219,8 +278,11 @@ class Ingestor:
                 stmt.on_conflict_do_update(
                     constraint="uq_products_market_external",
                     set_={
-                        k: stmt.excluded[k]
-                        for k in ("name", "normalized_name", "brand", "quantity", "unit", "image_url", "is_available", "last_seen_at")
+                        **{
+                            k: stmt.excluded[k]
+                            for k in ("name", "normalized_name", "brand", "quantity", "unit", "image_url", "is_available", "last_seen_at")
+                        },
+                        "category_id": func.coalesce(stmt.excluded.category_id, Product.category_id),
                     },
                 ).returning(Product.id)
             )
@@ -285,19 +347,23 @@ async def sync_area(
     longitude: float,
     distance_km: int = settings.default_search_distance_km,
     keywords: Sequence[str] = DEFAULT_KEYWORDS,
+    categories: Sequence[str] = (),
     depot_ids: Sequence[str] = (),
     max_pages: int = 5,
+    max_category_pages: int = 100,
 ) -> SyncStats:
-    """Bir bölge (ve isteğe bağlı şube listesi) için anahtar kelimelerle fiyatları çeker.
+    """Bir bölge (ve isteğe bağlı şube listesi) için fiyatları çeker: önce menü kategorilerinin
+    tamamı (şubedeki tüm ürünler), sonra anahtar kelimeler.
 
-    Her anahtar kelimeden sonra commit edilir; yarıda kesilen senkronizasyon o ana kadarki veriyi korur.
+    Her kategori/kelimeden sonra commit edilir; yarıda kesilen senkronizasyon o ana kadarki veriyi korur.
     """
     ingestor = Ingestor(db)
-    for keyword in keywords:
+    queries = [(c, {"menu_category": c, "max_pages": max_category_pages}) for c in categories]
+    queries += [(k, {"keywords": k, "max_pages": max_pages}) for k in keywords]
+    for keyword, query in queries:
         try:
             products = await client.search_all(
-                max_pages=max_pages,
-                keywords=keyword,
+                **query,
                 latitude=latitude,
                 longitude=longitude,
                 distance_km=distance_km,
@@ -316,10 +382,11 @@ async def sync_area(
 async def sync_selected_stores(
     db: AsyncSession,
     client: MarketFiyatiClient,
-    keywords: Sequence[str] = DEFAULT_KEYWORDS,
+    keywords: Sequence[str] = (),
     store_ids: Sequence[int] | None = None,
+    categories: Sequence[str] = MENU_CATEGORIES,
 ) -> SyncStats:
-    """Kullanıcıların seçtiği şubeler için fiyatları günceller.
+    """Kullanıcıların seçtiği şubeler için fiyatları günceller: varsayılan olarak şubelerin tüm ürünleri.
 
     Şubeler ~5 km'lik hücrelere bölünür; her hücre için tek bir bölgesel arama yapılır.
     """
@@ -345,6 +412,7 @@ async def sync_selected_stores(
             longitude=lon,
             distance_km=settings.default_search_distance_km,
             keywords=keywords,
+            categories=categories,
             depot_ids=[s.external_id for s in cell_stores],
         )
         for name in ("products_seen", "products_upserted", "store_prices", "stores", "groups_created", "price_changes"):

@@ -39,8 +39,12 @@ export function ListProvider({ children }: { children: ReactNode }) {
     setLists(await api.lists());
   }, []);
 
+  // Şube seçilince yeni zincirler (CarrefourSA, Migros…) eklenebilir; sayfa değişince market listesi tazelenir
   useEffect(() => {
     api.markets().then(setMarkets).catch(() => {});
+  }, [pathname]);
+
+  useEffect(() => {
     api.categories().then(setCategories).catch(() => {});
     setUnauthorizedHandler(() => { setUser(null); setLists([]); });
     (async () => {

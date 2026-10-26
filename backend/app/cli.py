@@ -2,7 +2,7 @@
 
     python -m app.cli nearby --lat 40.99 --lon 29.03            # çevredeki şubeleri kaydet
     python -m app.cli sync --lat 40.99 --lon 29.03 --keywords süt ekmek
-    python -m app.cli sync-selected                             # kullanıcıların seçtiği şubeler
+    python -m app.cli sync-selected                             # seçili şubelerin tüm ürünleri
     python -m app.cli sync-selected --every-hours 6             # sürekli çalışan worker
     python -m app.cli scrape --market sok --limit 100           # market sitesinden (Şok, A101)
     python -m app.cli seed-demo                                 # demo kataloğu + demo@marketkiyas.app
@@ -46,7 +46,10 @@ async def _sync(args: argparse.Namespace) -> None:
 async def _sync_selected(args: argparse.Namespace) -> None:
     while True:
         async with SessionLocal() as db, MarketFiyatiClient() as client:
-            stats = await sync_selected_stores(db, client, keywords=args.keywords)
+            if args.keywords:
+                stats = await sync_selected_stores(db, client, keywords=args.keywords, categories=())
+            else:
+                stats = await sync_selected_stores(db, client)
             log.info("bitti: %s", stats)
         if not args.every_hours:
             return
@@ -111,7 +114,7 @@ def main() -> None:
     p.set_defaults(func=_sync)
 
     p = sub.add_parser("sync-selected", help="kullanıcıların seçtiği şubelerin fiyatlarını çek")
-    p.add_argument("--keywords", nargs="+", default=list(DEFAULT_KEYWORDS))
+    p.add_argument("--keywords", nargs="+", help="verilmezse şubelerin tüm ürünleri (bütün kategoriler) çekilir")
     p.add_argument("--every-hours", type=float, default=0, help="0 = bir kez çalış")
     p.set_defaults(func=_sync_selected)
 
