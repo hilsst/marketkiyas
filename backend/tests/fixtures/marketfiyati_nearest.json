@@ -1,0 +1,6 @@
+[
+  {"id": "bim-4501", "sellerName": "Moda Şubesi", "marketName": "bim", "location": {"lat": 40.9862, "lon": 29.0262}},
+  {"id": "a101-7788", "sellerName": "Bahariye", "marketName": "a101", "location": {"lat": 40.9871, "lon": 29.0301}},
+  {"id": "far-1", "sellerName": "Uzak Şube", "marketName": "bim", "location": {"lat": 41.2, "lon": 29.3}},
+  {"sellerName": "id'siz kayıt", "marketName": "bim"}
+]

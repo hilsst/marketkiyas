@@ -39,6 +39,8 @@ class AssignedProduct(BaseModel):
     product_name: str | None
     brand: str | None
     unit_price: Decimal | None
+    store_id: int | None
+    store_name: str | None
 
 
 class ItemOut(BaseModel):
@@ -96,6 +98,7 @@ class PlanLineOut(BaseModel):
     brand: str | None
     market_id: int
     unit_price: Decimal
+    store_id: int | None  # kullanıcı şube seçtiyse fiyatın geldiği şube
     line_total: Decimal
 
 

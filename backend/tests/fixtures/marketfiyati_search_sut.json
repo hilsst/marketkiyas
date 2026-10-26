@@ -1,0 +1,42 @@
+{
+  "numberOfFound": 3,
+  "searchResultType": 1,
+  "content": [
+    {
+      "id": "mf-1001",
+      "title": "Pınar Süt 1 L",
+      "brand": "Pınar",
+      "imageUrl": "https://cdn.example/pinar-sut.jpg",
+      "refinedVolumeOrWeight": "1 L",
+      "categories": ["Süt Ürünleri"],
+      "productDepotInfoList": [
+        {"depotId": "bim-4501", "depotName": "Moda Şubesi", "price": 34.5, "unitPrice": "34,50 ₺/L", "marketAdi": "bim", "latitude": 40.9862, "longitude": 29.0262},
+        {"depotId": "a101-7788", "depotName": "Bahariye", "price": 33.9, "unitPrice": "33,90 ₺/L", "marketAdi": "a101", "latitude": 40.9871, "longitude": 29.0301},
+        {"depotId": "a101-7790", "depotName": "Kadıköy Rıhtım", "price": 35.25, "unitPrice": null, "marketAdi": "a101", "latitude": 40.9911, "longitude": 29.0233}
+      ]
+    },
+    {
+      "id": "mf-1002",
+      "title": "SÜTAŞ SÜT 1 L",
+      "brand": "Sütaş",
+      "imageUrl": null,
+      "refinedVolumeOrWeight": "1 L",
+      "productDepotInfoList": [
+        {"depotId": "bim-4501", "depotName": "Moda Şubesi", "price": "32,75", "marketAdi": "bim", "latitude": 40.9862, "longitude": 29.0262},
+        {"depotId": "sok-3001", "depotName": "Caferağa", "price": 36.0, "marketAdi": "ŞOK", "latitude": 40.9850, "longitude": 29.0280},
+        {"depotId": "mig-9001", "depotName": "Migros Jet Moda", "price": 37.5, "marketAdi": "Migros", "latitude": 40.9840, "longitude": 29.0290}
+      ]
+    },
+    {
+      "id": "mf-1003",
+      "title": "Pınar Laktozsuz Süt 1 L",
+      "brand": "Pınar",
+      "refinedVolumeOrWeight": "1 L",
+      "productDepotInfoList": [
+        {"depotId": "bim-4501", "depotName": "Moda Şubesi", "price": 45.0, "marketAdi": "bim"},
+        {"depotId": "broken", "price": null, "marketAdi": "bim"}
+      ]
+    },
+    {"id": null, "title": "bozuk kayıt"}
+  ]
+}

@@ -35,9 +35,12 @@ async def clean_tables():
         await conn.execute(
             text(
                 "TRUNCATE users, shopping_lists, shopping_list_items, savings_records, "
-                "products, price_history, product_groups, group_members RESTART IDENTITY CASCADE"
+                "products, price_history, product_groups, group_members, "
+                "stores, store_prices, user_stores RESTART IDENTITY CASCADE"
             )
         )
+        # Senkronizasyonun eklediği zincirleri sil, seed'deki 4 market kalsın
+        await conn.execute(text("DELETE FROM markets WHERE slug NOT IN ('bim', 'a101', 'sok', 'file')"))
 
 
 @pytest.fixture

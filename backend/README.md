@@ -56,6 +56,8 @@ pytest   # marketkiyas_test veritabanını kullanır
 | `POST /api/lists/{id}/apply` `{"plan_type": "opportunist"}` | Listeye Uygula: kalemlere market atanır, `shopping_groups` döner |
 | `POST /api/lists/{id}/complete` | Alışverişi Bitir: Fırsatçı tasarrufu kasaya eklenir |
 | `GET /api/savings` | Tasarruf Kasası (toplam + kayıtlar) |
+| `GET /api/stores/nearby?lat=&lon=&distance=5` | Çevredeki market şubeleri (marketfiyati.org.tr), `selected` bayrağıyla |
+| `GET/PUT /api/me/stores` `{"store_ids": [..]}` | "Çevremdeki marketler" seçimi. Yeni şubelerin fiyatları arka planda çekilir |
 
 ### Optimizasyon kuralları
 
@@ -65,7 +67,22 @@ pytest   # marketkiyas_test veritabanını kullanır
 - **Tasarruf:** Kombinasyon toplamı − Fırsatçı toplamı (tercih edilen markanın hiç bulunmadığı kalemler hariç). Aylık = x4, yıllık = x52.
 - Plan uygulandıktan sonra kalem eklenir/silinir ya da miktar/marka değişirse plan sıfırlanır (alındı işaretleri korunur); liste yeniden uygulanmalıdır. Böylece kasaya eski hesap yazılmaz.
 
+## Fiyat verisi: marketfiyati.org.tr
+
+Tüm fiyatlar [marketfiyati.org.tr](https://www.marketfiyati.org.tr)'den gelir (`app/services/marketfiyati/`).
+Kaynak JSON API sunduğu için tarayıcı otomasyonuna (Playwright) gerek yoktur.
+
+- **İstemci:** istekler arası en az 1 sn, 429/5xx/ağ hatalarında üstel bekleme ile 4 tekrar (Retry-After'a uyar), her istekte farklı User-Agent.
+- **Aktarım:** zincir (`markets`, bilinmeyen zincirler otomatik eklenir) → şube (`stores`) → ürün (zincir başına bir satır) → şube fiyatı (`store_prices`) → ürünün en düşük fiyatı değiştiyse `price_history`.
+- **Eşleştirme:** başlıktan marka atılır, miktar temel birime çevrilir ("Pınar Süt 1 L" → `sut 1000ml`). Aynı miktar/birimdeki gruplarla pg_trgm benzerliği ≥ 0.7 ise o gruba, değilse yeni gruba girer.
+- **Kullanıcı şubeleri:** şube seçen kullanıcıya arama, optimizasyon ve plan yalnızca o şubelerin son 7 gündeki fiyatlarıyla çalışır; plan kalemlere şubeyi de atar. Şube seçmeyen kullanıcı zincirin en düşük fiyatını görür.
+
+```bash
+python -m app.cli nearby --lat 40.99 --lon 29.03             # çevredeki şubeleri kaydet
+python -m app.cli sync --lat 40.99 --lon 29.03 --keywords süt ekmek
+python -m app.cli sync-selected --every-hours 6              # docker-compose'daki worker bunu çalıştırır
+```
+
 ## Sonraki adımlar
 
-1. Scraper'lar (Playwright + BS4, BİM için marketfiyati.org.tr) ve eşleştirme servisi.
-2. Next.js'in `demo-data.ts` yerine API'ye bağlanması.
+1. Next.js'in `demo-data.ts` yerine API'ye bağlanması.

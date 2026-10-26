@@ -9,7 +9,6 @@ from sqlalchemy.orm import selectinload
 from app.models import (
     GroupMember,
     ListStatus,
-    Market,
     PlanType,
     ProductGroup,
     SavingsRecord,
@@ -34,6 +33,7 @@ from app.schemas.lists import (
 from app.schemas.savings import CompleteResponse
 from app.services import optimizer
 from app.services.optimizer import ItemInput, Offer, OptimizationResult, Plan
+from app.services.pricing import PriceResolver, build_resolver, candidate_market_ids
 
 
 def _list_options():
@@ -43,6 +43,7 @@ def _list_options():
         .selectinload(ProductGroup.members)
         .selectinload(GroupMember.product),
         selectinload(ShoppingList.items).selectinload(ShoppingListItem.assigned_product),
+        selectinload(ShoppingList.items).selectinload(ShoppingListItem.assigned_store),
     )
 
 
@@ -104,6 +105,7 @@ def reset_plan(shopping_list: ShoppingList) -> None:
         item.assigned_market_id = None
         item.assigned_product_id = None
         item.assigned_unit_price = None
+        item.assigned_store_id = None
 
 
 # --- Serileştirme -------------------------------------------------------------------------
@@ -138,6 +140,8 @@ def _item_out(item: ShoppingListItem) -> ItemOut:
             product_name=product.name if product else None,
             brand=product.brand if product else None,
             unit_price=item.assigned_unit_price,
+            store_id=item.assigned_store_id,
+            store_name=item.assigned_store.name if item.assigned_store else None,
         )
     return ItemOut(
         id=item.id,
@@ -186,20 +190,24 @@ def to_detail(shopping_list: ShoppingList) -> ListDetail:
 # --- Optimizasyon -------------------------------------------------------------------------
 
 
-def _item_inputs(shopping_list: ShoppingList) -> list[ItemInput]:
+def _item_inputs(shopping_list: ShoppingList, resolver: PriceResolver) -> list[ItemInput]:
     inputs = []
     for item in shopping_list.items:
-        offers = tuple(
-            Offer(
-                product_id=m.product.id,
-                product_name=m.product.name,
-                brand=m.product.brand,
-                market_id=m.product.market_id,
-                unit_price=m.product.current_price,
+        offers = []
+        for member in item.group.members:
+            resolved = resolver.price(member.product)
+            if resolved is None:
+                continue
+            offers.append(
+                Offer(
+                    product_id=member.product.id,
+                    product_name=member.product.name,
+                    brand=member.product.brand,
+                    market_id=member.product.market_id,
+                    unit_price=resolved.price,
+                    store_id=resolved.store_id,
+                )
             )
-            for m in item.group.members
-            if m.product.is_available and m.product.current_price is not None
-        )
         inputs.append(
             ItemInput(
                 item_id=item.id,
@@ -207,15 +215,17 @@ def _item_inputs(shopping_list: ShoppingList) -> list[ItemInput]:
                 group_name=item.group.name,
                 quantity=item.quantity,
                 preferred_brand=item.preferred_brand,
-                offers=offers,
+                offers=tuple(offers),
             )
         )
     return inputs
 
 
 async def run_optimizer(db: AsyncSession, shopping_list: ShoppingList) -> OptimizationResult:
-    market_ids = list((await db.scalars(select(Market.id).where(Market.is_active).order_by(Market.id))).all())
-    return optimizer.optimize(_item_inputs(shopping_list), market_ids)
+    product_ids = [m.product_id for item in shopping_list.items for m in item.group.members]
+    resolver = await build_resolver(db, shopping_list.user_id, product_ids)
+    market_ids = await candidate_market_ids(db, resolver)
+    return optimizer.optimize(_item_inputs(shopping_list, resolver), market_ids)
 
 
 def _plan_out(plan: Plan) -> PlanOut:
@@ -234,6 +244,7 @@ def _plan_out(plan: Plan) -> PlanOut:
                 brand=line.offer.brand,
                 market_id=line.offer.market_id,
                 unit_price=line.offer.unit_price,
+                store_id=line.offer.store_id,
                 line_total=line.line_total,
             )
             for line in plan.lines
@@ -295,6 +306,7 @@ async def apply_plan(db: AsyncSession, shopping_list: ShoppingList, plan_type: P
         item.assigned_market_id = line.offer.market_id if line else None
         item.assigned_product_id = line.offer.product_id if line else None
         item.assigned_unit_price = line.offer.unit_price if line else None
+        item.assigned_store_id = line.offer.store_id if line else None
 
     shopping_list.applied_plan = plan_type
     shopping_list.applied_at = datetime.now(timezone.utc)

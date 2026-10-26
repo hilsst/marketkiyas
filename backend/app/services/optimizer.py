@@ -30,6 +30,7 @@ class Offer:
     brand: str | None
     market_id: int
     unit_price: Decimal
+    store_id: int | None = None  # fiyatın geldiği şube (kullanıcı şube seçtiyse)
 
 
 @dataclass(frozen=True)
