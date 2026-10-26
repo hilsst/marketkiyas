@@ -556,12 +556,13 @@ export default function ListDetailPage() {
 
             {mode === "combo" && view.savings > 0 && (
               <button
-                onClick={async () => { if (await mutate(() => api.clearPreferences(list.id))) setMode("cheapest"); }}
+                // Yalnızca Fırsatçı sekmesine geçer; marka seçimleri silinmez, Tek Market/Kombinasyon'a dönülebilir
+                onClick={() => setMode("cheapest")}
                 className="mt-4 p-3 bg-orange-50 hover:bg-orange-100 transition-colors rounded-lg border border-orange-200 flex items-start gap-2 text-left w-full cursor-pointer group"
               >
                 <span className="text-xl group-hover:scale-110 transition-transform">💡</span>
                 <div className="text-xs text-orange-800 leading-tight">
-                  Seçtiğiniz markalar yerine <b>MARKA FARKETMEZ</b> derseniz, tüm ürünlerin en ucuzunu alarak <b>{view.savings.toFixed(2)} ₺</b> daha az ödeyebilirsiniz. <u className="font-semibold ml-1">Uygulamak için tıklayın.</u>
+                  Seçtiğiniz markalar yerine <b>MARKA FARKETMEZ</b> derseniz, tüm ürünlerin en ucuzunu alarak <b>{view.savings.toFixed(2)} ₺</b> daha az ödeyebilirsiniz. <u className="font-semibold ml-1">Fırsatçı planını görmek için tıklayın.</u>
                 </div>
               </button>
             )}
