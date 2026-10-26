@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     marketfiyati_timeout_seconds: float = 30.0
     marketfiyati_user_agent: str = "MarketKiyas/0.1 (+https://github.com/hilsst/marketkiyas)"
     default_search_distance_km: int = 5
+    # Market siteleri: sayfa başına daha uzun bekleme (sunuculara yük bindirmemek için)
+    scraper_min_interval_seconds: float = 3.0
 
     # Next.js frontend adresleri, virgülle ayrılmış
     cors_origins: str = "http://localhost:3000"

@@ -1,0 +1,3 @@
+-r requirements.txt
+# A101 gibi fiyatı JavaScript ile yükleyen siteler için (Dockerfile.scraper bunu kurar)
+playwright==1.55.0

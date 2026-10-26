@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentUser, DbSession
@@ -88,6 +88,8 @@ async def nearby_stores(
         stmt = select(Store).where(
             Store.latitude.between(lat - deg, lat + deg), Store.longitude.between(lon - deg, lon + deg)
         )
+    # Zincir sitelerinden gelen "online fiyat" şubeleri konumsuzdur, her yerde seçilebilir
+    stmt = select(Store).where(or_(Store.id.in_(stmt.with_only_columns(Store.id)), Store.latitude.is_(None)))
     stores = (await db.scalars(stmt.where(Store.is_active).options(selectinload(Store.market)))).all()
     selected = await _selected_ids(db, user.id)
     out = [_store_out(s, selected, lat, lon) for s in stores]

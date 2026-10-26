@@ -48,6 +48,20 @@ services:
     entrypoint: []
     command: ["python", "-m", "app.cli", "sync-selected", "--every-hours", "6"]
 
+  # Market sitelerinden (Şok, A101) 12 saatte bir fiyat toplar. marketfiyati'ya erişilemediğinde kullanılır.
+  scraper:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.scraper
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://marketkiyas:marketkiyas@db:5432/marketkiyas
+
   # Sonraki adım: Next.js frontend servisi buraya eklenecek
 
 volumes:

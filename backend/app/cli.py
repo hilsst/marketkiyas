@@ -4,6 +4,7 @@
     python -m app.cli sync --lat 40.99 --lon 29.03 --keywords süt ekmek
     python -m app.cli sync-selected                             # kullanıcıların seçtiği şubeler
     python -m app.cli sync-selected --every-hours 6             # sürekli çalışan worker
+    python -m app.cli scrape --market sok --limit 100           # market sitesinden (Şok, A101)
 """
 
 import argparse
@@ -20,7 +21,11 @@ from app.services.marketfiyati.ingest import (
     sync_selected_stores,
 )
 
+from app.services.http import PoliteClient
+
 log = logging.getLogger("marketkiyas.cli")
+
+SCRAPERS = ("sok", "a101")
 
 
 async def _nearby(args: argparse.Namespace) -> None:
@@ -42,6 +47,34 @@ async def _sync_selected(args: argparse.Namespace) -> None:
         async with SessionLocal() as db, MarketFiyatiClient() as client:
             stats = await sync_selected_stores(db, client, keywords=args.keywords)
             log.info("bitti: %s", stats)
+        if not args.every_hours:
+            return
+        await asyncio.sleep(args.every_hours * 3600)
+
+
+async def _scrape_once(market: str, limit: int | None) -> None:
+    from app.services.scrapers.run import sync_chain
+    from app.services.scrapers.sok import SokScraper
+
+    async with SessionLocal() as db, PoliteClient(min_interval=settings.scraper_min_interval_seconds) as http:
+        if market == "sok":
+            stats = await sync_chain(db, SokScraper(http), limit)
+        else:
+            from app.services.scrapers.a101 import A101Scraper, PlaywrightRenderer
+
+            async with PlaywrightRenderer(http.user_agent) as render:
+                stats = await sync_chain(db, A101Scraper(http, render), limit)
+        log.info("%s bitti: %s", market, stats)
+
+
+async def _scrape(args: argparse.Namespace) -> None:
+    markets = SCRAPERS if args.market == "all" else (args.market,)
+    while True:
+        for market in markets:
+            try:
+                await _scrape_once(market, args.limit)
+            except Exception:
+                log.exception("%s taraması başarısız", market)
         if not args.every_hours:
             return
         await asyncio.sleep(args.every_hours * 3600)
@@ -70,6 +103,12 @@ def main() -> None:
     p.add_argument("--keywords", nargs="+", default=list(DEFAULT_KEYWORDS))
     p.add_argument("--every-hours", type=float, default=0, help="0 = bir kez çalış")
     p.set_defaults(func=_sync_selected)
+
+    p = sub.add_parser("scrape", help="market sitelerinden fiyat topla (robots.txt'ye uyar)")
+    p.add_argument("--market", choices=[*SCRAPERS, "all"], default="all")
+    p.add_argument("--limit", type=int, default=None, help="market başına en fazla ürün")
+    p.add_argument("--every-hours", type=float, default=0, help="0 = bir kez çalış")
+    p.set_defaults(func=_scrape)
 
     args = parser.parse_args()
     asyncio.run(args.func(args))

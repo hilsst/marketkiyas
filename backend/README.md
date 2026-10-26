@@ -83,6 +83,23 @@ python -m app.cli sync --lat 40.99 --lon 29.03 --keywords süt ekmek
 python -m app.cli sync-selected --every-hours 6              # docker-compose'daki worker bunu çalıştırır
 ```
 
+## Fiyat verisi: market siteleri (yedek kaynak)
+
+marketfiyati.org.tr'ye erişilemediğinde fiyatlar zincirlerin kendi sitelerinden toplanır (`app/services/scrapers/`).
+
+- **Kurallar:** robots.txt'ye uyulur, sadece sitemap'teki ürün sayfaları gezilir, sayfalar arası en az 3 sn beklenir, istemci kendini `MarketKiyas/0.1` olarak tanıtır.
+- **Şok:** fiyat HTML'de; BeautifulSoup ile okunur. **A101 (Kapıda):** fiyat JavaScript ile yüklenir; sayfa Playwright (başsız Chromium) ile render edilir.
+- **Okuma sırası:** önce schema.org JSON-LD (`Product.offers.price`), yoksa `h1` başlık, "Marka" etiketi ve sınıfında `price`/`fiyat` geçen öğeler (üstü çizili eski fiyat hariç).
+- **BİM:** sitede ürün kataloğu yok (sadece haftalık Aktüel). **File:** henüz yok.
+- Zincir siteleri şube değil zincir geneli fiyat verir: fiyatlar zincirin konumsuz "online fiyat" şubesine yazılır, kullanıcı bunu da seçebilir.
+
+```bash
+python -m app.cli scrape --market sok --limit 100
+python -m app.cli scrape --market a101 --limit 100   # requirements-scraper.txt (Playwright) gerekir
+```
+
+docker-compose'daki `scraper` servisi (`Dockerfile.scraper`) 12 saatte bir iki zinciri tarar.
+
 ## Sonraki adımlar
 
 1. Next.js'in `demo-data.ts` yerine API'ye bağlanması.

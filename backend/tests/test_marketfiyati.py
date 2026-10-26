@@ -35,7 +35,7 @@ async def test_client_retries_and_respects_retry_after(monkeypatch):
     async def fake_sleep(seconds):
         sleeps.append(seconds)
 
-    monkeypatch.setattr("app.services.marketfiyati.client.asyncio.sleep", fake_sleep)
+    monkeypatch.setattr("app.services.http.asyncio.sleep", fake_sleep)
 
     def handler(request):
         calls.append(request.headers["User-Agent"])
@@ -71,7 +71,7 @@ async def test_client_gives_up_after_max_retries(monkeypatch):
     async def no_sleep(_):
         pass
 
-    monkeypatch.setattr("app.services.marketfiyati.client.asyncio.sleep", no_sleep)
+    monkeypatch.setattr("app.services.http.asyncio.sleep", no_sleep)
     fake = FakeMarketFiyati()
     fake.fail_with = 503
     client = fake.client(max_retries=2)

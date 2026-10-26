@@ -1,0 +1,11 @@
+# Playwright + Chromium içeren imaj; sadece market sitesi taraması (scraper servisi) için
+FROM mcr.microsoft.com/playwright/python:v1.55.0-jammy
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /app
+
+COPY requirements.txt requirements-scraper.txt ./
+RUN pip install -r requirements-scraper.txt
+
+COPY . .
+CMD ["python", "-m", "app.cli", "scrape", "--market", "all", "--every-hours", "12"]
