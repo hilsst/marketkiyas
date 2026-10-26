@@ -101,7 +101,7 @@ python -m app.cli scrape --market a101 --limit 100   # requirements-scraper.txt 
 # Hazır kurulu bir Chromium kullanmak için: CHROMIUM_EXECUTABLE_PATH=/yol/chrome
 ```
 
-docker-compose'daki `scraper` servisi (`Dockerfile.scraper`) 12 saatte bir iki zinciri tarar.
+docker-compose'daki `scraper` servisi (`Dockerfile.scraper`) 12 saatte bir Şok'u tarar. A101 otomatik erişimi engellediği (Cloudflare) için varsayılan olarak kapalıdır; `--market a101` ile elle denenebilir.
 
 ## Sonraki adımlar
 

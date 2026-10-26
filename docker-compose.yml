@@ -48,7 +48,7 @@ services:
     entrypoint: []
     command: ["python", "-m", "app.cli", "sync-selected", "--every-hours", "6"]
 
-  # Market sitelerinden (Şok, A101) 12 saatte bir fiyat toplar. marketfiyati'ya erişilemediğinde kullanılır.
+  # Şok sitesinden 12 saatte bir fiyat toplar (A101 varsayılan kapalı). marketfiyati'ya erişilemediğinde kullanılır.
   scraper:
     build:
       context: ./backend

@@ -8,4 +8,5 @@ COPY requirements.txt requirements-scraper.txt ./
 RUN pip install -r requirements-scraper.txt
 
 COPY . .
-CMD ["python", "-m", "app.cli", "scrape", "--market", "all", "--every-hours", "12"]
+# A101 otomatik erişimi engellediği için (Cloudflare) varsayılan olarak sadece Şok taranır
+CMD ["python", "-m", "app.cli", "scrape", "--market", "sok", "--every-hours", "12"]
