@@ -20,7 +20,7 @@ class PlanType(str, enum.Enum):
 class ListStatus(str, enum.Enum):
     ACTIVE = "active"
     SHOPPING = "shopping"  # plan uygulandı, Alışveriş Modu
-    COMPLETED = "completed"  # "Alışverişi Bitir" dendi
+    COMPLETED = "completed"  # artık kullanılmıyor: "Alışverişi Bitir" listeyi ACTIVE'e döndürür
 
 
 def enum_values(e: type[enum.Enum]) -> list[str]:

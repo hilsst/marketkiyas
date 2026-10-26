@@ -163,3 +163,119 @@ async def test_validation_and_ownership(client, auth_headers, catalog):
     assert (await client.get(f"/api/lists/{lid}", headers=other_h)).status_code == 404
     assert (await client.get("/api/lists", headers=other_h)).json() == []
     assert (await client.get("/api/lists")).status_code == 401
+
+
+async def _detail_of(client, h, lid):
+    return (await client.get(f"/api/lists/{lid}", headers=h)).json()
+
+
+async def test_product_lock_restricts_to_that_market(client, auth_headers, catalog):
+    markets, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "L"}, headers=h)).json()["id"]
+    milk = (await client.get(f"/api/products/{ids['milk']}")).json()["products"]
+    a101_pinar = next(p for p in milk if p["market_id"] == markets["a101"])
+
+    r = await client.post(
+        f"/api/lists/{lid}/items", json={"group_id": ids["milk"], "preferred_product_id": a101_pinar["id"]}, headers=h
+    )
+    item = r.json()["items"][0]
+    assert item["preferred_product_id"] == a101_pinar["id"]
+    assert item["preferred_brand"] == "Pınar"
+
+    opt = (await client.get(f"/api/lists/{lid}/optimize", headers=h)).json()
+    # Şok'taki Pınar daha ucuz ama ürün kilidi A101'deki ürünü seçtirir
+    assert opt["combination"]["lines"][0]["product_id"] == a101_pinar["id"]
+    assert [m["market_id"] for m in opt["single_market"]["markets"] if m["missing"] == 0] == [markets["a101"]]
+    assert D(opt["savings"]["weekly"]) == D("2.40")  # 34.90 - 32.50
+
+    # Başka grubun ürünü kilitlenemez
+    other = (await client.get(f"/api/products/{ids['bread']}")).json()["products"][0]["id"]
+    r = await client.patch(f"/api/lists/{lid}/items/{item['id']}", json={"preferred_product_id": other}, headers=h)
+    assert r.status_code == 422
+
+    # Yalnızca marka seçmek ürün kilidini kaldırır
+    r = await client.patch(f"/api/lists/{lid}/items/{item['id']}", json={"preferred_brand": "Pınar"}, headers=h)
+    assert r.json()["items"][0]["preferred_product_id"] is None
+    # preferred_product_id: null -> Farketmez
+    await client.patch(f"/api/lists/{lid}/items/{item['id']}", json={"preferred_product_id": a101_pinar["id"]}, headers=h)
+    r = await client.patch(f"/api/lists/{lid}/items/{item['id']}", json={"preferred_product_id": None}, headers=h)
+    assert r.json()["items"][0]["preferred_brand"] is None
+
+
+async def test_adding_same_group_increments_quantity(client, auth_headers, catalog):
+    _, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "L"}, headers=h)).json()["id"]
+    await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["milk"], "preferred_brand": "Sütaş"}, headers=h)
+    r = await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["milk"]}, headers=h)
+    items = r.json()["items"]
+    assert len(items) == 1
+    assert D(items[0]["quantity"]) == 2
+    assert items[0]["preferred_brand"] == "Sütaş"  # tercih gönderilmediyse eskisi korunur
+
+
+async def test_clear_preferences_and_cancel_plan(client, auth_headers, catalog):
+    _, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "L"}, headers=h)).json()["id"]
+    await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["milk"], "preferred_brand": "Pınar"}, headers=h)
+    r = await client.post(f"/api/lists/{lid}/clear-preferences", headers=h)
+    assert r.json()["items"][0]["preferred_brand"] is None
+
+    detail = (await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "combination"}, headers=h)).json()
+    item_id = detail["items"][0]["id"]
+    await client.patch(f"/api/lists/{lid}/items/{item_id}", json={"is_checked": True}, headers=h)
+    r = await client.delete(f"/api/lists/{lid}/plan", headers=h)
+    body = r.json()
+    assert body["status"] == "active" and body["applied_plan"] is None
+    assert body["shopping_groups"] == []
+    assert body["items"][0]["is_checked"] is True  # İptal Et işaretleri silmez
+
+
+async def test_completed_list_is_reusable_next_week(client, auth_headers, catalog):
+    _, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "Haftalık"}, headers=h)).json()["id"]
+    await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["milk"], "preferred_brand": "Pınar"}, headers=h)
+
+    assert (await client.post(f"/api/lists/{lid}/complete", headers=h)).status_code == 409  # plan yok
+
+    for _week in range(2):
+        await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)
+        done = (await client.post(f"/api/lists/{lid}/complete", headers=h)).json()
+        assert D(done["saved_amount"]) == D("0.50")  # 33.00 (Şok Pınar) - 32.50 (BİM Sütaş)
+        detail = await _detail_of(client, h, lid)
+        assert detail["status"] == "active" and detail["applied_plan"] is None
+        assert detail["completed_at"] is not None
+
+    vault = (await client.get("/api/savings", headers=h)).json()
+    assert vault["record_count"] == 2
+    assert D(vault["total_saved"]) == D("1.00")
+
+
+async def test_list_summary_has_estimate_and_top_market(client, auth_headers, catalog):
+    markets, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "L"}, headers=h)).json()["id"]
+    await client.post("/api/lists", json={"name": "Boş"}, headers=h)
+    for g in ("milk", "eggs", "bread"):
+        await client.post(f"/api/lists/{lid}/items", json={"group_id": ids[g], "preferred_brand": None}, headers=h)
+
+    rows = {r["name"]: r for r in (await client.get("/api/lists", headers=h)).json()}
+    assert D(rows["L"]["estimated_total"]) == D("122.00")  # 32.50 + 80.00 + 9.50
+    assert rows["L"]["top_market_id"] == markets["bim"]
+    assert rows["Boş"]["estimated_total"] is None
+
+
+async def test_campaign_regular_price(client, db, catalog):
+    _, ids = catalog
+    product_id = (await client.get(f"/api/products/{ids['bread']}")).json()["products"][0]["id"]
+    db.add(PriceHistory(product_id=product_id, price=D("9.50"), regular_price=D("12.00"), is_campaign=True))
+    await db.commit()
+
+    detail = (await client.get(f"/api/products/{ids['bread']}")).json()
+    assert D(detail["products"][0]["regular_price"]) == D("12.00")
+    assert detail["products"][1]["regular_price"] is None
+    search = (await client.get("/api/products", params={"q": "ekmek"})).json()[0]
+    assert sorted(D(m["regular_price"]) for m in search["market_prices"] if m["regular_price"]) == [D("12.00")]

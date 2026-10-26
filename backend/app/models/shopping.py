@@ -59,6 +59,11 @@ class ShoppingListItem(TimestampMixin, Base):
 
     # Marka tercihi: NULL = "Farketmez (En Ucuzu Al)", dolu = kilitli marka (ör. "Pınar")
     preferred_brand: Mapped[str | None] = mapped_column(String(120))
+    # Ürün kilidi ("Marka Değiştir"de belirli bir marketteki ürünü seçmek): yalnızca o ürün alınır.
+    # Doluysa preferred_brand da o ürünün markasıdır.
+    preferred_product_id: Mapped[int | None] = mapped_column(
+        ForeignKey("products.id", ondelete="SET NULL")
+    )
 
     # Plan uygulandığında doldurulur -> Alışveriş Modu'nda market bazlı gruplama
     assigned_market_id: Mapped[int | None] = mapped_column(
@@ -80,5 +85,6 @@ class ShoppingListItem(TimestampMixin, Base):
     shopping_list: Mapped[ShoppingList] = relationship(back_populates="items")
     group: Mapped["ProductGroup"] = relationship()
     assigned_market: Mapped["Market | None"] = relationship()
-    assigned_product: Mapped["Product | None"] = relationship()
+    assigned_product: Mapped["Product | None"] = relationship(foreign_keys=[assigned_product_id])
+    preferred_product: Mapped["Product | None"] = relationship(foreign_keys=[preferred_product_id])
     assigned_store: Mapped["Store | None"] = relationship()

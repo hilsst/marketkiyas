@@ -41,9 +41,14 @@ class ItemInput:
     quantity: Decimal
     preferred_brand: str | None  # None = Farketmez
     offers: tuple[Offer, ...]
+    preferred_product_id: int | None = None  # ürün kilidi: yalnızca bu ürün (ve marketi)
 
     def allowed_offers(self, respect_brand: bool) -> list[Offer]:
-        if not respect_brand or not self.preferred_brand:
+        if not respect_brand:
+            return list(self.offers)
+        if self.preferred_product_id is not None:
+            return [o for o in self.offers if o.product_id == self.preferred_product_id]
+        if not self.preferred_brand:
             return list(self.offers)
         brand = self.preferred_brand.casefold()
         return [o for o in self.offers if o.brand and o.brand.casefold() == brand]
@@ -140,6 +145,11 @@ def _cheapest_plan(plan_type: PlanType, items: list[ItemInput], respect_brand: b
     return plan
 
 
+def opportunist_plan(items: list[ItemInput]) -> Plan:
+    """Tercihler yok sayılarak her kalemin en ucuzu (liste kartındaki "Tahmini" tutar)."""
+    return _cheapest_plan(PlanType.OPPORTUNIST, items, respect_brand=False)
+
+
 def single_market(items: list[ItemInput], market_ids: list[int]) -> SingleMarketResult:
     totals: list[MarketTotal] = []
     plans: dict[int, Plan] = {}
@@ -180,7 +190,7 @@ def calculate_savings(combination: Plan, opportunist: Plan) -> Savings:
 
 def optimize(items: list[ItemInput], market_ids: list[int]) -> OptimizationResult:
     combination = _cheapest_plan(PlanType.COMBINATION, items, respect_brand=True)
-    opportunist = _cheapest_plan(PlanType.OPPORTUNIST, items, respect_brand=False)
+    opportunist = opportunist_plan(items)
     return OptimizationResult(
         single_market=single_market(items, market_ids),
         combination=combination,

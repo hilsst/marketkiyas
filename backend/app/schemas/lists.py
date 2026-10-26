@@ -20,14 +20,17 @@ class ItemCreate(BaseModel):
     group_id: int
     quantity: Decimal = Field(default=Decimal(1), gt=0, le=999)
     preferred_brand: str | None = Field(default=None, max_length=120)  # None = Farketmez
+    preferred_product_id: int | None = None  # belirli ürünü kilitle (markası da kilitlenir)
     note: str | None = Field(default=None, max_length=255)
 
 
 class ItemUpdate(BaseModel):
-    """Sadece gönderilen alanlar güncellenir. preferred_brand: null göndermek "Farketmez"e döndürür."""
+    """Sadece gönderilen alanlar güncellenir. preferred_brand / preferred_product_id: null göndermek
+    "Farketmez"e döndürür."""
 
     quantity: Decimal | None = Field(default=None, gt=0, le=999)
     preferred_brand: str | None = Field(default=None, max_length=120)
+    preferred_product_id: int | None = None
     is_checked: bool | None = None
     position: int | None = Field(default=None, ge=0)
     note: str | None = Field(default=None, max_length=255)
@@ -50,6 +53,7 @@ class ItemOut(BaseModel):
     image_url: str | None
     quantity: Decimal
     preferred_brand: str | None
+    preferred_product_id: int | None
     is_checked: bool
     position: int
     note: str | None
@@ -77,6 +81,9 @@ class ListSummary(BaseModel):
     checked_count: int
     created_at: datetime
     updated_at: datetime
+    # Yalnızca GET /lists: tercihler yok sayılarak en ucuz toplam ve en çok ürünün alınacağı market
+    estimated_total: Decimal | None = None
+    top_market_id: int | None = None
 
 
 class ListDetail(ListSummary):

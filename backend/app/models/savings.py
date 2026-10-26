@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Index, Numeric, String, func, text
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Index, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -21,13 +21,6 @@ class SavingsRecord(Base):
 
     __tablename__ = "savings_records"
     __table_args__ = (
-        # Bir liste kasaya yalnızca bir kez eklenebilir (çift tıklama koruması)
-        Index(
-            "uq_savings_records_list_id",
-            "list_id",
-            unique=True,
-            postgresql_where=text("list_id IS NOT NULL"),
-        ),
         Index("ix_savings_records_user_created", "user_id", "created_at"),
         CheckConstraint("saved_amount >= 0", name="saved_amount_non_negative"),
     )

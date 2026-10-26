@@ -5,6 +5,7 @@
     python -m app.cli sync-selected                             # kullanıcıların seçtiği şubeler
     python -m app.cli sync-selected --every-hours 6             # sürekli çalışan worker
     python -m app.cli scrape --market sok --limit 100           # market sitesinden (Şok, A101)
+    python -m app.cli seed-demo                                 # demo kataloğu + demo@marketkiyas.app
 """
 
 import argparse
@@ -82,6 +83,14 @@ async def _scrape(args: argparse.Namespace) -> None:
         await asyncio.sleep(args.every_hours * 3600)
 
 
+async def _seed_demo(args: argparse.Namespace) -> None:
+    from app.services.demo_seed import DEMO_EMAIL, DEMO_PASSWORD, seed_demo
+
+    async with SessionLocal() as db:
+        stats = await seed_demo(db)
+    log.info("demo verisi: %s (giriş: %s / %s)", stats, DEMO_EMAIL, DEMO_PASSWORD)
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(prog="python -m app.cli")
@@ -111,6 +120,9 @@ def main() -> None:
     p.add_argument("--limit", type=int, default=None, help="market başına en fazla ürün")
     p.add_argument("--every-hours", type=float, default=0, help="0 = bir kez çalış")
     p.set_defaults(func=_scrape)
+
+    p = sub.add_parser("seed-demo", help="demo kataloğunu ve örnek listeleri yükle (gerçek fiyat değil)")
+    p.set_defaults(func=_seed_demo)
 
     args = parser.parse_args()
     asyncio.run(args.func(args))
