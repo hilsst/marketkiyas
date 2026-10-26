@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.models import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
@@ -32,3 +33,18 @@ async def get_current_user(db: DbSession, token: Annotated[str, Depends(oauth2_s
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def get_optional_user(
+    db: DbSession, token: Annotated[str | None, Depends(optional_oauth2_scheme)]
+) -> User | None:
+    """Giriş zorunlu olmayan uçlar için: geçerli token varsa kullanıcı, yoksa None."""
+    if not token:
+        return None
+    try:
+        return await get_current_user(db, token)
+    except HTTPException:
+        return None
+
+
+OptionalUser = Annotated[User | None, Depends(get_optional_user)]

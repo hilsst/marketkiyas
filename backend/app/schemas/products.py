@@ -36,7 +36,8 @@ class GroupProduct(BaseModel):
     brand: str | None
     market_id: int
     price: Decimal | None
-    is_available: bool
+    store_id: int | None  # kullanıcının seçtiği şubelerden en ucuzu
+    is_available: bool  # kullanıcının şubelerinde (ya da genel olarak) satılıyor mu
     image_url: str | None
     price_history: list[PricePoint]  # sparkline
 

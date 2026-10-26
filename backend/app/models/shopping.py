@@ -11,6 +11,7 @@ from app.models.enums import ListStatus, PlanType, enum_values
 if TYPE_CHECKING:
     from app.models.catalog import Market, Product
     from app.models.matching import ProductGroup
+    from app.models.stores import Store
     from app.models.user import User
 
 
@@ -67,6 +68,8 @@ class ShoppingListItem(TimestampMixin, Base):
         ForeignKey("products.id", ondelete="SET NULL")
     )
     assigned_unit_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    # Kullanıcı şube seçtiyse fiyatın geldiği şube ("BİM - Moda şubesi")
+    assigned_store_id: Mapped[int | None] = mapped_column(ForeignKey("stores.id", ondelete="SET NULL"))
 
     # Alışveriş Modu: alındı -> gri + üstü çizili, sırası korunur
     is_checked: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
@@ -78,3 +81,4 @@ class ShoppingListItem(TimestampMixin, Base):
     group: Mapped["ProductGroup"] = relationship()
     assigned_market: Mapped["Market | None"] = relationship()
     assigned_product: Mapped["Product | None"] = relationship()
+    assigned_store: Mapped["Store | None"] = relationship()

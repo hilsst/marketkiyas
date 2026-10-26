@@ -34,7 +34,35 @@ services:
     volumes:
       - ./backend:/app
 
-  # Sonraki adımlar: scraper worker (Playwright) ve Next.js frontend servisleri buraya eklenecek
+  # Kullanıcıların seçtiği şubelerin fiyatlarını 6 saatte bir marketfiyati.org.tr'den günceller
+  worker:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started  # migration'ları api çalıştırır
+    environment:
+      DATABASE_URL: postgresql+asyncpg://marketkiyas:marketkiyas@db:5432/marketkiyas
+    entrypoint: []
+    command: ["python", "-m", "app.cli", "sync-selected", "--every-hours", "6"]
+
+  # Şok sitesinden 12 saatte bir fiyat toplar (A101 varsayılan kapalı). marketfiyati'ya erişilemediğinde kullanılır.
+  scraper:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.scraper
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://marketkiyas:marketkiyas@db:5432/marketkiyas
+
+  # Sonraki adım: Next.js frontend servisi buraya eklenecek
 
 volumes:
   pgdata:

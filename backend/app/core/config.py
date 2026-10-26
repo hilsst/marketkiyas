@@ -16,6 +16,18 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 gün (mobil PWA için uzun oturum)
 
+    # marketfiyati.org.tr (T.C. Ticaret Bakanlığı / TÜBİTAK fiyat platformu)
+    marketfiyati_base_url: str = "https://api.marketfiyati.org.tr"
+    marketfiyati_min_interval_seconds: float = 1.0  # istekler arası en az bekleme
+    marketfiyati_max_retries: int = 4
+    marketfiyati_timeout_seconds: float = 30.0
+    marketfiyati_user_agent: str = "MarketKiyas/0.1 (+https://github.com/hilsst/marketkiyas)"
+    default_search_distance_km: int = 5
+    # Market siteleri: sayfa başına daha uzun bekleme (sunuculara yük bindirmemek için)
+    scraper_min_interval_seconds: float = 3.0
+    # Boşsa Playwright'ın kendi indirdiği Chromium kullanılır; hazır kurulu bir Chromium için yolunu verin
+    chromium_executable_path: str | None = None
+
     # Next.js frontend adresleri, virgülle ayrılmış
     cors_origins: str = "http://localhost:3000"
 

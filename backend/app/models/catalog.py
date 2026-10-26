@@ -1,4 +1,4 @@
-"""Market, kategori, ürün ve fiyat geçmişi tabloları (scraper'ların yazdığı katman)."""
+"""Market, kategori, ürün ve fiyat geçmişi tabloları (marketfiyati senkronizasyonunun yazdığı katman)."""
 
 from datetime import datetime
 from decimal import Decimal
@@ -31,7 +31,7 @@ class Market(TimestampMixin, Base):
     __tablename__ = "markets"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    slug: Mapped[str] = mapped_column(String(32), unique=True)  # bim, a101, sok, file
+    slug: Mapped[str] = mapped_column(String(32), unique=True)  # bim, a101, sok, migros...
     name: Mapped[str] = mapped_column(String(64))
     color: Mapped[str | None] = mapped_column(String(16))  # UI rozet rengi
     logo_url: Mapped[str | None] = mapped_column(String(512))
@@ -77,7 +77,7 @@ class Product(TimestampMixin, Base):
     category_id: Mapped[int | None] = mapped_column(
         ForeignKey("categories.id", ondelete="SET NULL"), index=True
     )
-    external_id: Mapped[str] = mapped_column(String(128))  # marketin kendi ürün kodu
+    external_id: Mapped[str] = mapped_column(String(128))  # marketfiyati ürün id'si
     name: Mapped[str] = mapped_column(String(255))  # ham isim: "Pınar Süt 1 L"
     normalized_name: Mapped[str] = mapped_column(String(255))  # "pinar sut 1000ml"
     brand: Mapped[str | None] = mapped_column(String(120))
@@ -88,6 +88,7 @@ class Product(TimestampMixin, Base):
         Enum(Unit, native_enum=False, length=8, values_callable=enum_values)
     )
 
+    # Zincirdeki tüm şubelerin en düşüğü; kullanıcı şube seçmediyse bu kullanılır
     current_price: Mapped[Decimal | None] = mapped_column(Money)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     image_url: Mapped[str | None] = mapped_column(String(1024))

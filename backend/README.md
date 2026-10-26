@@ -56,6 +56,8 @@ pytest   # marketkiyas_test veritabanını kullanır
 | `POST /api/lists/{id}/apply` `{"plan_type": "opportunist"}` | Listeye Uygula: kalemlere market atanır, `shopping_groups` döner |
 | `POST /api/lists/{id}/complete` | Alışverişi Bitir: Fırsatçı tasarrufu kasaya eklenir |
 | `GET /api/savings` | Tasarruf Kasası (toplam + kayıtlar) |
+| `GET /api/stores/nearby?lat=&lon=&distance=5` | Çevredeki market şubeleri (marketfiyati.org.tr), `selected` bayrağıyla |
+| `GET/PUT /api/me/stores` `{"store_ids": [..]}` | "Çevremdeki marketler" seçimi. Yeni şubelerin fiyatları arka planda çekilir |
 
 ### Optimizasyon kuralları
 
@@ -65,7 +67,42 @@ pytest   # marketkiyas_test veritabanını kullanır
 - **Tasarruf:** Kombinasyon toplamı − Fırsatçı toplamı (tercih edilen markanın hiç bulunmadığı kalemler hariç). Aylık = x4, yıllık = x52.
 - Plan uygulandıktan sonra kalem eklenir/silinir ya da miktar/marka değişirse plan sıfırlanır (alındı işaretleri korunur); liste yeniden uygulanmalıdır. Böylece kasaya eski hesap yazılmaz.
 
+## Fiyat verisi: marketfiyati.org.tr
+
+Tüm fiyatlar [marketfiyati.org.tr](https://www.marketfiyati.org.tr)'den gelir (`app/services/marketfiyati/`).
+Kaynak JSON API sunduğu için tarayıcı otomasyonuna (Playwright) gerek yoktur.
+
+- **İstemci:** istekler arası en az 1 sn, 429/5xx/ağ hatalarında üstel bekleme ile 4 tekrar (Retry-After'a uyar). Kendini `MarketKiyas/0.1` olarak tanıtır; tarayıcı taklidi yapmaz.
+- **Aktarım:** zincir (`markets`, bilinmeyen zincirler otomatik eklenir) → şube (`stores`) → ürün (zincir başına bir satır) → şube fiyatı (`store_prices`) → ürünün en düşük fiyatı değiştiyse `price_history`.
+- **Eşleştirme:** başlıktan marka atılır, miktar temel birime çevrilir ("Pınar Süt 1 L" → `sut 1000ml`). Aynı miktar/birimdeki gruplarla pg_trgm benzerliği ≥ 0.7 ise o gruba, değilse yeni gruba girer.
+- **Kullanıcı şubeleri:** şube seçen kullanıcıya arama, optimizasyon ve plan yalnızca o şubelerin son 7 gündeki fiyatlarıyla çalışır; plan kalemlere şubeyi de atar. Şube seçmeyen kullanıcı zincirin en düşük fiyatını görür.
+
+```bash
+python -m app.cli nearby --lat 40.99 --lon 29.03             # çevredeki şubeleri kaydet
+python -m app.cli sync --lat 40.99 --lon 29.03 --keywords süt ekmek
+python -m app.cli sync-selected --every-hours 6              # docker-compose'daki worker bunu çalıştırır
+```
+
+## Fiyat verisi: market siteleri (yedek kaynak)
+
+marketfiyati.org.tr'ye erişilemediğinde fiyatlar zincirlerin kendi sitelerinden toplanır (`app/services/scrapers/`).
+
+- **Kurallar:** robots.txt'ye uyulur, sadece sitemap'teki ürün sayfaları gezilir, sayfalar arası en az 3 sn beklenir, istemci kendini `MarketKiyas/0.1` olarak tanıtır.
+- **Şok:** fiyat HTML'de; BeautifulSoup ile okunur (2026-10-26 canlı sitede doğrulandı).
+- **A101 (Kapıda):** düz HTTP isteklerine (sitemap dahil) 403 döner, bu yüzden robots.txt dışında her şey Playwright (başsız Chromium, yine `MarketKiyas` kimliğiyle) ile açılır. Fiyat JavaScript ile yüklenir. Sayfadaki JSON-LD fiyatı güncel değil (ör. 2 kg bütün piliç 32,90), kullanılmaz; fiyat görünen fiyat kutusundan okunur, kutu boşsa ürün atlanır. Site zaman zaman "Just a moment..." bot kontrolü gösterir; bu aşılmaya çalışılmaz, sayfa atlanır.
+- **Okuma sırası:** önce schema.org JSON-LD (`Product.offers.price`, A101 hariç), yoksa `h1` başlık, "Marka" etiketi ve başlığa en yakın fiyat kutusu (sınıfında `price`/`fiyat` geçen öğeler; "benzer ürünler" kartlarına kayılmaz, indirimde düşük fiyat alınır).
+- Site üst üste 5 sayfayı reddederse tarama durur.
+- **BİM:** sitede ürün kataloğu yok (sadece haftalık Aktüel). **File:** sitede fiyat yok, online satış sadece mobil uygulamada.
+- Zincir siteleri şube değil zincir geneli fiyat verir: fiyatlar zincirin konumsuz "online fiyat" şubesine yazılır, kullanıcı bunu da seçebilir.
+
+```bash
+python -m app.cli scrape --market sok --limit 100
+python -m app.cli scrape --market a101 --limit 100   # requirements-scraper.txt (Playwright) gerekir
+# Hazır kurulu bir Chromium kullanmak için: CHROMIUM_EXECUTABLE_PATH=/yol/chrome
+```
+
+docker-compose'daki `scraper` servisi (`Dockerfile.scraper`) 12 saatte bir Şok'u tarar. A101 otomatik erişimi engellediği (Cloudflare) için varsayılan olarak kapalıdır; `--market a101` ile elle denenebilir.
+
 ## Sonraki adımlar
 
-1. Scraper'lar (Playwright + BS4, BİM için marketfiyati.org.tr) ve eşleştirme servisi.
-2. Next.js'in `demo-data.ts` yerine API'ye bağlanması.
+1. Next.js'in `demo-data.ts` yerine API'ye bağlanması.
