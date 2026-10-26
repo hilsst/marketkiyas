@@ -66,6 +66,13 @@ export default function ListDetailPage() {
     });
   };
 
+  const removeItem = async (itemId: number) => {
+    const removed = await mutate(() => api.removeItem(listId, itemId), {
+      optimistic: d => ({ ...d, items: d.items.filter(i => i.id !== itemId) }),
+    });
+    if (removed) refreshLists();
+  };
+
   const view = useMemo(() => {
     if (!detail || !opt) return null;
     const itemById = new Map(detail.items.map(i => [i.id, i]));
@@ -307,12 +314,20 @@ export default function ListDetailPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => qty > 1 && updateItem(it.id, { quantity: qty - 1 })} className="w-7 h-7 rounded-full bg-gray-100 text-gray-700">−</button>
+                        {/* Miktar 1'deyken eksi yerine çöp kutusu: ürünü listeden çıkarır */}
+                        {qty > 1 ? (
+                          <button onClick={() => updateItem(it.id, { quantity: qty - 1 })} className="w-7 h-7 rounded-full bg-gray-100 text-gray-700">−</button>
+                        ) : (
+                          <button onClick={() => removeItem(it.id)} aria-label="Listeden çıkar" className="w-7 h-7 rounded-full bg-red-50 text-red-500 text-sm">🗑</button>
+                        )}
                         <span className="w-6 text-center text-sm font-semibold">{qty}</span>
                         <button onClick={() => qty < 99 && updateItem(it.id, { quantity: qty + 1 })} className="w-7 h-7 rounded-full bg-gray-100 text-gray-700">+</button>
                       </div>
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-4">
+                      <button onClick={() => removeItem(it.id)} className="text-xs text-red-500 underline font-medium">
+                        Listeden Çıkar
+                      </button>
                       <button onClick={() => setPickerItemId(it.id)} className="text-xs text-emerald-600 underline font-medium">
                         Marka Değiştir
                       </button>
