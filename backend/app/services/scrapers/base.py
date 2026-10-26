@@ -13,6 +13,8 @@ from app.services.marketfiyati.schemas import Depot, DepotPrice, SearchProduct
 log = logging.getLogger(__name__)
 
 _SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+# Site üst üste bu kadar sayfayı reddederse (ör. bot kontrolü) tarama durur, zorlamaya devam edilmez
+MAX_CONSECUTIVE_FAILURES = 5
 _PRICE_RE = re.compile(r"(\d{1,3}(?:\.\d{3})*|\d+),(\d{2})\s*(?:₺|TL)")
 
 
@@ -142,7 +144,7 @@ class ChainScraper(ABC):
         )
 
     async def scrape(self, limit: int | None = None) -> AsyncIterator[SearchProduct]:
-        count = 0
+        count = failures = 0
         async for url in self.product_urls():
             if limit is not None and count >= limit:
                 return
@@ -150,7 +152,11 @@ class ChainScraper(ABC):
                 product = await self.scrape_product(url)
             except HttpError as exc:
                 log.warning("%s: %s", url, exc)
+                failures += 1
+                if failures >= MAX_CONSECUTIVE_FAILURES:
+                    raise ScrapeError(f"{self.market_name} üst üste {failures} sayfayı reddetti, tarama durduruldu") from exc
                 continue
+            failures = 0
             if product is None:
                 log.info("fiyat bulunamadı: %s", url)
                 continue

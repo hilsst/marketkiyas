@@ -62,7 +62,9 @@ async def _scrape_once(market: str, limit: int | None) -> None:
         else:
             from app.services.scrapers.a101 import A101Scraper, PlaywrightRenderer
 
-            async with PlaywrightRenderer(http.user_agent) as render:
+            async with PlaywrightRenderer(
+                http.user_agent, executable_path=settings.chromium_executable_path
+            ) as render:
                 stats = await sync_chain(db, A101Scraper(http, render), limit)
         log.info("%s bitti: %s", market, stats)
 

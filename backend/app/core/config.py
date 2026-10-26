@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     default_search_distance_km: int = 5
     # Market siteleri: sayfa başına daha uzun bekleme (sunuculara yük bindirmemek için)
     scraper_min_interval_seconds: float = 3.0
+    # Boşsa Playwright'ın kendi indirdiği Chromium kullanılır; hazır kurulu bir Chromium için yolunu verin
+    chromium_executable_path: str | None = None
 
     # Next.js frontend adresleri, virgülle ayrılmış
     cors_origins: str = "http://localhost:3000"

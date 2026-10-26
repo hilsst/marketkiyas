@@ -88,14 +88,17 @@ python -m app.cli sync-selected --every-hours 6              # docker-compose'da
 marketfiyati.org.tr'ye erişilemediğinde fiyatlar zincirlerin kendi sitelerinden toplanır (`app/services/scrapers/`).
 
 - **Kurallar:** robots.txt'ye uyulur, sadece sitemap'teki ürün sayfaları gezilir, sayfalar arası en az 3 sn beklenir, istemci kendini `MarketKiyas/0.1` olarak tanıtır.
-- **Şok:** fiyat HTML'de; BeautifulSoup ile okunur. **A101 (Kapıda):** fiyat JavaScript ile yüklenir; sayfa Playwright (başsız Chromium) ile render edilir.
-- **Okuma sırası:** önce schema.org JSON-LD (`Product.offers.price`), yoksa `h1` başlık, "Marka" etiketi ve sınıfında `price`/`fiyat` geçen öğeler (üstü çizili eski fiyat hariç).
-- **BİM:** sitede ürün kataloğu yok (sadece haftalık Aktüel). **File:** henüz yok.
+- **Şok:** fiyat HTML'de; BeautifulSoup ile okunur (2026-10-26 canlı sitede doğrulandı).
+- **A101 (Kapıda):** düz HTTP isteklerine (sitemap dahil) 403 döner, bu yüzden robots.txt dışında her şey Playwright (başsız Chromium, yine `MarketKiyas` kimliğiyle) ile açılır. Fiyat JavaScript ile yüklenir. Sayfadaki JSON-LD fiyatı güncel değil (ör. 2 kg bütün piliç 32,90), kullanılmaz; fiyat görünen fiyat kutusundan okunur, kutu boşsa ürün atlanır. Site zaman zaman "Just a moment..." bot kontrolü gösterir; bu aşılmaya çalışılmaz, sayfa atlanır.
+- **Okuma sırası:** önce schema.org JSON-LD (`Product.offers.price`, A101 hariç), yoksa `h1` başlık, "Marka" etiketi ve başlığa en yakın fiyat kutusu (sınıfında `price`/`fiyat` geçen öğeler; "benzer ürünler" kartlarına kayılmaz, indirimde düşük fiyat alınır).
+- Site üst üste 5 sayfayı reddederse tarama durur.
+- **BİM:** sitede ürün kataloğu yok (sadece haftalık Aktüel). **File:** sitede fiyat yok, online satış sadece mobil uygulamada.
 - Zincir siteleri şube değil zincir geneli fiyat verir: fiyatlar zincirin konumsuz "online fiyat" şubesine yazılır, kullanıcı bunu da seçebilir.
 
 ```bash
 python -m app.cli scrape --market sok --limit 100
 python -m app.cli scrape --market a101 --limit 100   # requirements-scraper.txt (Playwright) gerekir
+# Hazır kurulu bir Chromium kullanmak için: CHROMIUM_EXECUTABLE_PATH=/yol/chrome
 ```
 
 docker-compose'daki `scraper` servisi (`Dockerfile.scraper`) 12 saatte bir iki zinciri tarar.

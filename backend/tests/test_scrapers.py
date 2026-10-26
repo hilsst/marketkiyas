@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.models import Market, Product, ProductGroup, Store, StorePrice
 from app.services.http import PoliteClient
 from app.services.scrapers.a101 import A101Scraper
-from app.services.scrapers.base import parse_tl
+from app.services.scrapers.base import ScrapeError, parse_tl
 from app.services.scrapers.html import parse_product_html
 from app.services.scrapers.run import sync_chain
 from app.services.scrapers.sok import SokScraper
@@ -40,17 +40,29 @@ def test_parse_tl(text, expected):
     assert parse_tl(text) == expected
 
 
-def test_parse_sok_markup_prefers_current_price_over_struck_old_price():
+def test_parse_sok_markup_takes_discounted_price_from_product_box():
     parsed = parse_product_html(SOK_PAGE)
     assert parsed.title == "Ülker Kekstra Jölebol Portakallı Xl 70 g"
     assert parsed.brand == "ÜLKER"
+    # 16,50 eski fiyat; 13,00 aşağıdaki "benzer ürünler" kartı, sepet 0,00: hiçbiri bu ürünün fiyatı değil
     assert parsed.price == D("13.90")
     assert parsed.image_url == "https://images.sokmarket.com.tr/469843.jpg"
 
 
 def test_parse_jsonld_first():
     parsed = parse_product_html(A101_PAGE)
-    assert (parsed.title, parsed.brand, parsed.price) == ("Doyfarm Piliç Büfe Salam 850 Gr", "DOYFARM", D("189.50"))
+    assert (parsed.title, parsed.brand, parsed.price) == ("Doyfarm Piliç Salam 850 G", "DOYFARM", D("33.50"))
+
+
+def test_parse_visible_price_when_jsonld_price_is_untrusted():
+    parsed = parse_product_html(A101_PAGE, trust_jsonld_price=False)
+    assert (parsed.title, parsed.brand, parsed.price) == ("Doyfarm Piliç Salam 850 G", "DOYFARM", D("189.50"))
+    assert parsed.image_url.startswith("https://cdn2.a101.com.tr/")
+
+
+def test_untrusted_jsonld_price_is_not_used_when_price_box_is_empty():
+    page = A101_PAGE.replace('<span class="product-price">189,50 ₺</span>', '<div class="hHMyUW_price"></div>')
+    assert parse_product_html(page, trust_jsonld_price=False) is None
 
 
 def test_page_without_price_is_skipped():
@@ -98,25 +110,47 @@ async def test_sok_scraper_follows_sitemap_and_robots():
     assert all(r.headers["User-Agent"].startswith("MarketKiyas/") for r in site.requests)
 
 
-async def test_a101_scraper_renders_and_respects_robots():
+class FakeBrowser:
+    def __init__(self, files: dict[str, str]) -> None:
+        self.files = files
+        self.opened: list[str] = []
+
+    async def __call__(self, url: str) -> str:
+        self.opened.append(url)
+        return A101_PAGE
+
+    async def fetch_text(self, url: str) -> tuple[int, str]:
+        self.opened.append(url)
+        return (200, self.files[url]) if url in self.files else (404, "")
+
+
+async def test_a101_scraper_uses_browser_and_respects_robots():
     base = "https://www.a101.com.tr"
     allowed = f"{base}/kapida/et-tavuk-sarkuteri/doyfarm-pilic-salam-850-g_p-11000066"
     blocked = f"{base}/kapida/arama?x_p-1"
+    # Site düz HTTP'ye sitemap vermiyor (403); sadece robots.txt düz istekle okunur
     site = FakeSite({f"{base}/robots.txt": (200, "User-agent: *\nDisallow: /kapida/arama?\n")})
-    rendered = []
-
-    async def render(url):
-        rendered.append(url)
-        return A101_PAGE
+    browser = FakeBrowser(
+        {
+            f"{base}/sitemap.xml": f"""<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>{base}/sitemaps/products-ecom-1.xml</loc></sitemap>
+  <sitemap><loc>{base}/sitemaps/products-kapida-1.xml</loc></sitemap>
+</sitemapindex>""",
+            f"{base}/sitemaps/products-kapida-1.xml": f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>{allowed}</loc></url><url><loc>{blocked}</loc></url><url><loc>{base}/kapida/kampanyalar</loc></url>
+</urlset>""",
+        }
+    )
 
     async with site.http() as http:
-        scraper = A101Scraper(http, render)
-        assert scraper.is_product_url(allowed) and not scraper.is_product_url(f"{base}/kampanyalar")
-        product = await scraper.scrape_product(allowed)
-        assert await scraper.scrape_product(blocked) is None
+        products = [p async for p in A101Scraper(http, browser).scrape()]
 
-    assert rendered == [allowed]
-    assert product.id == "a101:11000066" and product.prices[0].price == D("189.50")
+    assert browser.opened == [f"{base}/sitemap.xml", f"{base}/sitemaps/products-kapida-1.xml", allowed]
+    assert [r.url.path for r in site.requests] == ["/robots.txt"]
+    assert [p.id for p in products] == ["a101:11000066"]
+    assert products[0].prices[0].price == D("189.50")  # JSON-LD'deki eski 33.50 değil
 
 
 async def test_sync_chain_ingests_into_online_store(db):
@@ -154,3 +188,22 @@ async def test_online_store_is_offered_in_nearby(client, auth_headers, db):
     app.dependency_overrides[get_marketfiyati_client] = _client
     r = await client.get("/api/stores/nearby", params={"lat": 40.98, "lon": 29.02}, headers=auth_headers)
     assert [s["name"] for s in r.json()] == ["Şok (online fiyat)"]
+
+
+async def test_scrape_stops_when_site_keeps_refusing():
+    base = "https://www.sokmarket.com.tr"
+    urls = "".join(f"<url><loc>{base}/urun-{i}-p-{i}</loc></url>" for i in range(1, 9))
+    site = FakeSite(
+        {
+            f"{base}/robots.txt": (200, SOK_ROBOTS),
+            f"{base}/sitemap/sitemap.xml": (200, SOK_INDEX),
+            f"{base}/sitemap/market-product_1.xml": (
+                200,
+                f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>',
+            ),
+        }
+    )  # ürün sayfaları 404
+    async with site.http() as http:
+        with pytest.raises(ScrapeError, match="üst üste 5"):
+            [p async for p in SokScraper(http).scrape()]
+    assert sum("-p-" in r.url.path for r in site.requests) == 5

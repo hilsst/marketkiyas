@@ -9,7 +9,7 @@ from decimal import Decimal
 
 from bs4 import BeautifulSoup, Tag
 
-from app.services.scrapers.base import all_tl, parse_tl
+from app.services.scrapers.base import all_tl
 
 
 @dataclass
@@ -33,6 +33,7 @@ def _jsonld_products(soup: BeautifulSoup) -> list[dict]:
 
 
 def _from_jsonld(soup: BeautifulSoup) -> ParsedProduct | None:
+    """JSON-LD'deki ürün; fiyatı yoksa 0 ile döner (ad/marka/görsel yine işe yarar)."""
     for item in _jsonld_products(soup):
         offers = item.get("offers") or {}
         if isinstance(offers, list):
@@ -43,7 +44,7 @@ def _from_jsonld(soup: BeautifulSoup) -> ParsedProduct | None:
         except ArithmeticError:
             price = None
         name = item.get("name")
-        if not price or price <= 0 or not name:
+        if not name:
             continue
         brand = item.get("brand")
         if isinstance(brand, dict):
@@ -51,7 +52,7 @@ def _from_jsonld(soup: BeautifulSoup) -> ParsedProduct | None:
         image = item.get("image")
         if isinstance(image, list):
             image = image[0] if image else None
-        return ParsedProduct(str(name).strip(), (brand or None) and str(brand).strip(), price, image)
+        return ParsedProduct(str(name).strip(), (brand or None) and str(brand).strip(), price or Decimal(0), image)
     return None
 
 
@@ -69,33 +70,52 @@ def _label_value(soup: BeautifulSoup, label: str) -> str | None:
     return None
 
 
-def _price_from_markup(soup: BeautifulSoup, h1: Tag | None) -> Decimal | None:
-    # Sınıf adında "price"/"fiyat" geçen öğeler; indirimli sayfada en düşük olan güncel fiyattır
-    candidates = []
-    for el in soup.find_all(class_=lambda c: c and any(k in c.lower() for k in ("price", "fiyat"))):
-        if el.find_parent(["del", "s", "strike"]) or el.name in ("del", "s", "strike"):
+_MAX_SCOPE_DEPTH = 6
+
+
+def _is_price_box(class_: str | None) -> bool:
+    return bool(class_) and any(k in class_.lower() for k in ("price", "fiyat"))
+
+
+def _price_from_markup(h1: Tag) -> Decimal | None:
+    """Başlığa en yakın fiyat kutusu. Sayfanın geri kalanında "benzer ürünler" kartları da fiyat taşır,
+    bu yüzden başlıktan yukarı doğru çıkıp fiyat kutusu içeren ilk kapsayıcıda durulur. Kutu boşsa
+    (fiyat henüz yüklenmemiş) None döner; başka bir ürünün fiyatına kayılmaz.
+    İndirimli üründe eski ve yeni fiyat aynı kutudadır; düşük olan güncel fiyattır."""
+    node = h1
+    for _ in range(_MAX_SCOPE_DEPTH):
+        node = node.parent
+        if not isinstance(node, Tag):
+            break
+        boxes = node.find_all(class_=_is_price_box)
+        if not boxes:
             continue
-        candidates += all_tl(el.get_text(" ", strip=True))
-    if candidates:
-        return min(candidates)
-    # Son çare: başlıktan sonraki ilk TL ifadesi
-    start = h1 if h1 is not None else soup
-    for text in start.find_all_next(string=True) if h1 is not None else soup.find_all(string=True):
-        if (price := parse_tl(text)) is not None:
-            return price
+        candidates = []
+        for el in boxes:
+            if el.name in ("del", "s", "strike") or el.find_parent(["del", "s", "strike"]):
+                continue
+            candidates += all_tl(el.get_text(" ", strip=True))
+        return min(candidates) if candidates else None
     return None
 
 
-def parse_product_html(html: str) -> ParsedProduct | None:
+def parse_product_html(html: str, *, trust_jsonld_price: bool = True) -> ParsedProduct | None:
+    """trust_jsonld_price=False: JSON-LD'den sadece ad/marka/görsel alınır, fiyat sayfada görünen
+    fiyat kutusundan okunur (A101'in JSON-LD fiyatı güncel değil)."""
     soup = BeautifulSoup(html, "html.parser")
-    if parsed := _from_jsonld(soup):
-        return parsed
+    jsonld = _from_jsonld(soup)
+    if jsonld and jsonld.price > 0 and trust_jsonld_price:
+        return jsonld
     h1 = soup.find("h1")
-    title = h1.get_text(" ", strip=True) if h1 else None
-    if not title:
+    if h1 is None:
         return None
-    price = _price_from_markup(soup, h1)
+    price = _price_from_markup(h1)
     if price is None:
+        return None
+    if jsonld:
+        return ParsedProduct(jsonld.title, jsonld.brand, price, jsonld.image_url)
+    title = h1.get_text(" ", strip=True)
+    if not title:
         return None
     og_image = soup.find("meta", property="og:image")
     return ParsedProduct(
