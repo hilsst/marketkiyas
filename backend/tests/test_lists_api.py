@@ -186,7 +186,10 @@ async def test_product_lock_restricts_to_that_market(client, auth_headers, catal
     opt = (await client.get(f"/api/lists/{lid}/optimize", headers=h)).json()
     # Şok'taki Pınar daha ucuz ama ürün kilidi A101'deki ürünü seçtirir
     assert opt["combination"]["lines"][0]["product_id"] == a101_pinar["id"]
-    assert [m["market_id"] for m in opt["single_market"]["markets"] if m["missing"] == 0] == [markets["a101"]]
+    single = opt["single_market"]["markets"]
+    assert [m["market_id"] for m in single if m["missing"] == 0 and m["substituted"] == 0] == [markets["a101"]]
+    # Diğer marketlerde süt başka markayla bulunur, eksik sayılmaz; plan kilitli ürünün marketi
+    assert opt["single_market"]["plan"]["lines"][0]["product_id"] == a101_pinar["id"]
     assert D(opt["savings"]["weekly"]) == D("2.40")  # 34.90 - 32.50
 
     # Başka grubun ürünü kilitlenemez

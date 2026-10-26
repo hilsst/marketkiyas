@@ -50,11 +50,11 @@ export interface ListDetail extends ListSummary {
 export interface PlanLine {
   item_id: number; group_id: number; group_name: string; quantity: Money; product_id: number;
   product_name: string; brand: string | null; market_id: number; unit_price: Money; store_id: number | null;
-  line_total: Money;
+  line_total: Money; substituted: boolean; // Tek Market: seçilen marka bu markette yok, başka marka
 }
 export interface MarketBreakdown { market_id: number; total: Money; item_ids: number[]; }
 export interface Plan { plan_type: PlanType; total: Money; lines: PlanLine[]; missing_item_ids: number[]; by_market: MarketBreakdown[]; }
-export interface MarketTotal { market_id: number; total: Money; found: number; missing: number; }
+export interface MarketTotal { market_id: number; total: Money; found: number; missing: number; substituted: number; }
 export interface OptimizeResult {
   single_market: { available: boolean; warning: string | null; plan: Plan | null; markets: MarketTotal[] };
   combination: Plan; opportunist: Plan;

@@ -108,6 +108,7 @@ class PlanLineOut(BaseModel):
     unit_price: Decimal
     store_id: int | None  # kullanıcı şube seçtiyse fiyatın geldiği şube
     line_total: Decimal
+    substituted: bool = False  # Tek Market: tercih edilen marka bu markette yok, başka marka
 
 
 class MarketBreakdown(BaseModel):
@@ -128,12 +129,13 @@ class MarketTotalOut(BaseModel):
     market_id: int
     total: Decimal
     found: int
-    missing: int
+    missing: int  # market bu ürünü hiç satmıyor
+    substituted: int = 0  # tercih edilen marka yok, başka markayla bulunan kalemler
 
 
 class SingleMarketOut(BaseModel):
     available: bool
-    warning: str | None  # "Hiçbir market tüm ürünleri eksiksiz bulundurmuyor"
+    warning: str | None  # "Hiçbir market listedeki tüm ürünleri satmıyor"
     plan: PlanOut | None
     markets: list[MarketTotalOut]
 

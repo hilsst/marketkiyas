@@ -5,8 +5,10 @@ Saf Python; veritabanına dokunmaz. `load_list_offers` (services/lists.py) girdi
 - Kombinasyon: kullanıcının marka tercihlerine uyarak her kalemi en ucuz olduğu marketten alır.
   Bu aynı zamanda "kullanıcının kendi tercihleriyle ödeyeceği tutar"dır (Tasarruf'un referansı).
 - Fırsatçı: marka tercihlerini yok sayar, her kalemin piyasadaki en ucuzunu alır.
-- Tek Market: tercihlere uyarak her marketin toplamını hesaplar; yalnızca eksiksiz (missing=0)
-  marketler arasından en ucuzunu seçer. Hiçbiri eksiksiz değilse plan yoktur ve uyarı döner.
+- Tek Market: her marketin toplamını tercihlere uyarak hesaplar; tercih edilen marka o markette yoksa
+  aynı ürünün o marketteki en ucuz başka markası alınır (substituted). Kalem yalnızca market o ürünü
+  hiç satmıyorsa eksiktir. Eksiksiz marketlerden önce en az marka değişikliği olanı, sonra en ucuzu
+  seçilir. Hiçbiri eksiksiz değilse plan yoktur ve uyarı döner.
 """
 
 from collections import defaultdict
@@ -15,7 +17,7 @@ from decimal import Decimal
 
 from app.models.enums import PlanType
 
-NO_COMPLETE_MARKET_WARNING = "Hiçbir market tüm ürünleri eksiksiz bulundurmuyor"
+NO_COMPLETE_MARKET_WARNING = "Hiçbir market listedeki tüm ürünleri satmıyor"
 
 WEEKS_PER_MONTH = 4
 WEEKS_PER_YEAR = 52
@@ -42,6 +44,9 @@ class ItemInput:
     preferred_brand: str | None  # None = Farketmez
     offers: tuple[Offer, ...]
     preferred_product_id: int | None = None  # ürün kilidi: yalnızca bu ürün (ve marketi)
+    # Benzer gruplardaki ürünler ("Pirinç 1 kg" için "Baldo Pirinç 1 Kg"); yalnızca Tek Market'te,
+    # grubun kendisi o markette hiç yoksa kullanılır
+    similar_offers: tuple[Offer, ...] = ()
 
     def allowed_offers(self, respect_brand: bool) -> list[Offer]:
         if not respect_brand:
@@ -61,6 +66,7 @@ class PlanLine:
     group_name: str
     quantity: Decimal
     offer: Offer
+    substituted: bool = False  # tercih edilen marka bu markette yok, başka marka alındı
 
     @property
     def line_total(self) -> Decimal:
@@ -90,6 +96,7 @@ class MarketTotal:
     total: Decimal
     found: int
     missing: int
+    substituted: int = 0  # farklı markayla bulunan kalem sayısı
 
 
 @dataclass
@@ -156,21 +163,35 @@ def single_market(items: list[ItemInput], market_ids: list[int]) -> SingleMarket
     for market_id in market_ids:
         plan = Plan(PlanType.SINGLE_MARKET)
         for item in items:
-            in_market = [o for o in item.allowed_offers(respect_brand=True) if o.market_id == market_id]
-            offer = _cheapest(in_market)
+            offer = _cheapest([o for o in item.allowed_offers(respect_brand=True) if o.market_id == market_id])
+            substituted = False
+            if offer is None:
+                # Tercih edilen marka yok: aynı ürünün bu marketteki başka bir markası, o da yoksa benzeri
+                offer = _cheapest([o for o in item.offers if o.market_id == market_id]) or _cheapest(
+                    [o for o in item.similar_offers if o.market_id == market_id]
+                )
+                substituted = offer is not None
             if offer is None:
                 plan.missing_item_ids.append(item.item_id)
             else:
                 plan.lines.append(
-                    PlanLine(item.item_id, item.group_id, item.group_name, item.quantity, offer)
+                    PlanLine(item.item_id, item.group_id, item.group_name, item.quantity, offer, substituted)
                 )
         plans[market_id] = plan
-        totals.append(MarketTotal(market_id, plan.total, len(plan.lines), len(plan.missing_item_ids)))
+        totals.append(
+            MarketTotal(
+                market_id,
+                plan.total,
+                len(plan.lines),
+                len(plan.missing_item_ids),
+                sum(line.substituted for line in plan.lines),
+            )
+        )
 
     complete = [t for t in totals if t.missing == 0]
     if not items or not complete:
         return SingleMarketResult(None, totals, NO_COMPLETE_MARKET_WARNING if items else None)
-    best = min(complete, key=lambda t: (t.total, t.market_id))
+    best = min(complete, key=lambda t: (t.substituted, t.total, t.market_id))
     return SingleMarketResult(plans[best.market_id], totals, None)
 
 
