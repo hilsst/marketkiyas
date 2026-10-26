@@ -51,6 +51,23 @@ def test_single_market_respects_locked_brand():
     assert not any(line.substituted for line in result.single_market.plan.lines)
 
 
+def test_equal_prices_prefer_markets_already_in_the_plan():
+    # Ekmek BİM'de ve Şok'ta aynı fiyat; yumurta sadece Şok'ta ucuz -> ekmek de Şok'tan (tek market)
+    bread = [offer(30, BIM, "10.00"), offer(31, SOK, "10.00")]
+    eggs = [offer(32, BIM, "90.00"), offer(33, SOK, "80.00")]
+    result = optimize([item(1, bread), item(2, eggs)], [BIM, SOK])
+    assert {line.offer.market_id for line in result.opportunist.lines} == {SOK}
+    assert {line.offer.market_id for line in result.combination.lines} == {SOK}
+
+
+def test_equal_prices_group_tied_items_into_one_market():
+    # İki kalem de üç markette aynı fiyat: hepsi aynı (en çok kalemi kapsayan, sonra küçük id) markete
+    a = [offer(40, A101, "5.00"), offer(41, SOK, "5.00")]
+    b = [offer(42, BIM, "7.00"), offer(43, SOK, "7.00")]
+    result = optimize([item(1, a), item(2, b)], MARKETS)
+    assert {line.offer.market_id for line in result.opportunist.lines} == {SOK}
+
+
 def test_single_market_uses_similar_product_when_group_missing():
     # "Pirinç 1 kg" grubu BİM'de yok ama "Baldo Pirinç 1 Kg" var
     rice = ItemInput(1, 10, "Pirinç 1 kg", D("1"), "Anadolu Mutfağı", (offer(20, SOK, "32.50", "Anadolu Mutfağı"),),
