@@ -82,9 +82,13 @@ export default function ListDetailPage() {
 
     const singleResults = opt.single_market.markets
       .filter(m => m.found > 0)
-      .map(m => ({ marketId: m.market_id, total: num(m.total), missing: m.missing }));
+      .map(m => ({ marketId: m.market_id, total: num(m.total), missing: m.missing, substituted: m.substituted }));
     const bestSingle = singlePlan && singlePlan.by_market[0]
-      ? { marketId: singlePlan.by_market[0].market_id, total: num(singlePlan.total) }
+      ? {
+          marketId: singlePlan.by_market[0].market_id,
+          total: num(singlePlan.total),
+          rows: singlePlan.lines.map(line => ({ item: itemById.get(line.item_id)!, line })).filter(r => r.item),
+        }
       : null;
     const closestSingle = [...singleResults].sort((a, b) => a.missing - b.missing || a.total - b.total)[0] || null;
 
@@ -455,13 +459,28 @@ export default function ListDetailPage() {
                       </div>
                       <span className="font-bold text-emerald-700 text-xl">{view.bestSingle.total.toFixed(2)} ₺</span>
                     </div>
+                    <div className="mt-2 divide-y divide-emerald-100 text-sm">
+                      {view.bestSingle.rows.map(({ item, line }) => (
+                        <div key={item.id} className="py-1.5 flex justify-between gap-2">
+                          <div className="min-w-0">
+                            {item.group_name} <span className="text-gray-500 text-xs">({line.substituted ? line.product_name : line.brand || line.product_name})</span>
+                            {line.substituted && (
+                              <div className="text-[11px] text-orange-600">
+                                Seçtiğiniz {item.preferred_brand ? "\"" + item.preferred_brand + "\" markası" : "ürün"} burada yok, benzeri alındı
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-gray-700 shrink-0">{num(line.line_total).toFixed(2)} ₺</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-orange-50 p-3 rounded-lg border border-orange-200 mb-3">
-                    <div className="text-sm text-orange-800 font-bold mb-1">⚠️ Hiçbir market tüm ürünleri eksiksiz bulundurmuyor.</div>
+                    <div className="text-sm text-orange-800 font-bold mb-1">⚠️ Hiçbir market listedeki tüm ürünleri satmıyor.</div>
                     {view.closestSingle && (
                       <div className="text-xs text-orange-700 leading-tight">
-                        En yakın market: <b>{marketById(view.closestSingle.marketId)?.name}</b> ({view.closestSingle.missing} ürün eksik).<br/>
+                        En yakın market: <b>{marketById(view.closestSingle.marketId)?.name}</b> ({view.closestSingle.missing} ürün hiçbir markayla yok).<br/>
                         Diğer ürünler için Kombinasyon veya Fırsatçı modunu kullanın.
                       </div>
                     )}
@@ -472,7 +491,11 @@ export default function ListDetailPage() {
                 {view.singleResults.map(r => (
                   <div key={r.marketId} className="flex justify-between text-sm py-1">
                     <span className="text-gray-600">{marketById(r.marketId)?.name}</span>
-                    <span>{r.total.toFixed(2)} ₺ {r.missing > 0 && <span className="text-xs text-red-500 font-medium">({r.missing} eksik)</span>}</span>
+                    <span>
+                      {r.total.toFixed(2)} ₺
+                      {r.substituted > 0 && <span className="text-xs text-orange-600 font-medium"> ({r.substituted} farklı marka)</span>}
+                      {r.missing > 0 && <span className="text-xs text-red-500 font-medium"> ({r.missing} ürün yok)</span>}
+                    </span>
                   </div>
                 ))}
               </div>

@@ -63,7 +63,7 @@ pytest   # marketkiyas_test veritabanını kullanır
 
 - **Kombinasyon:** Marka tercihlerine uyarak her kalem en ucuz marketten. Bu tutar "kendi tercihlerinle ödeyeceğin" referanstır.
 - **Fırsatçı:** Marka tercihleri yok sayılır, her kalemin piyasadaki en ucuzu.
-- **Tek Market:** Tercihlere uyarak market toplamları; sadece eksiksiz (missing=0) marketler arasından en ucuzu. Hiçbiri yoksa `warning: "Hiçbir market tüm ürünleri eksiksiz bulundurmuyor"` ve uygulama 409 döner.
+- **Tek Market:** Tercihlere uyarak market toplamları; seçilen marka o markette yoksa aynı ürünün oradaki en ucuz başka markası alınır (`substituted`), kalem ancak market o ürünü hiç satmıyorsa eksiktir. Eksiksiz marketlerden önce en az marka değişikliği olan, sonra en ucuzu seçilir. Hiçbiri yoksa `warning: "Hiçbir market listedeki tüm ürünleri satmıyor"` ve uygulama 409 döner.
 - **Tasarruf:** Kombinasyon toplamı − Fırsatçı toplamı (tercih edilen markanın hiç bulunmadığı kalemler hariç). Aylık = x4, yıllık = x52.
 - Plan uygulandıktan sonra kalem eklenir/silinir ya da miktar/marka değişirse plan sıfırlanır (alındı işaretleri korunur); liste yeniden uygulanmalıdır. Böylece kasaya eski hesap yazılmaz.
 

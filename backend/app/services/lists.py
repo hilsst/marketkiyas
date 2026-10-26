@@ -243,24 +243,65 @@ def to_detail(shopping_list: ShoppingList) -> ListDetail:
 # --- Optimizasyon -------------------------------------------------------------------------
 
 
-def _item_inputs(shopping_list: ShoppingList, resolver: PriceResolver) -> list[ItemInput]:
+# "Pirinç 1 kg" ile "Baldo Pirinç 1 Kg" gibi aynı miktardaki benzer gruplar (pg_trgm word_similarity)
+SIMILAR_GROUP_THRESHOLD = 0.8
+SIMILAR_GROUP_LIMIT = 30
+
+
+async def similar_groups(db: AsyncSession, groups: list[ProductGroup]) -> dict[int, list[ProductGroup]]:
+    """Her grup için adı grubun adını kapsayan, miktarı ve birimi aynı diğer gruplar.
+
+    Tek Market'te bir ürün o markette hiç yoksa benzeri buradan alınır. Miktarı bilinmeyen gruplar
+    için aranmaz; yanlış eşleşme riski yüksek.
+    """
+    result: dict[int, list[ProductGroup]] = {}
+    for group in {g.id: g for g in groups}.values():
+        if group.quantity is None or group.unit is None:
+            continue
+        result[group.id] = list(
+            await db.scalars(
+                select(ProductGroup)
+                .where(
+                    ProductGroup.id != group.id,
+                    ProductGroup.quantity == group.quantity,
+                    ProductGroup.unit == group.unit,
+                    func.word_similarity(group.normalized_name, ProductGroup.normalized_name)
+                    >= SIMILAR_GROUP_THRESHOLD,
+                )
+                .options(selectinload(ProductGroup.members).selectinload(GroupMember.product))
+                .limit(SIMILAR_GROUP_LIMIT)
+            )
+        )
+    return result
+
+
+def _offers(members: list[GroupMember], resolver: PriceResolver) -> list[Offer]:
+    offers = []
+    for member in members:
+        resolved = resolver.price(member.product)
+        if resolved is None:
+            continue
+        offers.append(
+            Offer(
+                product_id=member.product.id,
+                product_name=member.product.name,
+                brand=member.product.brand,
+                market_id=member.product.market_id,
+                unit_price=resolved.price,
+                store_id=resolved.store_id,
+            )
+        )
+    return offers
+
+
+def _item_inputs(
+    shopping_list: ShoppingList, resolver: PriceResolver, similar: dict[int, list[ProductGroup]] | None = None
+) -> list[ItemInput]:
+    similar = similar or {}
     inputs = []
     for item in shopping_list.items:
-        offers = []
-        for member in item.group.members:
-            resolved = resolver.price(member.product)
-            if resolved is None:
-                continue
-            offers.append(
-                Offer(
-                    product_id=member.product.id,
-                    product_name=member.product.name,
-                    brand=member.product.brand,
-                    market_id=member.product.market_id,
-                    unit_price=resolved.price,
-                    store_id=resolved.store_id,
-                )
-            )
+        offers = _offers(item.group.members, resolver)
+        similar_offers = [o for g in similar.get(item.group_id, []) for o in _offers(g.members, resolver)]
         inputs.append(
             ItemInput(
                 item_id=item.id,
@@ -270,16 +311,19 @@ def _item_inputs(shopping_list: ShoppingList, resolver: PriceResolver) -> list[I
                 preferred_brand=item.preferred_brand,
                 offers=tuple(offers),
                 preferred_product_id=item.preferred_product_id,
+                similar_offers=tuple(similar_offers),
             )
         )
     return inputs
 
 
 async def run_optimizer(db: AsyncSession, shopping_list: ShoppingList) -> OptimizationResult:
+    similar = await similar_groups(db, [item.group for item in shopping_list.items])
     product_ids = [m.product_id for item in shopping_list.items for m in item.group.members]
+    product_ids += [m.product_id for groups in similar.values() for g in groups for m in g.members]
     resolver = await build_resolver(db, shopping_list.user_id, product_ids)
     market_ids = await candidate_market_ids(db, resolver)
-    return optimizer.optimize(_item_inputs(shopping_list, resolver), market_ids)
+    return optimizer.optimize(_item_inputs(shopping_list, resolver, similar), market_ids)
 
 
 def _plan_out(plan: Plan) -> PlanOut:
@@ -300,6 +344,7 @@ def _plan_out(plan: Plan) -> PlanOut:
                 unit_price=line.offer.unit_price,
                 store_id=line.offer.store_id,
                 line_total=line.line_total,
+                substituted=line.substituted,
             )
             for line in plan.lines
         ],
@@ -323,7 +368,9 @@ def to_optimize_out(result: OptimizationResult) -> OptimizeOut:
             warning=single.warning,
             plan=_plan_out(single.plan) if single.plan else None,
             markets=[
-                MarketTotalOut(market_id=m.market_id, total=m.total, found=m.found, missing=m.missing)
+                MarketTotalOut(
+                    market_id=m.market_id, total=m.total, found=m.found, missing=m.missing, substituted=m.substituted
+                )
                 for m in single.markets
             ],
         ),
