@@ -62,6 +62,7 @@ class DepotPrice:
     depot: Depot
     price: Decimal
     unit_price: str | None
+    regular_price: Decimal | None = None  # kampanyadaysa indirim öncesi fiyat ("discountlessPrice")
 
 
 @dataclass(frozen=True)
@@ -96,7 +97,10 @@ class SearchProduct:
                 latitude=_decimal(entry.get("latitude")),
                 longitude=_decimal(entry.get("longitude")),
             )
-            prices.append(DepotPrice(depot, price, _str(entry.get("unitPrice"))))
+            regular = _price(entry.get("discountlessPrice")) if entry.get("discount") else None
+            prices.append(
+                DepotPrice(depot, price, _str(entry.get("unitPrice")), regular if regular and regular > price else None)
+            )
         return cls(
             id=product_id,
             title=title,

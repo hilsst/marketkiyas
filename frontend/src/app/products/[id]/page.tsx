@@ -38,6 +38,7 @@ export default function ProductDetailPage() {
       : [{ key: String(p.id), product: p, storeName: p.store_name, price: num(p.price) }])
     .sort((a, b) => a.price - b.price), [products]);
   const marketCount = new Set(products.map(p => p.market_id)).size;
+  const storeCount = new Set(products.flatMap(p => p.store_prices.map(sp => sp.store_id))).size;
 
   if (group === undefined) return <div className="p-6">Yükleniyor…</div>;
   if (!group) return <div className="p-6 text-center">Ürün bulunamadı</div>;
@@ -127,7 +128,8 @@ export default function ProductDetailPage() {
       )}
       <div className="card divide-y divide-gray-100 mb-4">
         <div className="px-4 py-3 text-sm font-semibold text-gray-700">
-          {marketCount} markette{offers.length > marketCount ? ", " + offers.length + " şubede" : ""} bulundu
+          {marketCount} markette{storeCount > marketCount ? ", " + storeCount + " şubede" : ""} bulundu
+          {offers.length > Math.max(storeCount, marketCount) ? " · " + offers.length + " seçenek" : ""}
         </div>
         {offers.map(({ key, product: p, storeName, price }, idx) => (
           <button key={key} onClick={() => setSelectedId(p.id)}

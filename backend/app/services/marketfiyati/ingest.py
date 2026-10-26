@@ -31,13 +31,20 @@ from app.models import (
     UserStore,
 )
 from app.services.marketfiyati.client import MarketFiyatiClient
-from app.services.marketfiyati.schemas import Depot, SearchProduct
-from app.services.normalize import normalize_name, normalize_text, parse_quantity, turkish_lower
+from app.services.marketfiyati.schemas import Depot, DepotPrice, SearchProduct
+from app.services.normalize import (
+    normalize_name,
+    normalize_text,
+    parse_quantity,
+    same_product,
+    turkish_lower,
+)
 
 log = logging.getLogger(__name__)
 
-# Aynı gruba girmek için gereken en düşük trigram benzerliği. Miktar ve birim ayrıca birebir eşleşmeli.
-GROUP_SIMILARITY_THRESHOLD = 0.7
+# Aday gruplar için en düşük trigram benzerliği; asıl karar same_product (kelime eşleşmesi).
+# Miktar ve birim ayrıca birebir eşleşmeli.
+GROUP_CANDIDATE_SIMILARITY = 0.3
 
 # Kullanıcı şube seçince ve periyodik senkronizasyonda aranan temel ürünler
 DEFAULT_KEYWORDS = (
@@ -218,13 +225,23 @@ class Ingestor:
         if cache_key in self._groups:
             return self._groups[cache_key]
 
+        # Aday: aynı miktar/birimde harfçe benzer gruplar; karar kelime eşleşmesiyle ("su" ≠ "süt")
         similarity = func.similarity(ProductGroup.normalized_name, key)
-        stmt = select(ProductGroup.id).where(similarity >= GROUP_SIMILARITY_THRESHOLD)
+        stmt = select(ProductGroup.id, ProductGroup.normalized_name, ProductGroup.category_id).where(
+            similarity >= GROUP_CANDIDATE_SIMILARITY
+        )
         stmt = stmt.where(ProductGroup.unit.is_(None) if unit is None else ProductGroup.unit == unit)
         stmt = stmt.where(
             ProductGroup.quantity.is_(None) if quantity is None else ProductGroup.quantity == quantity
         )
-        group_id = await self.db.scalar(stmt.order_by(similarity.desc()).limit(1))
+        group_id = next(
+            (
+                gid
+                for gid, name, gcat in await self.db.execute(stmt.order_by(similarity.desc()).limit(20))
+                if same_product(name, key) and (gcat is None or category_id is None or gcat == category_id)
+            ),
+            None,
+        )
         if group_id is None:
             group = ProductGroup(
                 name=display,
@@ -301,15 +318,18 @@ class Ingestor:
                 )
                 self.stats.store_prices += 1
 
-            await self._refresh_current_price(product_id)
+            await self._refresh_current_price(product_id, depot_prices)
             await self.db.execute(
                 insert(GroupMember)
                 .values(group_id=group_id, product_id=product_id, is_manual=False)
                 .on_conflict_do_nothing(index_elements=[GroupMember.product_id])
             )
 
-    async def _refresh_current_price(self, product_id: int) -> None:
-        """Ürünün zincir genelindeki en düşük güncel fiyatı; değiştiyse fiyat geçmişine yazılır."""
+    async def _refresh_current_price(self, product_id: int, depot_prices: Sequence[DepotPrice] = ()) -> None:
+        """Ürünün zincir genelindeki en düşük güncel fiyatı; fiyat ya da kampanya durumu değiştiyse
+        fiyat geçmişine yazılır. Kampanya bilgisi (indirim öncesi fiyat) en düşük fiyatlı şubeden gelir;
+        Fırsatlar bunu kullanır.
+        """
         old, new = (
             await self.db.execute(
                 select(
@@ -320,11 +340,28 @@ class Ingestor:
                 ).where(Product.id == product_id)
             )
         ).one()
-        if new is not None and new != old:
+        if new is None:
+            return
+        regular = next((dp.regular_price for dp in depot_prices if dp.price == new and dp.regular_price), None)
+        last_regular = await self.db.scalar(
+            select(PriceHistory.regular_price)
+            .where(PriceHistory.product_id == product_id)
+            .order_by(PriceHistory.recorded_at.desc(), PriceHistory.id.desc())
+            .limit(1)
+        )
+        if new != old or regular != last_regular:
             await self.db.execute(
                 Product.__table__.update().where(Product.id == product_id).values(current_price=new)
             )
-            self.db.add(PriceHistory(product_id=product_id, price=new, recorded_at=self._now))
+            self.db.add(
+                PriceHistory(
+                    product_id=product_id,
+                    price=new,
+                    regular_price=regular,
+                    is_campaign=regular is not None,
+                    recorded_at=self._now,
+                )
+            )
             self.stats.price_changes += 1
 
 
