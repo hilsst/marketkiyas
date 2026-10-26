@@ -58,6 +58,12 @@ pytest   # marketkiyas_test veritabanını kullanır
 | `GET /api/savings` | Tasarruf Kasası (toplam + kayıtlar) |
 | `GET /api/stores/nearby?lat=&lon=&distance=5` | Çevredeki market şubeleri (marketfiyati.org.tr), `selected` bayrağıyla |
 | `GET/PUT /api/me/stores` `{"store_ids": [..]}` | "Çevremdeki marketler" seçimi. Yeni şubelerin fiyatları arka planda çekilir |
+| `GET /api/products/barcode/{barkod}` | Barkod Okut: önce veritabanı (barkod ya da marketfiyati ürün id'si), yoksa marketfiyati `/api/v2/searchByIdentity` (`identityType: "barcode"`); bulunan ürün kaydedilir |
+| `GET /api/products/deals` | Fırsatlar: son 30 günün en yüksek fiyatından ya da kampanya öncesi fiyattan en az %5 ucuz, grup başına en iyisi |
+| `GET/POST /api/alerts`, `DELETE /api/alerts/{id}` | Fiyat alarmı. `target_price` boşsa "kurulduğu fiyatın altına inince". Kullanıcının şube fiyatlarıyla, okunurken değerlendirilir |
+| `GET /api/alerts/unread`, `POST /api/alerts/seen` | 🔔 rozeti: fiyatı düşen ve görülmemiş alarm sayısı |
+| `POST /api/lists/{id}/share`, `POST /api/lists/join` `{"code"}` | Ortak liste: 8 haneli davet kodu, kodla katılma |
+| `DELETE /api/lists/{id}/members/{user_id}` | Sahip üyeyi çıkarır ya da üye listeden ayrılır. Üyeler listeyi düzenler, optimizasyon herkesin kendi şubeleriyle; listeyi yalnızca sahibi siler |
 
 ### Optimizasyon kuralları
 

@@ -7,7 +7,7 @@ from decimal import Decimal as D
 import pytest
 from sqlalchemy import select, update
 
-from app.api.routes.stores import get_marketfiyati_client
+from app.api.routes.products import get_barcode_client
 from app.main import app
 from app.models import GroupMember, Market, PriceHistory, Product, ProductGroup, Unit
 from app.services.normalize import normalize_name
@@ -158,7 +158,7 @@ def fake():
         async with fake.client() as c:
             yield c
 
-    app.dependency_overrides[get_marketfiyati_client] = _client
+    app.dependency_overrides[get_barcode_client] = _client
     yield fake
 
 

@@ -28,6 +28,7 @@ export default function ListDetailPage() {
   const [opt, setOpt] = useState<OptimizeResult | null>(null);
   const [pickerItemId, setPickerItemId] = useState<number | null>(null);
   const [pickerAlternatives, setPickerAlternatives] = useState<GroupProduct[] | null>(null);
+  const [sharing, setSharing] = useState(false);
   // Hızlı art arda tıklamalarda yalnızca son isteğin cevabı ekrana yazılır
   const seq = useRef(0);
 
@@ -72,6 +73,21 @@ export default function ListDetailPage() {
     });
     if (removed) refreshLists();
   };
+
+  // Ortak listede diğer kişinin değişiklikleri 15 sn'de bir çekilir
+  const shared = !!detail && (detail.members.length > 0 || detail.owner_id !== user?.id);
+  const lastUpdate = detail?.updated_at;
+  useEffect(() => {
+    if (!shared) return;
+    const t = setInterval(async () => {
+      const mine = seq.current;
+      try {
+        const fresh = await api.list(listId);
+        if (mine === seq.current && fresh.updated_at !== lastUpdate) { setDetail(fresh); reoptimize(); }
+      } catch {}
+    }, 15000);
+    return () => clearInterval(t);
+  }, [shared, lastUpdate, listId, reoptimize]);
 
   const view = useMemo(() => {
     if (!detail || !opt) return null;
@@ -181,6 +197,44 @@ export default function ListDetailPage() {
     } catch (e) { setToast((e as Error).message); }
   };
 
+  const isOwner = list.owner_id === user.id;
+
+  const handleLeave = async () => {
+    if (!confirm("Bu ortak listeden ayrılmak istiyor musunuz? Liste sahibinde kalmaya devam eder.")) return;
+    try {
+      await api.removeMember(list.id, user.id);
+      await refreshLists();
+      router.push("/lists");
+    } catch (e) { setToast((e as Error).message); }
+  };
+
+  const openShare = async () => {
+    setSharing(true);
+    if (list.share_code) return;
+    try {
+      const { share_code } = await api.shareList(list.id);
+      setDetail(d => (d ? { ...d, share_code } : d));
+    } catch (e) { setToast((e as Error).message); }
+  };
+
+  const shareLink = list.share_code && typeof window !== "undefined"
+    ? window.location.origin + "/lists/join?code=" + list.share_code : "";
+
+  const sendInvite = async () => {
+    const text = "MarketKıyas'ta \"" + list.name + "\" listeme katıl. Kod: " + list.share_code;
+    try {
+      if (navigator.share) await navigator.share({ title: "MarketKıyas listesi", text, url: shareLink });
+      else { await navigator.clipboard.writeText(text + "\n" + shareLink); setToast("Davet kopyalandı"); }
+    } catch {}
+  };
+
+  const removeMember = async (memberId: number) => {
+    try {
+      await api.removeMember(list.id, memberId);
+      setDetail(await api.list(list.id));
+    } catch (e) { setToast((e as Error).message); }
+  };
+
   const cancelPlan = () => mutate(() => api.cancelPlan(list.id), { reopt: false });
 
   const toggle = (item: ListItem) => updateItem(item.id, { is_checked: !item.is_checked });
@@ -190,11 +244,27 @@ export default function ListDetailPage() {
       <div className="p-4 pb-2">
         <div className="flex justify-between items-start">
           <button onClick={() => router.back()} className="text-gray-600 mb-2">← Geri</button>
-          <button onClick={handleDeleteList} className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 bg-red-50 rounded">
-            🗑️ Listeyi Sil
-          </button>
+          <div className="flex gap-2">
+            <button onClick={openShare} className="text-sky-700 text-xs font-semibold px-2 py-1 bg-sky-50 rounded">
+              👥 {isOwner ? "Paylaş" : "Kişiler"}
+            </button>
+            {isOwner ? (
+              <button onClick={handleDeleteList} className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 bg-red-50 rounded">
+                🗑️ Listeyi Sil
+              </button>
+            ) : (
+              <button onClick={handleLeave} className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 bg-red-50 rounded">
+                🚪 Listeden Ayrıl
+              </button>
+            )}
+          </div>
         </div>
         <h1 className="text-2xl font-bold">{list.name}</h1>
+        {shared && (
+          <div className="text-xs text-sky-700 mt-0.5">
+            👥 Ortak liste: {[list.owner_name, ...list.members.map(m => m.name)].filter(Boolean).join(", ")}
+          </div>
+        )}
         <div className="text-xs text-gray-500 mt-1">
           {totalItems} ürün · Tamamlanan: {checkedCount}/{totalItems}
         </div>
@@ -308,6 +378,9 @@ export default function ListDetailPage() {
                         <div className={"text-sm font-medium " + (it.is_checked ? "line-through text-gray-400" : "")}>
                           {it.group_name}
                         </div>
+                        {shared && it.added_by_name && it.added_by_id !== user.id && (
+                          <div className="text-[11px] text-sky-700">{it.added_by_name} ekledi</div>
+                        )}
                         {line && (
                           <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
                             <span className={"px-1.5 py-0.5 rounded " + (locked ? "bg-orange-100 text-orange-700" : "bg-gray-100 text-gray-600")}>
@@ -566,6 +639,47 @@ export default function ListDetailPage() {
                 </div>
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {sharing && (
+        <div className="fixed inset-0 bg-black/40 flex items-end z-50" onClick={() => setSharing(false)}>
+          <div className="bg-white w-full max-w-md mx-auto rounded-t-2xl p-4" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <div className="text-lg font-bold">Ortak liste</div>
+                <div className="text-xs text-gray-500">Kodu alan kişi bu listeyi görür, ürün ekler ve işaretler.</div>
+              </div>
+              <button onClick={() => setSharing(false)} className="text-gray-400 text-2xl">&times;</button>
+            </div>
+            <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 text-center mb-3">
+              <div className="text-xs text-sky-700 mb-1">Davet kodu</div>
+              <div className="text-3xl font-mono font-black tracking-[0.2em] text-sky-900">{list.share_code || "…"}</div>
+            </div>
+            {list.share_code && (
+              <button onClick={sendInvite} className="w-full bg-sky-600 text-white py-3 rounded-xl font-semibold mb-4">
+                📤 Daveti Gönder (WhatsApp, SMS…)
+              </button>
+            )}
+            <div className="text-sm font-semibold text-gray-700 mb-2">Listedekiler</div>
+            <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+              <div className="px-3 py-2 text-sm flex justify-between">
+                <span>{list.owner_name}{list.owner_id === user.id ? " (siz)" : ""}</span>
+                <span className="text-xs text-gray-400">Sahibi</span>
+              </div>
+              {list.members.map(m => (
+                <div key={m.user_id} className="px-3 py-2 text-sm flex justify-between items-center">
+                  <span>{m.name}{m.user_id === user.id ? " (siz)" : ""}</span>
+                  {isOwner && (
+                    <button onClick={() => removeMember(m.user_id)} className="text-xs text-red-500 underline">Çıkar</button>
+                  )}
+                </div>
+              ))}
+              {list.members.length === 0 && (
+                <div className="px-3 py-2 text-xs text-gray-400">Henüz kimse katılmadı.</div>
+              )}
+            </div>
           </div>
         </div>
       )}

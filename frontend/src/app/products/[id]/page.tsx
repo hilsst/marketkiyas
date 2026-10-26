@@ -1,7 +1,7 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { api, formatSize, num, GroupDetail, GroupProduct } from "@/lib/api";
+import { api, formatSize, num, unitPrice, GroupDetail, GroupProduct, PriceAlert } from "@/lib/api";
 import MarketLogo from "@/components/MarketLogo";
 import ProductImage from "@/components/ProductImage";
 import { useGroupIcon, useLists } from "@/lib/store";
@@ -10,15 +10,23 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const groupId = Number(params.id);
-  const { user, lists, addItem, setToast, marketById, categoryById } = useLists();
+  const { user, lists, addItem, setToast, marketById, categoryById, refreshAlerts } = useLists();
   const groupIcon = useGroupIcon();
   const [group, setGroup] = useState<GroupDetail | null | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [picker, setPicker] = useState(false);
+  const [alertSheet, setAlertSheet] = useState(false);
+  const [alert, setAlert] = useState<PriceAlert | null>(null);
+  const [target, setTarget] = useState("");
 
   useEffect(() => {
     api.productGroup(groupId).then(setGroup).catch(() => setGroup(null));
   }, [groupId]);
+
+  useEffect(() => {
+    if (!user) { setAlert(null); return; }
+    api.alerts().then(all => setAlert(all.find(a => a.group_id === groupId) || null)).catch(() => {});
+  }, [user, groupId]);
 
   // Yalnızca fiyatı olanlar; API fiyata göre sıralı döner
   const products = useMemo(() => (group?.products || []).filter(p => p.price != null), [group]);
@@ -50,6 +58,39 @@ export default function ProductDetailPage() {
     } catch (e) {
       setToast((e as Error).message);
     }
+  }
+
+  const openAlertSheet = () => {
+    if (!user) { router.push("/login?next=" + encodeURIComponent("/products/" + groupId)); return; }
+    setTarget(alert?.target_price ? num(alert.target_price).toFixed(2) : "");
+    setAlertSheet(true);
+  };
+
+  async function saveAlert(withTarget: boolean) {
+    const value = Number(target.replace(",", "."));
+    if (withTarget && !(value > 0)) { setToast("Geçerli bir fiyat yazın"); return; }
+    try {
+      // Uygulama açıkken fiyat düşerse telefon bildirimi de gösterebilmek için izin istenir
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+      const all = await api.createAlert(groupId, withTarget ? value : null);
+      setAlert(all.find(a => a.group_id === groupId) || null);
+      setAlertSheet(false);
+      setToast(withTarget ? "Fiyat " + value.toFixed(2) + " ₺ altına inince haber vereceğiz" : "Fiyat düşünce haber vereceğiz");
+      refreshAlerts();
+    } catch (e) { setToast((e as Error).message); }
+  }
+
+  async function removeAlert() {
+    if (!alert) return;
+    try {
+      await api.deleteAlert(alert.id);
+      setAlert(null);
+      setAlertSheet(false);
+      setToast("Alarm kaldırıldı");
+      refreshAlerts();
+    } catch (e) { setToast((e as Error).message); }
   }
 
   const openPicker = () => {
@@ -106,6 +147,9 @@ export default function ProductDetailPage() {
             </div>
             <div className="text-right">
               <div className={"font-bold " + (idx===0?"text-emerald-600":"text-gray-900")}>{price.toFixed(2)} ₺</div>
+              {unitPrice(price, group.quantity, group.unit) && (
+                <div className="text-[10px] text-gray-400">{unitPrice(price, group.quantity, group.unit)!.label}</div>
+              )}
               {idx === 0 && <div className="text-[10px] text-emerald-600 font-semibold">EN UCUZ</div>}
             </div>
           </button>
@@ -115,8 +159,37 @@ export default function ProductDetailPage() {
         <button onClick={openPicker} className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-semibold">
           ➕ Listeye Ekle
         </button>
-        <button className="px-4 bg-white border border-gray-200 rounded-xl">🔔</button>
+        <button onClick={openAlertSheet} aria-label="Fiyat alarmı"
+          className={"px-4 rounded-xl border text-sm " + (alert ? "bg-amber-50 border-amber-300 text-amber-800" : "bg-white border-gray-200")}>
+          🔔{alert ? " Kurulu" : ""}
+        </button>
       </div>
+      {alertSheet && (
+        <div className="fixed inset-0 bg-black/40 flex items-end z-50" onClick={() => setAlertSheet(false)}>
+          <div className="bg-white w-full max-w-md mx-auto rounded-t-2xl p-4" onClick={e => e.stopPropagation()}>
+            <div className="text-lg font-bold">Fiyat alarmı</div>
+            <div className="text-xs text-gray-500 mb-4">
+              {group.name} şu an en ucuz {offers[0] ? offers[0].price.toFixed(2) + " ₺" : "-"}. Fiyat düşünce 🔔 sekmesinde haber veririz.
+            </div>
+            <button onClick={() => saveAlert(false)}
+              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-emerald-400 mb-2">
+              <div className="font-semibold text-emerald-700">Fiyatı düşünce haber ver</div>
+              <div className="text-xs text-gray-500">Şu anki en ucuz fiyatın altına inince</div>
+            </button>
+            <div className="p-3 rounded-lg border border-gray-200">
+              <div className="font-semibold text-gray-800 mb-2">Şu fiyatın altına inince</div>
+              <div className="flex gap-2">
+                <input value={target} onChange={e => setTarget(e.target.value)} inputMode="decimal" placeholder="örn. 30,00"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                <button onClick={() => saveAlert(true)} className="bg-emerald-600 text-white px-4 rounded-lg text-sm font-semibold">Kur</button>
+              </div>
+            </div>
+            {alert && (
+              <button onClick={removeAlert} className="w-full mt-3 text-sm text-red-500 underline">Alarmı kaldır</button>
+            )}
+          </div>
+        </div>
+      )}
       {picker && (
         <div className="fixed inset-0 bg-black/40 flex items-end z-50" onClick={() => setPicker(false)}>
           <div className="bg-white w-full max-w-md mx-auto rounded-t-2xl p-4" onClick={e => e.stopPropagation()}>

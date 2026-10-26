@@ -1,14 +1,20 @@
+from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.deps import DbSession, OptionalUser
-from app.api.routes.stores import MarketFiyati
 from app.schemas.products import BarcodeResult, DealOut, GroupDetail, GroupSummary
 from app.services import barcode, catalog
-from app.services.marketfiyati.client import MarketFiyatiError
+from app.services.marketfiyati.client import MarketFiyatiClient, MarketFiyatiError
 
 router = APIRouter(prefix="/products", tags=["products"])
+
+
+async def get_barcode_client() -> AsyncIterator[MarketFiyatiClient]:
+    """Kullanıcı rafta bekliyor: kısa zaman aşımı, tek tekrar."""
+    async with MarketFiyatiClient(timeout=10, max_retries=1) as client:
+        yield client
 
 
 @router.get("", response_model=list[GroupSummary])
@@ -38,7 +44,7 @@ async def find_by_barcode(
     code: str,
     db: DbSession,
     user: OptionalUser,
-    client: MarketFiyati,
+    client: Annotated[MarketFiyatiClient, Depends(get_barcode_client)],
     lat: Annotated[float | None, Query(ge=35, le=43)] = None,
     lon: Annotated[float | None, Query(ge=25, le=45)] = None,
 ) -> BarcodeResult:

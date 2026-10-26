@@ -35,17 +35,20 @@ export interface ListItem {
   id: number; group_id: number; group_name: string; category_id: number | null; image_url: string | null;
   quantity: Money; preferred_brand: string | null; preferred_product_id: number | null; is_checked: boolean;
   position: number; note: string | null; assigned: AssignedProduct | null;
+  added_by_id: number | null; added_by_name: string | null; // ortak listede kalemi ekleyen
 }
 export interface ShoppingGroup { market_id: number | null; item_ids: number[]; checked_count: number; }
 export interface ListSummary {
-  id: number; name: string; icon: string | null; status: "active" | "shopping" | "completed";
+  id: number; owner_id: number; owner_name: string | null; member_count: number; name: string; icon: string | null; status: "active" | "shopping" | "completed";
   applied_plan: PlanType | null; planned_total: Money | null; item_count: number; checked_count: number;
   created_at: string; updated_at: string; estimated_total: Money | null; top_market_id: number | null;
 }
 export interface ListDetail extends ListSummary {
   preference_total: Money | null; expected_savings: Money | null; applied_at: string | null;
   completed_at: string | null; items: ListItem[]; shopping_groups: ShoppingGroup[];
+  share_code: string | null; members: ListMember[];
 }
+export interface ListMember { user_id: number; name: string | null; joined_at: string; }
 
 export interface PlanLine {
   item_id: number; group_id: number; group_name: string; quantity: Money; product_id: number;
@@ -71,6 +74,19 @@ export interface CompleteResponse { list_id: number; saved_amount: Money; vault_
 export interface Store {
   id: number; name: string; market_id: number; market_slug: string; market_name: string;
   latitude: Money | null; longitude: Money | null; distance_km: number | null; selected: boolean;
+}
+
+export interface PriceAlert {
+  id: number; group_id: number; group_name: string; category_id: number | null; image_url: string | null;
+  quantity: Money | null; unit: Unit | null; target_price: Money | null; baseline_price: Money | null;
+  current_price: Money | null; current_market_id: number | null; triggered: boolean; triggered_at: string | null;
+  unread: boolean; created_at: string;
+}
+export interface Deal {
+  group_id: number; group_name: string; category_id: number | null; image_url: string | null;
+  quantity: Money | null; unit: Unit | null; product_id: number; product_name: string; brand: string | null;
+  market_id: number; store_id: number | null; price: Money; previous_price: Money; discount_percent: number;
+  is_campaign: boolean;
 }
 
 export class ApiError extends Error {
@@ -146,7 +162,21 @@ export const api = {
   cancelPlan: (listId: number) => request<ListDetail>("DELETE", `/lists/${listId}/plan`),
   complete: (listId: number) => request<CompleteResponse>("POST", `/lists/${listId}/complete`),
 
+  shareList: (listId: number) => request<{ share_code: string }>("POST", `/lists/${listId}/share`),
+  joinList: (code: string) => request<ListDetail>("POST", "/lists/join", { code }),
+  removeMember: (listId: number, userId: number) => request<void>("DELETE", `/lists/${listId}/members/${userId}`),
+
   savings: () => request<SavingsVault>("GET", "/savings"),
+
+  alerts: () => request<PriceAlert[]>("GET", "/alerts"),
+  unreadAlerts: () => request<{ unread: number }>("GET", "/alerts/unread"),
+  createAlert: (groupId: number, targetPrice?: number | null) =>
+    request<PriceAlert[]>("POST", "/alerts", { group_id: groupId, target_price: targetPrice ?? null }),
+  deleteAlert: (id: number) => request<void>("DELETE", "/alerts/" + id),
+  markAlertsSeen: () => request<void>("POST", "/alerts/seen"),
+
+  deals: () => request<Deal[]>("GET", "/products/deals"),
+  findBarcode: (code: string) => request<{ barcode: string; group_id: number }>("GET", "/products/barcode/" + encodeURIComponent(code)),
 
   nearbyStores: (lat: number, lon: number, distance?: number) =>
     request<Store[]>("GET", "/stores/nearby" + qs({ lat, lon, distance })),
@@ -162,6 +192,14 @@ export function formatSize(quantity: Money | null, unit: Unit | null): string {
   if (unit === "ml") return q >= 1000 ? fmt(q / 1000) + " L" : fmt(q) + " ml";
   if (unit === "g") return q >= 1000 ? fmt(q / 1000) + " kg" : fmt(q) + " g";
   return fmt(q) + "'" + countSuffix(q);
+}
+
+/** Kilo/litre/adet başına fiyat: (34,50 ₺, 1000 ml) -> "34,50 ₺/L". Miktar bilinmiyorsa null. */
+export function unitPrice(price: Money | number | null | undefined, quantity: Money | null, unit: Unit | null) {
+  const q = num(quantity);
+  if (price == null || !q || !unit) return null;
+  const value = unit === "adet" ? num(price) / q : (num(price) / q) * 1000;
+  return { value, label: value.toFixed(2).replace(".", ",") + " ₺/" + (unit === "ml" ? "L" : unit === "g" ? "kg" : "adet") };
 }
 
 // Türkçe ses uyumu: 15'li, 30'lu, 6'lı, 4'lü
