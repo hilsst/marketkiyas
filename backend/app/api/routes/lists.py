@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from fastapi import APIRouter, Response, status
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentUser, DbSession
 from app.models import ShoppingList, ShoppingListItem
@@ -24,13 +24,8 @@ router = APIRouter(prefix="/lists", tags=["lists"])
 
 @router.get("", response_model=list[ListSummary])
 async def list_lists(user: CurrentUser, db: DbSession) -> list[ListSummary]:
-    rows = await db.scalars(
-        select(ShoppingList)
-        .where(ShoppingList.user_id == user.id)
-        .options(selectinload(ShoppingList.items))
-        .order_by(ShoppingList.updated_at.desc())
-    )
-    return [svc.to_summary(sl) for sl in rows]
+    """Listeler sayfası: her liste için "Tahmini" tutar ve "En çok" alınacak market."""
+    return await svc.list_summaries(db, user)
 
 
 @router.post("", response_model=ListDetail, status_code=status.HTTP_201_CREATED)
@@ -68,23 +63,27 @@ async def delete_list(list_id: int, user: CurrentUser, db: DbSession) -> Respons
 
 @router.post("/{list_id}/items", response_model=ListDetail, status_code=status.HTTP_201_CREATED)
 async def add_item(list_id: int, body: ItemCreate, user: CurrentUser, db: DbSession) -> ListDetail:
+    """Grup listede zaten varsa yeni kalem açılmaz: miktarı artar, gönderilen tercih uygulanır."""
     shopping_list = await svc.get_owned_list(db, user, list_id)
     group = await svc.get_group(db, body.group_id)
+    preference = body.model_dump(include={"preferred_brand", "preferred_product_id"}, exclude_none=True)
+    existing = next((i for i in shopping_list.items if i.group_id == group.id), None)
+    if existing is not None:
+        svc.reset_plan(shopping_list)
+        existing.quantity = min(existing.quantity + body.quantity, Decimal(999))
+        svc.set_preference(existing, group, preference)
+        await db.commit()
+        return svc.to_detail(await svc.get_owned_list(db, user, list_id))
+
     next_position = await db.scalar(
         select(func.coalesce(func.max(ShoppingListItem.position) + 1, 0)).where(
             ShoppingListItem.list_id == list_id
         )
     )
     svc.reset_plan(shopping_list)
-    shopping_list.items.append(
-        ShoppingListItem(
-            group_id=group.id,
-            quantity=body.quantity,
-            preferred_brand=svc.validate_brand(group, body.preferred_brand),
-            note=body.note,
-            position=next_position,
-        )
-    )
+    item = ShoppingListItem(group_id=group.id, quantity=body.quantity, note=body.note, position=next_position)
+    svc.set_preference(item, group, preference)
+    shopping_list.items.append(item)
     await db.commit()
     return svc.to_detail(await svc.get_owned_list(db, user, list_id))
 
@@ -98,11 +97,8 @@ async def update_item(
     item = svc.get_item(shopping_list, item_id)
     changes = body.model_dump(exclude_unset=True)
 
-    if "preferred_brand" in changes:
-        brand = svc.validate_brand(item.group, changes["preferred_brand"])
-        if brand != item.preferred_brand:
-            svc.reset_plan(shopping_list)
-        item.preferred_brand = brand
+    if svc.set_preference(item, item.group, changes):
+        svc.reset_plan(shopping_list)
     if "quantity" in changes and changes["quantity"] is not None and changes["quantity"] != item.quantity:
         svc.reset_plan(shopping_list)
         item.quantity = changes["quantity"]
@@ -148,8 +144,31 @@ async def apply_plan(
     return svc.to_detail(await svc.get_owned_list(db, user, list_id))
 
 
+@router.post("/{list_id}/clear-preferences", response_model=ListDetail)
+async def clear_preferences(list_id: int, user: CurrentUser, db: DbSession) -> ListDetail:
+    """Kombinasyon ipucu: tüm marka/ürün kilitlerini kaldırır ("MARKA FARKETMEZ")."""
+    shopping_list = await svc.get_owned_list(db, user, list_id)
+    changed = False
+    for item in shopping_list.items:
+        changed |= svc.set_preference(item, item.group, {"preferred_product_id": None})
+    if changed:
+        svc.reset_plan(shopping_list)
+    await db.commit()
+    return svc.to_detail(await svc.get_owned_list(db, user, list_id))
+
+
+@router.delete("/{list_id}/plan", response_model=ListDetail)
+async def cancel_plan(list_id: int, user: CurrentUser, db: DbSession) -> ListDetail:
+    """Alışveriş Modu'nda "İptal Et": plan kaldırılır, alındı işaretleri korunur."""
+    shopping_list = await svc.get_owned_list(db, user, list_id)
+    svc.reset_plan(shopping_list)
+    await db.commit()
+    return svc.to_detail(await svc.get_owned_list(db, user, list_id))
+
+
 @router.post("/{list_id}/complete", response_model=CompleteResponse)
 async def complete_list(list_id: int, user: CurrentUser, db: DbSession) -> CompleteResponse:
-    """"Alışverişi Bitir": Fırsatçı planı uygulandıysa tasarruf kalıcı kasaya eklenir."""
+    """"Alışverişi Bitir": Fırsatçı planı uygulandıysa tasarruf kalıcı kasaya eklenir; liste
+    Alışveriş Modu'ndan çıkar ve yeniden kullanılabilir."""
     shopping_list = await svc.get_owned_list(db, user, list_id)
     return await svc.complete_list(db, user, shopping_list)

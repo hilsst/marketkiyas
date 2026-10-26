@@ -9,6 +9,7 @@ from app.models.enums import Unit
 class MarketPrice(BaseModel):
     market_id: int
     min_price: Decimal
+    regular_price: Decimal | None = None  # kampanyadaysa indirim öncesi fiyat ("PROMO")
 
 
 class GroupSummary(BaseModel):
@@ -36,6 +37,7 @@ class GroupProduct(BaseModel):
     brand: str | None
     market_id: int
     price: Decimal | None
+    regular_price: Decimal | None  # kampanyadaysa indirim öncesi fiyat
     store_id: int | None  # kullanıcının seçtiği şubelerden en ucuzu
     is_available: bool  # kullanıcının şubelerinde (ya da genel olarak) satılıyor mu
     image_url: str | None

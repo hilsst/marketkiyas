@@ -59,7 +59,7 @@ async def test_savings_survive_list_deletion(db):
     assert record.saved_amount == Decimal("55.75")
 
 
-async def test_list_can_be_saved_to_vault_only_once(db):
+async def test_list_can_be_saved_to_vault_every_week(db):
     user = await _user(db)
     lst = ShoppingList(user_id=user.id, name="L")
     db.add(lst)
@@ -76,8 +76,7 @@ async def test_list_can_be_saved_to_vault_only_once(db):
     db.add(SavingsRecord(**kwargs))
     await db.flush()
     db.add(SavingsRecord(**kwargs))
-    with pytest.raises(IntegrityError):
-        await db.flush()
+    await db.flush()  # aynı liste haftaya yeniden kullanılır; çift kayıt koruması plan sıfırlamada
 
 
 async def test_grouping_and_trgm_similarity(db):

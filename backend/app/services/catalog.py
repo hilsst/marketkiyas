@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from decimal import Decimal
 
 from sqlalchemy import func, or_, select
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -24,12 +25,40 @@ def _priced(products: Sequence[Product], resolver: PriceResolver) -> list[tuple[
     return priced
 
 
-def group_summary(group: ProductGroup, resolver: PriceResolver) -> GroupSummary:
+async def campaign_prices(db: AsyncSession, product_ids: Sequence[int]) -> dict[int, Decimal]:
+    """Son fiyat kaydı kampanyalı olan ürünlerin indirim öncesi fiyatı."""
+    if not product_ids:
+        return {}
+    latest = (
+        select(PriceHistory.product_id, PriceHistory.regular_price, PriceHistory.is_campaign)
+        .where(PriceHistory.product_id.in_(product_ids))
+        .order_by(PriceHistory.product_id, PriceHistory.recorded_at.desc(), PriceHistory.id.desc())
+        .ext(distinct_on(PriceHistory.product_id))
+    )
+    return {
+        product_id: regular
+        for product_id, regular, is_campaign in await db.execute(latest)
+        if is_campaign and regular is not None
+    }
+
+
+def _regular(product: Product, price: Decimal, resolver: PriceResolver, campaigns: dict[int, Decimal]) -> Decimal | None:
+    # Kampanya bilgisi zincir fiyatına aittir; şube fiyatı kullanılıyorsa gösterilmez
+    regular = campaigns.get(product.id)
+    if resolver.uses_stores or regular is None or regular <= price:
+        return None
+    return regular
+
+
+def group_summary(
+    group: ProductGroup, resolver: PriceResolver, campaigns: dict[int, Decimal] | None = None
+) -> GroupSummary:
+    campaigns = campaigns or {}
     priced = _priced([m.product for m in group.members], resolver)
-    by_market: dict[int, Decimal] = {}
+    by_market: dict[int, tuple[Decimal, Decimal | None]] = {}
     for p, price in priced:
-        if p.market_id not in by_market or price < by_market[p.market_id]:
-            by_market[p.market_id] = price
+        if p.market_id not in by_market or price < by_market[p.market_id][0]:
+            by_market[p.market_id] = (price, _regular(p, price, resolver, campaigns))
     brands = sorted({p.brand for p, _ in priced if p.brand}, key=str.casefold)
     return GroupSummary(
         id=group.id,
@@ -38,8 +67,11 @@ def group_summary(group: ProductGroup, resolver: PriceResolver) -> GroupSummary:
         quantity=group.quantity,
         unit=group.unit,
         image_url=group.image_url,
-        min_price=min(by_market.values(), default=None),
-        market_prices=[MarketPrice(market_id=m, min_price=v) for m, v in sorted(by_market.items())],
+        min_price=min((price for price, _ in by_market.values()), default=None),
+        market_prices=[
+            MarketPrice(market_id=m, min_price=price, regular_price=regular)
+            for m, (price, regular) in sorted(by_market.items())
+        ],
         brands=brands,
     )
 
@@ -77,7 +109,8 @@ async def search_groups(
         stmt = stmt.order_by(ProductGroup.name)
     groups = (await db.scalars(stmt.limit(limit))).all()
     resolver = await _resolver_for(db, user_id, groups)
-    summaries = [group_summary(g, resolver) for g in groups]
+    campaigns = await campaign_prices(db, [m.product_id for g in groups for m in g.members])
+    summaries = [group_summary(g, resolver, campaigns) for g in groups]
     if resolver.uses_stores:
         summaries = [s for s in summaries if s.min_price is not None]
     return summaries
@@ -116,6 +149,7 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
             history[product_id].append(PricePoint(price=price, recorded_at=recorded_at))
 
     prices = {p.id: resolver.price(p) for p in products}
+    campaigns = await campaign_prices(db, [p.id for p in products])
     rows = [
         GroupProduct(
             id=p.id,
@@ -123,6 +157,7 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
             brand=p.brand,
             market_id=p.market_id,
             price=prices[p.id].price if prices[p.id] else None,
+            regular_price=_regular(p, prices[p.id].price, resolver, campaigns) if prices[p.id] else None,
             store_id=prices[p.id].store_id if prices[p.id] else None,
             is_available=prices[p.id] is not None,
             image_url=p.image_url,
@@ -131,4 +166,4 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
         for p in products
     ]
     rows.sort(key=lambda r: (r.price is None, r.price or 0, r.id))
-    return GroupDetail(**group_summary(group, resolver).model_dump(), products=rows)
+    return GroupDetail(**group_summary(group, resolver, campaigns).model_dump(), products=rows)
