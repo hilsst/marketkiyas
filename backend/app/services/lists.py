@@ -1,0 +1,347 @@
+from datetime import datetime, timezone
+from decimal import Decimal
+
+from fastapi import HTTPException, status
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models import (
+    GroupMember,
+    ListStatus,
+    Market,
+    PlanType,
+    ProductGroup,
+    SavingsRecord,
+    ShoppingList,
+    ShoppingListItem,
+    User,
+)
+from app.schemas.lists import (
+    AssignedProduct,
+    ItemOut,
+    ListDetail,
+    ListSummary,
+    MarketBreakdown,
+    MarketTotalOut,
+    OptimizeOut,
+    PlanLineOut,
+    PlanOut,
+    SavingsProjection,
+    ShoppingGroup,
+    SingleMarketOut,
+)
+from app.schemas.savings import CompleteResponse
+from app.services import optimizer
+from app.services.optimizer import ItemInput, Offer, OptimizationResult, Plan
+
+
+def _list_options():
+    return (
+        selectinload(ShoppingList.items)
+        .selectinload(ShoppingListItem.group)
+        .selectinload(ProductGroup.members)
+        .selectinload(GroupMember.product),
+        selectinload(ShoppingList.items).selectinload(ShoppingListItem.assigned_product),
+    )
+
+
+async def get_owned_list(db: AsyncSession, user: User, list_id: int) -> ShoppingList:
+    shopping_list = await db.scalar(
+        select(ShoppingList)
+        .where(ShoppingList.id == list_id, ShoppingList.user_id == user.id)
+        .options(*_list_options())
+        .execution_options(populate_existing=True)
+    )
+    if shopping_list is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Liste bulunamadı")
+    return shopping_list
+
+
+def get_item(shopping_list: ShoppingList, item_id: int) -> ShoppingListItem:
+    for item in shopping_list.items:
+        if item.id == item_id:
+            return item
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Ürün listede bulunamadı")
+
+
+async def get_group(db: AsyncSession, group_id: int) -> ProductGroup:
+    group = await db.scalar(
+        select(ProductGroup)
+        .where(ProductGroup.id == group_id)
+        .options(selectinload(ProductGroup.members).selectinload(GroupMember.product))
+    )
+    if group is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ürün grubu bulunamadı")
+    return group
+
+
+def validate_brand(group: ProductGroup, brand: str | None) -> str | None:
+    """Kilitlenen marka grupta gerçekten var mı? Grubun yazımıyla döner."""
+    if brand is None:
+        return None
+    for member in group.members:
+        if member.product.brand and member.product.brand.casefold() == brand.strip().casefold():
+            return member.product.brand
+    raise HTTPException(
+        status.HTTP_422_UNPROCESSABLE_CONTENT, f"'{brand}' markası bu ürün grubunda bulunmuyor"
+    )
+
+
+def reset_plan(shopping_list: ShoppingList) -> None:
+    """Kalem eklenir/silinir ya da miktar/marka değişirse uygulanan plan ve beklenen tasarruf
+    geçersiz olur; liste yeniden optimize edilip uygulanmalıdır. İşaretler (alındı) korunur."""
+    if shopping_list.applied_plan is None:
+        return
+    shopping_list.applied_plan = None
+    shopping_list.applied_at = None
+    shopping_list.planned_total = None
+    shopping_list.preference_total = None
+    shopping_list.expected_savings = None
+    if shopping_list.status is ListStatus.SHOPPING:
+        shopping_list.status = ListStatus.ACTIVE
+    for item in shopping_list.items:
+        item.assigned_market_id = None
+        item.assigned_product_id = None
+        item.assigned_unit_price = None
+
+
+# --- Serileştirme -------------------------------------------------------------------------
+
+
+def _summary_fields(shopping_list: ShoppingList) -> dict:
+    return dict(
+        id=shopping_list.id,
+        name=shopping_list.name,
+        icon=shopping_list.icon,
+        status=shopping_list.status,
+        applied_plan=shopping_list.applied_plan,
+        planned_total=shopping_list.planned_total,
+        item_count=len(shopping_list.items),
+        checked_count=sum(1 for i in shopping_list.items if i.is_checked),
+        created_at=shopping_list.created_at,
+        updated_at=shopping_list.updated_at,
+    )
+
+
+def to_summary(shopping_list: ShoppingList) -> ListSummary:
+    return ListSummary(**_summary_fields(shopping_list))
+
+
+def _item_out(item: ShoppingListItem) -> ItemOut:
+    assigned = None
+    if item.assigned_market_id is not None:
+        product = item.assigned_product
+        assigned = AssignedProduct(
+            market_id=item.assigned_market_id,
+            product_id=item.assigned_product_id,
+            product_name=product.name if product else None,
+            brand=product.brand if product else None,
+            unit_price=item.assigned_unit_price,
+        )
+    return ItemOut(
+        id=item.id,
+        group_id=item.group_id,
+        group_name=item.group.name,
+        image_url=item.group.image_url,
+        quantity=item.quantity,
+        preferred_brand=item.preferred_brand,
+        is_checked=item.is_checked,
+        position=item.position,
+        note=item.note,
+        assigned=assigned,
+    )
+
+
+def _shopping_groups(shopping_list: ShoppingList) -> list[ShoppingGroup]:
+    """Plan uygulandıysa kalemleri markete göre gruplar. Alınan ürünler yerinde kalır (sıra korunur)."""
+    if shopping_list.applied_plan is None:
+        return []
+    groups: dict[int | None, list[ShoppingListItem]] = {}
+    for item in shopping_list.items:  # position sırasına göre gelir
+        groups.setdefault(item.assigned_market_id, []).append(item)
+    ordered = sorted(groups.items(), key=lambda kv: (kv[0] is None, kv[0] or 0))
+    return [
+        ShoppingGroup(
+            market_id=market_id,
+            item_ids=[i.id for i in items],
+            checked_count=sum(1 for i in items if i.is_checked),
+        )
+        for market_id, items in ordered
+    ]
+
+
+def to_detail(shopping_list: ShoppingList) -> ListDetail:
+    return ListDetail(
+        **_summary_fields(shopping_list),
+        preference_total=shopping_list.preference_total,
+        expected_savings=shopping_list.expected_savings,
+        applied_at=shopping_list.applied_at,
+        completed_at=shopping_list.completed_at,
+        items=[_item_out(i) for i in shopping_list.items],
+        shopping_groups=_shopping_groups(shopping_list),
+    )
+
+
+# --- Optimizasyon -------------------------------------------------------------------------
+
+
+def _item_inputs(shopping_list: ShoppingList) -> list[ItemInput]:
+    inputs = []
+    for item in shopping_list.items:
+        offers = tuple(
+            Offer(
+                product_id=m.product.id,
+                product_name=m.product.name,
+                brand=m.product.brand,
+                market_id=m.product.market_id,
+                unit_price=m.product.current_price,
+            )
+            for m in item.group.members
+            if m.product.is_available and m.product.current_price is not None
+        )
+        inputs.append(
+            ItemInput(
+                item_id=item.id,
+                group_id=item.group_id,
+                group_name=item.group.name,
+                quantity=item.quantity,
+                preferred_brand=item.preferred_brand,
+                offers=offers,
+            )
+        )
+    return inputs
+
+
+async def run_optimizer(db: AsyncSession, shopping_list: ShoppingList) -> OptimizationResult:
+    market_ids = list((await db.scalars(select(Market.id).where(Market.is_active).order_by(Market.id))).all())
+    return optimizer.optimize(_item_inputs(shopping_list), market_ids)
+
+
+def _plan_out(plan: Plan) -> PlanOut:
+    return PlanOut(
+        plan_type=plan.plan_type,
+        total=plan.total,
+        missing_item_ids=plan.missing_item_ids,
+        lines=[
+            PlanLineOut(
+                item_id=line.item_id,
+                group_id=line.group_id,
+                group_name=line.group_name,
+                quantity=line.quantity,
+                product_id=line.offer.product_id,
+                product_name=line.offer.product_name,
+                brand=line.offer.brand,
+                market_id=line.offer.market_id,
+                unit_price=line.offer.unit_price,
+                line_total=line.line_total,
+            )
+            for line in plan.lines
+        ],
+        by_market=[
+            MarketBreakdown(
+                market_id=market_id,
+                total=sum((line.line_total for line in lines), Decimal("0.00")),
+                item_ids=[line.item_id for line in lines],
+            )
+            for market_id, lines in sorted(plan.lines_by_market().items())
+        ],
+    )
+
+
+def to_optimize_out(result: OptimizationResult) -> OptimizeOut:
+    single = result.single_market
+    savings = result.savings
+    return OptimizeOut(
+        single_market=SingleMarketOut(
+            available=single.plan is not None,
+            warning=single.warning,
+            plan=_plan_out(single.plan) if single.plan else None,
+            markets=[
+                MarketTotalOut(market_id=m.market_id, total=m.total, found=m.found, missing=m.missing)
+                for m in single.markets
+            ],
+        ),
+        combination=_plan_out(result.combination),
+        opportunist=_plan_out(result.opportunist),
+        savings=SavingsProjection(
+            preference_total=savings.preference_total,
+            opportunist_total=savings.optimized_total,
+            weekly=savings.weekly,
+            monthly=savings.monthly,
+            yearly=savings.yearly,
+        ),
+    )
+
+
+async def apply_plan(db: AsyncSession, shopping_list: ShoppingList, plan_type: PlanType) -> None:
+    """"Listeye Uygula": her kaleme marketini ve ürününü atar, listeyi Alışveriş Modu'na alır."""
+    if shopping_list.status is ListStatus.COMPLETED:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Tamamlanmış listeye plan uygulanamaz")
+
+    result = await run_optimizer(db, shopping_list)
+    plan = result.plan(plan_type)
+    if plan is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            result.single_market.warning or optimizer.NO_COMPLETE_MARKET_WARNING,
+        )
+    if not plan.lines:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Planda uygulanacak ürün yok")
+
+    lines = {line.item_id: line for line in plan.lines}
+    for item in shopping_list.items:
+        line = lines.get(item.id)
+        item.assigned_market_id = line.offer.market_id if line else None
+        item.assigned_product_id = line.offer.product_id if line else None
+        item.assigned_unit_price = line.offer.unit_price if line else None
+
+    shopping_list.applied_plan = plan_type
+    shopping_list.applied_at = datetime.now(timezone.utc)
+    shopping_list.status = ListStatus.SHOPPING
+    shopping_list.planned_total = plan.total
+    shopping_list.preference_total = result.savings.preference_total
+    # Tasarruf yalnızca Fırsatçı planında doğar
+    shopping_list.expected_savings = (
+        result.savings.weekly if plan_type is PlanType.OPPORTUNIST else Decimal("0.00")
+    )
+    await db.commit()
+
+
+async def vault_total(db: AsyncSession, user: User) -> Decimal:
+    total = await db.scalar(
+        select(func.coalesce(func.sum(SavingsRecord.saved_amount), 0)).where(
+            SavingsRecord.user_id == user.id
+        )
+    )
+    return Decimal(total).quantize(Decimal("0.01"))
+
+
+async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingList) -> CompleteResponse:
+    """"Alışverişi Bitir": listeyi kapatır, Fırsatçı tasarrufunu kalıcı kasaya ekler."""
+    if shopping_list.status is ListStatus.COMPLETED:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Bu alışveriş zaten bitirildi")
+
+    saved = shopping_list.expected_savings or Decimal("0.00")
+    if shopping_list.applied_plan is PlanType.OPPORTUNIST and saved > 0:
+        db.add(
+            SavingsRecord(
+                user_id=user.id,
+                list_id=shopping_list.id,
+                list_name=shopping_list.name,
+                plan_type=PlanType.OPPORTUNIST,
+                preference_total=shopping_list.preference_total,
+                optimized_total=shopping_list.preference_total - saved,
+                saved_amount=saved,
+                item_count=len(shopping_list.items),
+            )
+        )
+    else:
+        saved = Decimal("0.00")
+
+    shopping_list.status = ListStatus.COMPLETED
+    shopping_list.completed_at = datetime.now(timezone.utc)
+    await db.commit()
+    return CompleteResponse(
+        list_id=shopping_list.id, saved_amount=saved, vault_total=await vault_total(db, user)
+    )

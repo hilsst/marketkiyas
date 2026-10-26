@@ -1,0 +1,188 @@
+"""Liste optimizasyonu: Tek Market, Kombinasyon ve Fırsatçı planları.
+
+Saf Python; veritabanına dokunmaz. `load_list_offers` (services/lists.py) girdiyi hazırlar.
+
+- Kombinasyon: kullanıcının marka tercihlerine uyarak her kalemi en ucuz olduğu marketten alır.
+  Bu aynı zamanda "kullanıcının kendi tercihleriyle ödeyeceği tutar"dır (Tasarruf'un referansı).
+- Fırsatçı: marka tercihlerini yok sayar, her kalemin piyasadaki en ucuzunu alır.
+- Tek Market: tercihlere uyarak her marketin toplamını hesaplar; yalnızca eksiksiz (missing=0)
+  marketler arasından en ucuzunu seçer. Hiçbiri eksiksiz değilse plan yoktur ve uyarı döner.
+"""
+
+from collections import defaultdict
+from dataclasses import dataclass, field
+from decimal import Decimal
+
+from app.models.enums import PlanType
+
+NO_COMPLETE_MARKET_WARNING = "Hiçbir market tüm ürünleri eksiksiz bulundurmuyor"
+
+WEEKS_PER_MONTH = 4
+WEEKS_PER_YEAR = 52
+
+
+@dataclass(frozen=True)
+class Offer:
+    """Bir grubun bir marketteki somut ürünü ve fiyatı."""
+
+    product_id: int
+    product_name: str
+    brand: str | None
+    market_id: int
+    unit_price: Decimal
+
+
+@dataclass(frozen=True)
+class ItemInput:
+    item_id: int
+    group_id: int
+    group_name: str
+    quantity: Decimal
+    preferred_brand: str | None  # None = Farketmez
+    offers: tuple[Offer, ...]
+
+    def allowed_offers(self, respect_brand: bool) -> list[Offer]:
+        if not respect_brand or not self.preferred_brand:
+            return list(self.offers)
+        brand = self.preferred_brand.casefold()
+        return [o for o in self.offers if o.brand and o.brand.casefold() == brand]
+
+
+@dataclass
+class PlanLine:
+    item_id: int
+    group_id: int
+    group_name: str
+    quantity: Decimal
+    offer: Offer
+
+    @property
+    def line_total(self) -> Decimal:
+        return (self.offer.unit_price * self.quantity).quantize(Decimal("0.01"))
+
+
+@dataclass
+class Plan:
+    plan_type: PlanType
+    lines: list[PlanLine] = field(default_factory=list)
+    missing_item_ids: list[int] = field(default_factory=list)
+
+    @property
+    def total(self) -> Decimal:
+        return sum((line.line_total for line in self.lines), Decimal("0.00"))
+
+    def lines_by_market(self) -> dict[int, list[PlanLine]]:
+        grouped: dict[int, list[PlanLine]] = defaultdict(list)
+        for line in self.lines:
+            grouped[line.offer.market_id].append(line)
+        return dict(grouped)
+
+
+@dataclass
+class MarketTotal:
+    market_id: int
+    total: Decimal
+    found: int
+    missing: int
+
+
+@dataclass
+class SingleMarketResult:
+    plan: Plan | None  # None -> eksiksiz market yok
+    markets: list[MarketTotal]
+    warning: str | None
+
+
+@dataclass
+class Savings:
+    preference_total: Decimal
+    optimized_total: Decimal
+    weekly: Decimal
+
+    @property
+    def monthly(self) -> Decimal:
+        return self.weekly * WEEKS_PER_MONTH
+
+    @property
+    def yearly(self) -> Decimal:
+        return self.weekly * WEEKS_PER_YEAR
+
+
+@dataclass
+class OptimizationResult:
+    single_market: SingleMarketResult
+    combination: Plan
+    opportunist: Plan
+    savings: Savings
+
+    def plan(self, plan_type: PlanType) -> Plan | None:
+        if plan_type is PlanType.SINGLE_MARKET:
+            return self.single_market.plan
+        if plan_type is PlanType.COMBINATION:
+            return self.combination
+        return self.opportunist
+
+
+def _cheapest(offers: list[Offer]) -> Offer | None:
+    # Eşit fiyatta deterministik sonuç için market_id, product_id ile kır
+    return min(offers, key=lambda o: (o.unit_price, o.market_id, o.product_id), default=None)
+
+
+def _cheapest_plan(plan_type: PlanType, items: list[ItemInput], respect_brand: bool) -> Plan:
+    plan = Plan(plan_type)
+    for item in items:
+        offer = _cheapest(item.allowed_offers(respect_brand))
+        if offer is None:
+            plan.missing_item_ids.append(item.item_id)
+        else:
+            plan.lines.append(PlanLine(item.item_id, item.group_id, item.group_name, item.quantity, offer))
+    return plan
+
+
+def single_market(items: list[ItemInput], market_ids: list[int]) -> SingleMarketResult:
+    totals: list[MarketTotal] = []
+    plans: dict[int, Plan] = {}
+    for market_id in market_ids:
+        plan = Plan(PlanType.SINGLE_MARKET)
+        for item in items:
+            in_market = [o for o in item.allowed_offers(respect_brand=True) if o.market_id == market_id]
+            offer = _cheapest(in_market)
+            if offer is None:
+                plan.missing_item_ids.append(item.item_id)
+            else:
+                plan.lines.append(
+                    PlanLine(item.item_id, item.group_id, item.group_name, item.quantity, offer)
+                )
+        plans[market_id] = plan
+        totals.append(MarketTotal(market_id, plan.total, len(plan.lines), len(plan.missing_item_ids)))
+
+    complete = [t for t in totals if t.missing == 0]
+    if not items or not complete:
+        return SingleMarketResult(None, totals, NO_COMPLETE_MARKET_WARNING if items else None)
+    best = min(complete, key=lambda t: (t.total, t.market_id))
+    return SingleMarketResult(plans[best.market_id], totals, None)
+
+
+def calculate_savings(combination: Plan, opportunist: Plan) -> Savings:
+    """Tasarruf = kullanıcının tercihleriyle ödeyeceği tutar - Fırsatçı toplamı.
+
+    Kullanıcının tercih ettiği markanın hiç bulunmadığı kalemler iki tarafta da hesaba katılmaz,
+    aksi halde eksik ürün "tasarruf" gibi görünürdü.
+    """
+    comparable = {line.item_id for line in combination.lines}
+    preference = combination.total
+    optimized = sum(
+        (line.line_total for line in opportunist.lines if line.item_id in comparable), Decimal("0.00")
+    )
+    return Savings(preference, optimized, max(preference - optimized, Decimal("0.00")))
+
+
+def optimize(items: list[ItemInput], market_ids: list[int]) -> OptimizationResult:
+    combination = _cheapest_plan(PlanType.COMBINATION, items, respect_brand=True)
+    opportunist = _cheapest_plan(PlanType.OPPORTUNIST, items, respect_brand=False)
+    return OptimizationResult(
+        single_market=single_market(items, market_ids),
+        combination=combination,
+        opportunist=opportunist,
+        savings=calculate_savings(combination, opportunist),
+    )
