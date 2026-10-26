@@ -78,6 +78,8 @@ class Product(TimestampMixin, Base):
         ForeignKey("categories.id", ondelete="SET NULL"), index=True
     )
     external_id: Mapped[str] = mapped_column(String(128))  # marketfiyati ürün id'si
+    # EAN/UPC barkodu; barkodla aranıp bulunan ürünlerde dolar ("Barkod Okut")
+    barcode: Mapped[str | None] = mapped_column(String(32), index=True)
     name: Mapped[str] = mapped_column(String(255))  # ham isim: "Pınar Süt 1 L"
     normalized_name: Mapped[str] = mapped_column(String(255))  # "pinar sut 1000ml"
     brand: Mapped[str | None] = mapped_column(String(120))

@@ -7,7 +7,7 @@ import {
 } from "./api";
 
 // Giriş gerektirmeyen sayfalar: arama ve ürün detayı herkese açık
-const PUBLIC_PATHS = ["/", "/login", "/alerts"];
+const PUBLIC_PATHS = ["/", "/login", "/deals"];
 const isPublic = (path: string) => PUBLIC_PATHS.includes(path) || path.startsWith("/products/");
 
 interface Ctx {
@@ -21,6 +21,7 @@ interface Ctx {
   createList: (name: string) => Promise<number>;
   addItem: (listId: number, groupId: number, preferredProductId?: number | null) => Promise<void>;
   toast: string | null; setToast: (s: string | null) => void;
+  unreadAlerts: number; refreshAlerts: () => Promise<void>;
 }
 const AppCtx = createContext<Ctx | null>(null);
 
@@ -33,6 +34,7 @@ export function ListProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [lists, setLists] = useState<ListSummary[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
 
   const refreshLists = useCallback(async () => {
     if (!getToken()) { setLists([]); return; }
@@ -61,9 +63,30 @@ export function ListProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (hydrated && !user && !isPublic(pathname)) {
-      router.replace("/login?next=" + encodeURIComponent(pathname));
+      router.replace("/login?next=" + encodeURIComponent(pathname + window.location.search));
     }
   }, [hydrated, user, pathname, router]);
+
+  // 🔔 rozeti: fiyatı düşen alarm sayısı. Sayı artınca (izin verildiyse) telefon bildirimi gösterilir.
+  const refreshAlerts = useCallback(async () => {
+    if (!getToken()) { setUnreadAlerts(0); return; }
+    try {
+      const { unread } = await api.unreadAlerts();
+      setUnreadAlerts(prev => {
+        if (unread > prev && typeof Notification !== "undefined" && Notification.permission === "granted") {
+          try { new Notification("MarketKıyas", { body: "Takip ettiğiniz bir ürünün fiyatı düştü 🔔" }); } catch {}
+        }
+        return unread;
+      });
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!user) { setUnreadAlerts(0); return; }
+    refreshAlerts();
+    const t = setInterval(refreshAlerts, 5 * 60 * 1000);
+    return () => clearInterval(t);
+  }, [user, pathname, refreshAlerts]);
 
   useEffect(() => {
     if (toast) { const t = setTimeout(() => setToast(null), 2200); return () => clearTimeout(t); }
@@ -100,7 +123,7 @@ export function ListProvider({ children }: { children: ReactNode }) {
     <AppCtx.Provider value={{
       user, hydrated, login, register, logout,
       markets, marketById, categories, categoryById,
-      lists, refreshLists, createList, addItem, toast, setToast,
+      lists, refreshLists, createList, addItem, toast, setToast, unreadAlerts, refreshAlerts,
     }}>
       {children}
       {toast && (

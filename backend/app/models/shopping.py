@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Numeric, String
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -38,8 +38,13 @@ class ShoppingList(TimestampMixin, Base):
     preference_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     expected_savings: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Ortak liste davet kodu ("Listeyi Paylaş"); kodu giren kullanıcı listeye üye olur
+    share_code: Mapped[str | None] = mapped_column(String(16), unique=True)
 
     user: Mapped["User"] = relationship(back_populates="shopping_lists")
+    members: Mapped[list["ListMember"]] = relationship(
+        back_populates="shopping_list", cascade="all, delete-orphan", order_by="ListMember.created_at"
+    )
     items: Mapped[list["ShoppingListItem"]] = relationship(
         back_populates="shopping_list",
         cascade="all, delete-orphan",
@@ -81,10 +86,30 @@ class ShoppingListItem(TimestampMixin, Base):
     checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     position: Mapped[int] = mapped_column(default=0, server_default="0")
     note: Mapped[str | None] = mapped_column(String(255))
+    # Ortak listede kalemi kimin eklediği ("Ayşe ekledi")
+    added_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
     shopping_list: Mapped[ShoppingList] = relationship(back_populates="items")
+    added_by: Mapped["User | None"] = relationship(foreign_keys=[added_by_user_id])
     group: Mapped["ProductGroup"] = relationship()
     assigned_market: Mapped["Market | None"] = relationship()
     assigned_product: Mapped["Product | None"] = relationship(foreign_keys=[assigned_product_id])
     preferred_product: Mapped["Product | None"] = relationship(foreign_keys=[preferred_product_id])
     assigned_store: Mapped["Store | None"] = relationship()
+
+
+class ListMember(Base):
+    """Ortak liste: sahibi dışında listeyi görüp düzenleyebilen kullanıcı (eş, ev arkadaşı)."""
+
+    __tablename__ = "list_members"
+
+    list_id: Mapped[int] = mapped_column(
+        ForeignKey("shopping_lists.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    shopping_list: Mapped[ShoppingList] = relationship(back_populates="members")
+    user: Mapped["User"] = relationship()

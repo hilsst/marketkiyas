@@ -94,6 +94,23 @@ class MarketFiyatiClient(PoliteClient):
         }
         return SearchPage.from_raw(await self._request("POST", "/api/v2/searchByCategories", body) or {})
 
+    async def search_by_barcode(
+        self,
+        barcode: str,
+        *,
+        latitude: float | None = None,
+        longitude: float | None = None,
+        distance_km: int | None = None,
+        depot_ids: Sequence[str] = (),
+    ) -> SearchPage:
+        """Barkodla ürün arar (sitenin /searchByIdentity ucu, identityType "barcode")."""
+        body: dict[str, Any] = {"identity": barcode, "identityType": "barcode"}
+        if latitude is not None and longitude is not None:
+            body.update(latitude=latitude, longitude=longitude, distance=distance_km)
+        if depot_ids:
+            body["depots"] = list(depot_ids)
+        return SearchPage.from_raw(await self._request("POST", "/api/v2/searchByIdentity", body) or {})
+
     async def search_all(self, max_pages: int = 20, *, menu_category: str | None = None, **kwargs) -> list:
         """Tüm sayfaları dolaşır (max_pages güvenlik sınırı). menu_category verilirse o kategori taranır."""
         products = []

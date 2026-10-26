@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from sqlalchemy import func, or_, select
@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models import GroupMember, PriceHistory, Product, ProductGroup, Store, StorePrice
 from app.schemas.products import (
+    DealOut,
     GroupDetail,
     GroupProduct,
     GroupSummary,
@@ -193,3 +194,77 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
     ]
     rows.sort(key=lambda r: (r.price is None, r.price or 0, r.id))
     return GroupDetail(**group_summary(group, resolver, campaigns).model_dump(), products=rows)
+
+
+DEAL_WINDOW = timedelta(days=30)
+DEAL_MIN_DISCOUNT = Decimal("0.05")
+
+
+async def deals(db: AsyncSession, user_id: int | None = None, limit: int = 40) -> list[DealOut]:
+    """Fırsatlar: fiyatı son 30 günün en yüksek fiyatından ya da kampanya öncesi fiyatından en az %5
+    düşük olan ürünler, grup başına en iyisi, indirim oranına göre.
+
+    Önceki fiyat zincir geneli fiyat geçmişinden gelir; gösterilen fiyat kullanıcının şubelerindeki
+    fiyattır (şube seçtiyse). Şubelerinde satılmayan ürünler listelenmez.
+    """
+    since = datetime.now(timezone.utc) - DEAL_WINDOW
+    previous = dict(
+        (
+            await db.execute(
+                select(PriceHistory.product_id, func.max(PriceHistory.price))
+                .where(PriceHistory.recorded_at >= since)
+                .group_by(PriceHistory.product_id)
+            )
+        ).all()
+    )
+    campaign_ids = set(
+        await db.scalars(
+            select(PriceHistory.product_id).where(
+                PriceHistory.recorded_at >= since,
+                PriceHistory.is_campaign,
+                PriceHistory.regular_price > PriceHistory.price,
+            )
+        )
+    )
+    products = (
+        await db.scalars(
+            select(Product)
+            .join(GroupMember, GroupMember.product_id == Product.id)
+            .where(Product.id.in_(set(previous) | campaign_ids), Product.current_price.is_not(None))
+            .options(selectinload(Product.group_membership).selectinload(GroupMember.group))
+        )
+    ).all()
+    resolver = await build_resolver(db, user_id, [p.id for p in products])
+    campaigns = await campaign_prices(db, [p.id for p in products])
+
+    best: dict[int, DealOut] = {}
+    for p in products:
+        resolved = resolver.price(p)
+        if resolved is None:
+            continue
+        regular = campaigns.get(p.id)
+        before = max(previous.get(p.id) or Decimal(0), regular or Decimal(0))
+        if before <= 0 or resolved.price > before * (1 - DEAL_MIN_DISCOUNT):
+            continue
+        group = p.group_membership.group
+        deal = DealOut(
+            group_id=group.id,
+            group_name=group.name,
+            category_id=group.category_id,
+            image_url=p.image_url or group.image_url,
+            quantity=group.quantity,
+            unit=group.unit,
+            product_id=p.id,
+            product_name=p.name,
+            brand=p.brand,
+            market_id=p.market_id,
+            store_id=resolved.store_id,
+            price=resolved.price,
+            previous_price=before,
+            discount_percent=int((1 - resolved.price / before) * 100),
+            is_campaign=regular is not None and regular > resolved.price,
+        )
+        current = best.get(group.id)
+        if current is None or (deal.discount_percent, -deal.price) > (current.discount_percent, -current.price):
+            best[group.id] = deal
+    return sorted(best.values(), key=lambda d: (-d.discount_percent, d.price, d.group_id))[:limit]

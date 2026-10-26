@@ -20,6 +20,7 @@ class FakeMarketFiyati:
         self.nearest = nearest if nearest is not None else load("marketfiyati_nearest.json")
         self.requests: list[httpx.Request] = []
         self.fail_with: int | None = None
+        self.identity: dict = {"numberOfFound": 0, "content": []}  # /searchByIdentity yanıtı
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
@@ -31,6 +32,8 @@ class FakeMarketFiyati:
             body = json.loads(request.content)
             # tek sayfa: ikinci sayfa boş
             return httpx.Response(200, json=self.search if body["pages"] == 0 else {"numberOfFound": 0, "content": []})
+        if request.url.path == "/api/v2/searchByIdentity":
+            return httpx.Response(200, json=self.identity)
         return httpx.Response(404)
 
     def client(self, **kwargs) -> MarketFiyatiClient:
