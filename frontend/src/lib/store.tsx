@@ -1,112 +1,120 @@
 "use client";
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { SEED_LISTS, ShoppingList, ListItem } from "./demo-data";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  api, getToken, setToken, setUnauthorizedHandler,
+  Category, ListSummary, Market, User,
+} from "./api";
 
-const KEY = "mk_lists_v2"; 
-const SAVINGS_KEY = "mk_savings_v1";
-
-export interface SavingsRecord {
-  id: string;
-  date: string;
-  amount: number;
-  listName: string;
-  itemCount: number;
-}
+// Giriş gerektirmeyen sayfalar: arama ve ürün detayı herkese açık
+const PUBLIC_PATHS = ["/", "/login", "/alerts"];
+const isPublic = (path: string) => PUBLIC_PATHS.includes(path) || path.startsWith("/products/");
 
 interface Ctx {
-  lists: ShoppingList[]; hydrated: boolean;
-  savings: SavingsRecord[];
-  createList: (name: string) => number;
-  addItem: (listId: number, groupId: number, preferredProductId?: number | null) => void;
-  updateItem: (listId: number, itemId: number, patch: Partial<ListItem>) => void;
-  removeItem: (listId: number, itemId: number) => void;
-  deleteList: (listId: number) => void;
-  clearPreferences: (listId: number) => void;
-  addSavings: (record: Omit<SavingsRecord, 'id'>) => void;
+  user: User | null; hydrated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, fullName?: string) => Promise<void>;
+  logout: () => void;
+  markets: Market[]; marketById: (id: number | null | undefined) => Market | undefined;
+  categories: Category[]; categoryById: (id: number | null | undefined) => Category | undefined;
+  lists: ListSummary[]; refreshLists: () => Promise<void>;
+  createList: (name: string) => Promise<number>;
+  addItem: (listId: number, groupId: number, preferredProductId?: number | null) => Promise<void>;
   toast: string | null; setToast: (s: string | null) => void;
 }
-const ListCtx = createContext<Ctx | null>(null);
+const AppCtx = createContext<Ctx | null>(null);
 
 export function ListProvider({ children }: { children: ReactNode }) {
-  const [lists, setLists] = useState<ShoppingList[]>(SEED_LISTS);
-  const [savings, setSavings] = useState<SavingsRecord[]>([]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const [user, setUser] = useState<User | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [lists, setLists] = useState<ListSummary[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    try { 
-      const s = localStorage.getItem(KEY); 
-      if (s) setLists(JSON.parse(s)); 
-      const sv = localStorage.getItem(SAVINGS_KEY);
-      if (sv) setSavings(JSON.parse(sv));
-    } catch {}
-    setHydrated(true);
+  const refreshLists = useCallback(async () => {
+    if (!getToken()) { setLists([]); return; }
+    setLists(await api.lists());
   }, []);
 
-  useEffect(() => { 
-    if (hydrated) {
-      localStorage.setItem(KEY, JSON.stringify(lists)); 
-      localStorage.setItem(SAVINGS_KEY, JSON.stringify(savings));
+  useEffect(() => {
+    api.markets().then(setMarkets).catch(() => {});
+    api.categories().then(setCategories).catch(() => {});
+    setUnauthorizedHandler(() => { setUser(null); setLists([]); });
+    (async () => {
+      if (getToken()) {
+        try {
+          setUser(await api.me());
+          await refreshLists();
+        } catch { setToken(null); }
+      }
+      setHydrated(true);
+    })();
+    return () => setUnauthorizedHandler(null);
+  }, [refreshLists]);
+
+  useEffect(() => {
+    if (hydrated && !user && !isPublic(pathname)) {
+      router.replace("/login?next=" + encodeURIComponent(pathname));
     }
-  }, [lists, savings, hydrated]);
+  }, [hydrated, user, pathname, router]);
 
   useEffect(() => {
     if (toast) { const t = setTimeout(() => setToast(null), 2200); return () => clearTimeout(t); }
   }, [toast]);
 
-  const createList = (name: string) => {
-    const id = Math.max(0, ...lists.map(l => l.id)) + 1;
-    setLists(p => [...p, { id, name, items: [] }]);
-    return id;
+  const onAuth = async (res: { access_token: string; user: User }) => {
+    setToken(res.access_token);
+    setUser(res.user);
+    await refreshLists();
   };
-  
-  const addItem = (listId: number, groupId: number, preferredProductId: number | null = null) => {
-    setLists(p => p.map(l => {
-      if (l.id !== listId) return l;
-      const ex = l.items.find(i => i.groupId === groupId);
-      if (ex) {
-        return { ...l, items: l.items.map(i => 
-          i.id === ex.id ? { ...i, quantity: i.quantity + 1, preferredProductId: preferredProductId || i.preferredProductId } : i
-        ) };
-      }
-      const nid = Math.max(0, ...l.items.map(i => i.id)) + 1;
-      return { ...l, items: [...l.items, { id: nid, groupId, quantity: 1, isChecked: false, preferredProductId }] };
-    }));
+  const login = async (email: string, password: string) => onAuth(await api.login(email, password));
+  const register = async (email: string, password: string, fullName?: string) =>
+    onAuth(await api.register(email, password, fullName));
+  const logout = () => { setToken(null); setUser(null); setLists([]); router.push("/login"); };
+
+  const createList = async (name: string) => {
+    const created = await api.createList(name);
+    await refreshLists();
+    return created.id;
   };
 
-  const updateItem = (listId: number, itemId: number, patch: Partial<ListItem>) =>
-    setLists(p => p.map(l => l.id !== listId ? l : {
-      ...l, items: l.items.map(i => i.id === itemId ? { ...i, ...patch } : i) }));
-      
-  const removeItem = (listId: number, itemId: number) =>
-    setLists(p => p.map(l => l.id !== listId ? l : {
-      ...l, items: l.items.filter(i => i.id !== itemId) }));
-
-  const deleteList = (listId: number) =>
-    setLists(p => p.filter(l => l.id !== listId));
-      
-  const clearPreferences = (listId: number) =>
-    setLists(p => p.map(l => l.id !== listId ? l : {
-      ...l, items: l.items.map(i => ({ ...i, preferredProductId: null }))
-    }));
-
-  const addSavings = (record: Omit<SavingsRecord, 'id'>) => {
-    setSavings(prev => [{ id: Date.now().toString(), ...record }, ...prev]);
+  // Grup listede varsa API miktarı artırır ve seçilen ürünü kilitler (demodaki davranış)
+  const addItem = async (listId: number, groupId: number, preferredProductId: number | null = null) => {
+    await api.addItem(listId, groupId, preferredProductId);
+    await refreshLists();
   };
+
+  const marketMap = useMemo(() => new Map(markets.map(m => [m.id, m])), [markets]);
+  const categoryMap = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
+  const marketById = useCallback((id: number | null | undefined) => (id == null ? undefined : marketMap.get(id)), [marketMap]);
+  const categoryById = useCallback((id: number | null | undefined) => (id == null ? undefined : categoryMap.get(id)), [categoryMap]);
 
   return (
-    <ListCtx.Provider value={{ lists, hydrated, savings, createList, addItem, updateItem, removeItem, deleteList, clearPreferences, addSavings, toast, setToast }}>
+    <AppCtx.Provider value={{
+      user, hydrated, login, register, logout,
+      markets, marketById, categories, categoryById,
+      lists, refreshLists, createList, addItem, toast, setToast,
+    }}>
       {children}
       {toast && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-4 py-2 rounded-full shadow-lg z-50">
           {toast}
         </div>
       )}
-    </ListCtx.Provider>
+    </AppCtx.Provider>
   );
 }
 export function useLists() {
-  const c = useContext(ListCtx);
+  const c = useContext(AppCtx);
   if (!c) throw new Error("useLists inside ListProvider");
   return c;
+}
+
+/** Ürün grubu ikonu: API'de grup emojisi yok, kategorinin ikonu kullanılır. */
+export function useGroupIcon() {
+  const { categoryById } = useLists();
+  return (categoryId: number | null | undefined) => categoryById(categoryId)?.icon || "🛒";
 }

@@ -198,6 +198,7 @@ def _item_out(item: ShoppingListItem) -> ItemOut:
         id=item.id,
         group_id=item.group_id,
         group_name=item.group.name,
+        category_id=item.group.category_id,
         image_url=item.group.image_url,
         quantity=item.quantity,
         preferred_brand=item.preferred_brand,

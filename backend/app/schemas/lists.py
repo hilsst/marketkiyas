@@ -50,6 +50,7 @@ class ItemOut(BaseModel):
     id: int
     group_id: int
     group_name: str
+    category_id: int | None
     image_url: str | None
     quantity: Decimal
     preferred_brand: str | None
