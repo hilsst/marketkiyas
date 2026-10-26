@@ -53,7 +53,10 @@ async def regroup(db: AsyncSession) -> RegroupStats:
     stats = RegroupStats()
     groups = list(
         await db.scalars(
-            select(ProductGroup).options(selectinload(ProductGroup.members).selectinload(GroupMember.product))
+            select(ProductGroup)
+            .options(selectinload(ProductGroup.members).selectinload(GroupMember.product))
+            # Oturumda önceden yüklenmiş gruplar varsa üyeleri veritabanından tazelensin
+            .execution_options(populate_existing=True)
         )
     )
     buckets: dict[tuple, list[ProductGroup]] = defaultdict(list)
