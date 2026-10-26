@@ -72,7 +72,7 @@ pytest   # marketkiyas_test veritabanını kullanır
 Tüm fiyatlar [marketfiyati.org.tr](https://www.marketfiyati.org.tr)'den gelir (`app/services/marketfiyati/`).
 Kaynak JSON API sunduğu için tarayıcı otomasyonuna (Playwright) gerek yoktur.
 
-- **İstemci:** istekler arası en az 1 sn, 429/5xx/ağ hatalarında üstel bekleme ile 4 tekrar (Retry-After'a uyar), her istekte farklı User-Agent.
+- **İstemci:** istekler arası en az 1 sn, 429/5xx/ağ hatalarında üstel bekleme ile 4 tekrar (Retry-After'a uyar). Kendini `MarketKiyas/0.1` olarak tanıtır; tarayıcı taklidi yapmaz.
 - **Aktarım:** zincir (`markets`, bilinmeyen zincirler otomatik eklenir) → şube (`stores`) → ürün (zincir başına bir satır) → şube fiyatı (`store_prices`) → ürünün en düşük fiyatı değiştiyse `price_history`.
 - **Eşleştirme:** başlıktan marka atılır, miktar temel birime çevrilir ("Pınar Süt 1 L" → `sut 1000ml`). Aynı miktar/birimdeki gruplarla pg_trgm benzerliği ≥ 0.7 ise o gruba, değilse yeni gruba girer.
 - **Kullanıcı şubeleri:** şube seçen kullanıcıya arama, optimizasyon ve plan yalnızca o şubelerin son 7 gündeki fiyatlarıyla çalışır; plan kalemlere şubeyi de atar. Şube seçmeyen kullanıcı zincirin en düşük fiyatını görür.

@@ -28,7 +28,7 @@ def test_market_slug_aliases():
     assert market_slug("Tarım Kredi") == "tarim_kredi"
 
 
-async def test_client_retries_rotates_user_agent_and_respects_retry_after(monkeypatch):
+async def test_client_retries_and_respects_retry_after(monkeypatch):
     calls = []
     sleeps = []
 
@@ -52,7 +52,8 @@ async def test_client_retries_rotates_user_agent_and_respects_retry_after(monkey
     await client.aclose()
 
     assert [d.id for d in depots] == ["bim-4501", "a101-7788", "far-1"]
-    assert len(calls) == 3 and len(set(calls)) == 3  # her denemede farklı User-Agent
+    assert len(calls) == 3
+    assert set(calls) == {"MarketKiyas/0.1 (+https://github.com/hilsst/marketkiyas)"}  # kendini açıkça tanıtır
     assert sleeps[0] == 3.0  # Retry-After
 
 

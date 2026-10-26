@@ -2,11 +2,12 @@
 
 - Hız sınırı: istekler arasında en az `min_interval` saniye (tek paylaşılan kilit).
 - Tekrar deneme: ağ hataları, 429 ve 5xx için üstel bekleme + jitter; Retry-After başlığına uyulur.
-- User-Agent rotasyonu: her istekte listeden sıradaki tarayıcı kimliği.
+- Kimlik: istemci kendini açıkça "MarketKiyas" olarak tanıtır. Tarayıcı taklidi (User-Agent
+  rotasyonu, sahte Origin/Referer) bilerek yapılmaz; kaynak erişimi kısıtlarsa çözüm resmi
+  erişim izni istemektir.
 """
 
 import asyncio
-import itertools
 import logging
 import random
 import time
@@ -20,13 +21,6 @@ from app.services.marketfiyati.schemas import Depot, SearchPage
 
 log = logging.getLogger(__name__)
 
-USER_AGENTS = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
-    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
-)
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 MAX_PAGE_SIZE = 100
 
@@ -44,7 +38,7 @@ class MarketFiyatiClient:
         max_retries: int = settings.marketfiyati_max_retries,
         timeout: float = settings.marketfiyati_timeout_seconds,
         transport: httpx.AsyncBaseTransport | None = None,
-        user_agents: Sequence[str] = USER_AGENTS,
+        user_agent: str = settings.marketfiyati_user_agent,
     ) -> None:
         self._http = httpx.AsyncClient(
             base_url=base_url,
@@ -53,13 +47,11 @@ class MarketFiyatiClient:
             headers={
                 "Accept": "application/json",
                 "Content-Type": "application/json",
-                "Origin": "https://www.marketfiyati.org.tr",
-                "Referer": "https://www.marketfiyati.org.tr/",
+                "User-Agent": user_agent,
             },
         )
         self._min_interval = min_interval
         self._max_retries = max_retries
-        self._user_agents = itertools.cycle(user_agents)
         self._lock = asyncio.Lock()
         self._last_request = 0.0
 
@@ -94,9 +86,7 @@ class MarketFiyatiClient:
             await self._throttle()
             response = None
             try:
-                response = await self._http.request(
-                    method, path, json=json, headers={"User-Agent": next(self._user_agents)}
-                )
+                response = await self._http.request(method, path, json=json)
                 if response.status_code not in RETRY_STATUSES:
                     response.raise_for_status()
                     return response.json()

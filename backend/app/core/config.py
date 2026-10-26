@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     marketfiyati_min_interval_seconds: float = 1.0  # istekler arası en az bekleme
     marketfiyati_max_retries: int = 4
     marketfiyati_timeout_seconds: float = 30.0
+    marketfiyati_user_agent: str = "MarketKiyas/0.1 (+https://github.com/hilsst/marketkiyas)"
     default_search_distance_km: int = 5
 
     # Next.js frontend adresleri, virgülle ayrılmış
