@@ -40,16 +40,32 @@ pytest   # marketkiyas_test veritabanını kullanır
 | `shopping_list_items` | `group_id`, `quantity`, `preferred_brand` (**NULL = Farketmez**, dolu = kilitli marka), plan sonrası `assigned_market_id` / `assigned_product_id` / `assigned_unit_price` (Alışveriş Modu'nda market bazlı gruplama), `is_checked` (gri + üstü çizili), `position` (sıra korunur). |
 | `savings_records` | Tasarruf Kasası. "Alışverişi Bitir"de yazılır. `list_id` **ON DELETE SET NULL** + `list_name` snapshot: liste silinse de kasa kalır. Bir liste kasaya yalnızca bir kez eklenebilir (partial unique index). Haftalık/aylık(x4)/yıllık(x52) değerler `saved_amount`'tan hesaplanır. |
 
-## Endpoint'ler (şimdilik)
+## Endpoint'ler
 
-- `GET  /api/health`
-- `POST /api/auth/register` · `POST /api/auth/login` (JSON) · `GET /api/auth/me`
-- `POST /api/auth/token` (Swagger "Authorize" için OAuth2 form)
-- `GET  /api/markets` · `GET /api/categories`
+| Endpoint | Açıklama |
+|---|---|
+| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | JWT auth (`/api/auth/token` Swagger için) |
+| `GET /api/markets`, `GET /api/categories`, `GET /api/health` | |
+| `GET /api/products?q=süt&category_id=` | Ürün grubu araması (pg_trgm). Market bazında en ucuz fiyat + kilitlenebilir markalar |
+| `GET /api/products/{group_id}` | Gruptaki ürünler ve son 30 fiyat noktası (sparkline) |
+| `GET/POST /api/lists`, `GET/PATCH/DELETE /api/lists/{id}` | Liste CRUD. Silmek kasayı etkilemez |
+| `POST /api/lists/{id}/items` | Kalem ekle (`preferred_brand: null` = Farketmez) |
+| `PATCH /api/lists/{id}/items/{item_id}` | Marka kilitle/aç, miktar, `is_checked` (alındı), `position` |
+| `DELETE /api/lists/{id}/items/{item_id}` | |
+| `GET /api/lists/{id}/optimize` | Tek Market (eksik ürün uyarısıyla), Kombinasyon, Fırsatçı + haftalık/aylık/yıllık tasarruf |
+| `POST /api/lists/{id}/apply` `{"plan_type": "opportunist"}` | Listeye Uygula: kalemlere market atanır, `shopping_groups` döner |
+| `POST /api/lists/{id}/complete` | Alışverişi Bitir: Fırsatçı tasarrufu kasaya eklenir |
+| `GET /api/savings` | Tasarruf Kasası (toplam + kayıtlar) |
+
+### Optimizasyon kuralları
+
+- **Kombinasyon:** Marka tercihlerine uyarak her kalem en ucuz marketten. Bu tutar "kendi tercihlerinle ödeyeceğin" referanstır.
+- **Fırsatçı:** Marka tercihleri yok sayılır, her kalemin piyasadaki en ucuzu.
+- **Tek Market:** Tercihlere uyarak market toplamları; sadece eksiksiz (missing=0) marketler arasından en ucuzu. Hiçbiri yoksa `warning: "Hiçbir market tüm ürünleri eksiksiz bulundurmuyor"` ve uygulama 409 döner.
+- **Tasarruf:** Kombinasyon toplamı − Fırsatçı toplamı (tercih edilen markanın hiç bulunmadığı kalemler hariç). Aylık = x4, yıllık = x52.
+- Plan uygulandıktan sonra kalem eklenir/silinir ya da miktar/marka değişirse plan sıfırlanır (alındı işaretleri korunur); liste yeniden uygulanmalıdır. Böylece kasaya eski hesap yazılmaz.
 
 ## Sonraki adımlar
 
-1. Endpoint'ler: `/api/products` (grup arama, pg_trgm), `/api/lists` CRUD, `/api/lists/{id}/optimize`
-   (Tek Market / Kombinasyon / Fırsatçı), `/api/lists/{id}/apply`, `/api/lists/{id}/complete`, `/api/savings`.
-2. Scraper'lar (Playwright + BS4, BİM için marketfiyati.org.tr) ve eşleştirme servisi.
-3. Next.js'in `demo-data.ts` yerine API'ye bağlanması.
+1. Scraper'lar (Playwright + BS4, BİM için marketfiyati.org.tr) ve eşleştirme servisi.
+2. Next.js'in `demo-data.ts` yerine API'ye bağlanması.

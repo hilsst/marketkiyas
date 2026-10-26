@@ -32,6 +32,10 @@ class ShoppingList(TimestampMixin, Base):
         Enum(PlanType, native_enum=False, length=16, values_callable=enum_values)
     )
     applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Plan uygulandığı andaki tutarlar; "Alışverişi Bitir"de kasaya bunlar yazılır
+    planned_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    preference_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    expected_savings: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     user: Mapped["User"] = relationship(back_populates="shopping_lists")

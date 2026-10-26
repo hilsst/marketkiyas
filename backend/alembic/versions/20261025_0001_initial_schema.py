@@ -229,7 +229,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-
     op.drop_index(op.f('ix_shopping_list_items_list_id'), table_name='shopping_list_items')
     op.drop_table('shopping_list_items')
     op.drop_index('uq_savings_records_list_id', table_name='savings_records', postgresql_where=sa.text('list_id IS NOT NULL'))
