@@ -3,6 +3,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { api, formatSize, num, GroupDetail, GroupProduct } from "@/lib/api";
 import MarketLogo from "@/components/MarketLogo";
+import ProductImage from "@/components/ProductImage";
 import { useGroupIcon, useLists } from "@/lib/store";
 
 export default function ProductDetailPage() {
@@ -22,6 +23,13 @@ export default function ProductDetailPage() {
   // Yalnızca fiyatı olanlar; API fiyata göre sıralı döner
   const products = useMemo(() => (group?.products || []).filter(p => p.price != null), [group]);
   const selected: GroupProduct | undefined = products.find(p => p.id === selectedId) || products[0];
+  // Şube seçildiyse her şubedeki fiyat ayrı satır ("CarrefourSA · Göksu Süper"), seçilmediyse zincir başına bir satır
+  const offers = useMemo(() => products
+    .flatMap(p => p.store_prices.length
+      ? p.store_prices.map(sp => ({ key: p.id + "-" + sp.store_id, product: p, storeName: sp.store_name as string | null, price: num(sp.price) }))
+      : [{ key: String(p.id), product: p, storeName: p.store_name, price: num(p.price) }])
+    .sort((a, b) => a.price - b.price), [products]);
+  const marketCount = new Set(products.map(p => p.market_id)).size;
 
   if (group === undefined) return <div className="p-6">Yükleniyor…</div>;
   if (!group) return <div className="p-6 text-center">Ürün bulunamadı</div>;
@@ -54,7 +62,7 @@ export default function ProductDetailPage() {
       <button onClick={() => router.back()} className="text-gray-600 mb-3">← Geri</button>
       <div className="card p-4 mb-3">
         <div className="flex items-start gap-3">
-          <div className="text-5xl">{groupIcon(group.category_id)}</div>
+          <ProductImage src={selected?.image_url || group.image_url} icon={groupIcon(group.category_id)} size={72} />
           <div>
             <h1 className="text-xl font-bold">{group.name}</h1>
             <div className="text-sm text-gray-500">
@@ -77,16 +85,19 @@ export default function ProductDetailPage() {
         </div>
       )}
       <div className="card divide-y divide-gray-100 mb-4">
-        <div className="px-4 py-3 text-sm font-semibold text-gray-700">{products.length} markette bulundu</div>
-        {products.map((p, idx) => (
-          <button key={p.id} onClick={() => setSelectedId(p.id)}
+        <div className="px-4 py-3 text-sm font-semibold text-gray-700">
+          {marketCount} markette{offers.length > marketCount ? ", " + offers.length + " şubede" : ""} bulundu
+        </div>
+        {offers.map(({ key, product: p, storeName, price }, idx) => (
+          <button key={key} onClick={() => setSelectedId(p.id)}
             className={"w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-50 " + (p.id===selected?.id?"bg-emerald-50/50":"")}>
             <MarketLogo id={p.market_id} size={32} />
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-sm">{marketById(p.market_id)?.name}</span>
-                {p.brand && <span className="text-xs text-gray-500">· {p.brand}</span>}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm">
+                <span className="font-medium">{marketById(p.market_id)?.name}</span>
+                {storeName && <span className="text-gray-500"> · {storeName}</span>}
               </div>
+              <div className="text-xs text-gray-500 truncate">{p.brand ? p.brand + " · " : ""}{p.name}</div>
               {p.regular_price && (
                 <div className="text-xs text-orange-600 mt-0.5">
                   <span className="line-through text-gray-400">{num(p.regular_price).toFixed(2)}</span> promo
@@ -94,7 +105,7 @@ export default function ProductDetailPage() {
               )}
             </div>
             <div className="text-right">
-              <div className={"font-bold " + (idx===0?"text-emerald-600":"text-gray-900")}>{num(p.price).toFixed(2)} ₺</div>
+              <div className={"font-bold " + (idx===0?"text-emerald-600":"text-gray-900")}>{price.toFixed(2)} ₺</div>
               {idx === 0 && <div className="text-[10px] text-emerald-600 font-semibold">EN UCUZ</div>}
             </div>
           </button>

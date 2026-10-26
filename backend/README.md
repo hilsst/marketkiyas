@@ -75,7 +75,9 @@ Kaynak JSON API sunduğu için tarayıcı otomasyonuna (Playwright) gerek yoktur
 - **İstemci:** istekler arası en az 1 sn, 429/5xx/ağ hatalarında üstel bekleme ile 4 tekrar (Retry-After'a uyar). Kendini `MarketKiyas/0.1` olarak tanıtır; tarayıcı taklidi yapmaz.
 - **Aktarım:** zincir (`markets`, bilinmeyen zincirler otomatik eklenir) → şube (`stores`) → ürün (zincir başına bir satır) → şube fiyatı (`store_prices`) → ürünün en düşük fiyatı değiştiyse `price_history`.
 - **Eşleştirme:** başlıktan marka atılır, miktar temel birime çevrilir ("Pınar Süt 1 L" → `sut 1000ml`). Aynı miktar/birimdeki gruplarla pg_trgm benzerliği ≥ 0.7 ise o gruba, değilse yeni gruba girer.
-- **Kullanıcı şubeleri:** şube seçen kullanıcıya arama, optimizasyon ve plan yalnızca o şubelerin son 7 gündeki fiyatlarıyla çalışır; plan kalemlere şubeyi de atar. Şube seçmeyen kullanıcı zincirin en düşük fiyatını görür.
+- **Kullanıcı şubeleri:** şube seçen kullanıcıya arama, optimizasyon ve plan yalnızca o şubelerin son 7 gündeki fiyatlarıyla çalışır; plan kalemlere şubeyi de atar. Şube seçmeyen kullanıcı zincirin en düşük fiyatını görür. Ürün detayı seçili her şubenin fiyatını şube adıyla verir (`store_prices`).
+- **Tüm katalog:** seçili şubeler için sitenin 9 menü kategorisi (`/api/v2/searchByCategories`, `menuCategory: true`) sayfa sayfa taranır; böylece şubede satılan her ürün gelir (`sync-selected --keywords ...` verilirse yalnız o kelimeler aranır).
+- **Kategoriler:** `menu_category` / `main_category` uygulamanın kategorilerine eşlenir ("Temel Gıda" → Temel Gıda, ama "Ekmek ve Unlu Mamüller" → Fırın, "Bebek Mamaları" → Bebek). "Pet Shop" gibi karşılığı olmayanlar kategorisiz kalır.
 
 ```bash
 python -m app.cli nearby --lat 40.99 --lon 29.03             # çevredeki şubeleri kaydet

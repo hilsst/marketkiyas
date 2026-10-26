@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections.abc import Sequence
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import func, or_, select
@@ -7,10 +8,17 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import GroupMember, PriceHistory, Product, ProductGroup
-from app.schemas.products import GroupDetail, GroupProduct, GroupSummary, MarketPrice, PricePoint
+from app.models import GroupMember, PriceHistory, Product, ProductGroup, Store, StorePrice
+from app.schemas.products import (
+    GroupDetail,
+    GroupProduct,
+    GroupSummary,
+    MarketPrice,
+    PricePoint,
+    ProductStorePrice,
+)
 from app.services.normalize import normalize_name
-from app.services.pricing import PriceResolver, build_resolver
+from app.services.pricing import PRICE_MAX_AGE, PriceResolver, build_resolver
 
 SEARCH_SIMILARITY_THRESHOLD = 0.2
 SPARKLINE_POINTS = 30
@@ -148,6 +156,22 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
         for product_id, price, recorded_at in rows:
             history[product_id].append(PricePoint(price=price, recorded_at=recorded_at))
 
+    store_prices: dict[int, list[ProductStorePrice]] = defaultdict(list)
+    if resolver.uses_stores and products:
+        rows = await db.execute(
+            select(StorePrice.product_id, StorePrice.store_id, Store.name, StorePrice.price)
+            .join(Store, Store.id == StorePrice.store_id)
+            .where(
+                StorePrice.product_id.in_([p.id for p in products]),
+                StorePrice.store_id.in_(resolver.store_ids),
+                StorePrice.updated_at >= datetime.now(timezone.utc) - PRICE_MAX_AGE,
+            )
+            .order_by(StorePrice.price, StorePrice.store_id)
+        )
+        for product_id, store_id, store_name, price in rows:
+            store_prices[product_id].append(ProductStorePrice(store_id=store_id, store_name=store_name, price=price))
+    store_names = {sp.store_id: sp.store_name for sps in store_prices.values() for sp in sps}
+
     prices = {p.id: resolver.price(p) for p in products}
     campaigns = await campaign_prices(db, [p.id for p in products])
     rows = [
@@ -159,9 +183,11 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
             price=prices[p.id].price if prices[p.id] else None,
             regular_price=_regular(p, prices[p.id].price, resolver, campaigns) if prices[p.id] else None,
             store_id=prices[p.id].store_id if prices[p.id] else None,
+            store_name=store_names.get(prices[p.id].store_id) if prices[p.id] else None,
             is_available=prices[p.id] is not None,
             image_url=p.image_url,
             price_history=history[p.id],
+            store_prices=store_prices[p.id],
         )
         for p in products
     ]

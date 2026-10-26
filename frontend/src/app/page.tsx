@@ -4,6 +4,7 @@ import Link from "next/link";
 import { api, formatSize, num, GroupSummary } from "@/lib/api";
 import { useGroupIcon, useLists } from "@/lib/store";
 import MarketLogo from "@/components/MarketLogo";
+import ProductImage from "@/components/ProductImage";
 
 export default function HomePage() {
   const { categories, marketById } = useLists();
@@ -52,7 +53,7 @@ export default function HomePage() {
             <Link key={group.id} href={"/products/" + group.id}
               className="card p-4 block hover:border-emerald-200">
               <div className="flex items-start gap-3">
-                <div className="text-3xl">{groupIcon(group.category_id)}</div>
+                <ProductImage src={group.image_url} icon={groupIcon(group.category_id)} size={48} />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-gray-900">{group.name}</div>
                   <div className="text-xs text-gray-500 mt-0.5">

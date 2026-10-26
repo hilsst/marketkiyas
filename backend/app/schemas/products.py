@@ -31,6 +31,14 @@ class PricePoint(BaseModel):
     recorded_at: datetime
 
 
+class ProductStorePrice(BaseModel):
+    """Ürünün kullanıcının seçtiği bir şubedeki fiyatı."""
+
+    store_id: int
+    store_name: str
+    price: Decimal
+
+
 class GroupProduct(BaseModel):
     id: int
     name: str
@@ -39,9 +47,11 @@ class GroupProduct(BaseModel):
     price: Decimal | None
     regular_price: Decimal | None  # kampanyadaysa indirim öncesi fiyat
     store_id: int | None  # kullanıcının seçtiği şubelerden en ucuzu
+    store_name: str | None = None
     is_available: bool  # kullanıcının şubelerinde (ya da genel olarak) satılıyor mu
     image_url: str | None
     price_history: list[PricePoint]  # sparkline
+    store_prices: list[ProductStorePrice] = []  # seçili şubelerin hepsi, ucuzdan pahalıya
 
 
 class GroupDetail(GroupSummary):

@@ -5,10 +5,10 @@ import httpx
 import pytest
 from sqlalchemy import func, select
 
-from app.models import GroupMember, Market, PriceHistory, Product, ProductGroup, Store, StorePrice, Unit
+from app.models import Category, GroupMember, Market, PriceHistory, Product, ProductGroup, Store, StorePrice, Unit
 from app.services.marketfiyati.client import MarketFiyatiClient, MarketFiyatiError
-from app.services.marketfiyati.ingest import market_slug, refresh_nearby_stores, sync_area
-from app.services.marketfiyati.schemas import SearchPage
+from app.services.marketfiyati.ingest import category_slug, market_slug, refresh_nearby_stores, sync_area
+from app.services.marketfiyati.schemas import SearchPage, SearchProduct
 from tests.marketfiyati_fake import FakeMarketFiyati, load
 
 AREA = dict(latitude=40.987, longitude=29.027, distance_km=5)
@@ -26,6 +26,52 @@ def test_market_slug_aliases():
     assert market_slug("ŞOK") == "sok"
     assert market_slug("CarrefourSA") == "carrefour"
     assert market_slug("Tarım Kredi") == "tarim_kredi"
+
+
+@pytest.mark.parametrize(
+    ("menu", "main", "slug"),
+    [
+        ("Süt Ürünleri ve Kahvaltılık", "Peynir", "sut-kahvaltilik"),
+        ("Et, Tavuk ve Balık", "Beyaz Et", "et-tavuk-balik"),
+        ("Temel Gıda", "Bakliyat", "temel-gida"),
+        ("Temel Gıda", "Ekmek ve Unlu Mamüller", "firin"),
+        ("Temel Gıda", "Bebek Mamaları", "bebek"),
+        ("Atıştırmalık ve Tatlı", "Dondurmalar", "atistirmalik"),
+        ("Diğer Ürünler", "Bebek Gereçleri", "bebek"),
+        ("Diğer Ürünler", "Pet Shop", None),
+        (None, None, None),
+    ],
+)
+def test_category_slug(menu, main, slug):
+    raw = {"id": "x", "title": "Ürün", "menu_category": menu, "main_category": main}
+    assert category_slug(SearchProduct.from_raw(raw)) == slug
+
+
+async def test_search_category_request_body():
+    fake = FakeMarketFiyati()
+    async with fake.client() as client:
+        await client.search_category("Temel Gıda", depot_ids=["bim-4501"], **AREA)
+    request = fake.requests[0]
+    assert request.url.path == "/api/v2/searchByCategories"
+    body = json.loads(request.content)
+    assert body["keywords"] == "Temel Gıda"
+    assert body["menuCategory"] is True
+    assert body["depots"] == ["bim-4501"]
+
+
+async def test_category_sync_assigns_categories(db):
+    fake = FakeMarketFiyati()
+    for row in fake.search["content"]:
+        row["menu_category"] = "Süt Ürünleri ve Kahvaltılık"
+        row["main_category"] = "Süt"
+    async with fake.client() as client:
+        await sync_area(db, client, keywords=[], categories=["Süt Ürünleri ve Kahvaltılık"], **AREA)
+
+    category_id = await db.scalar(select(Category.id).where(Category.slug == "sut-kahvaltilik"))
+    groups = (await db.scalars(select(ProductGroup))).all()
+    assert groups and all(g.category_id == category_id for g in groups)
+    products = (await db.scalars(select(Product))).all()
+    assert products and all(p.category_id == category_id for p in products)
 
 
 async def test_client_retries_and_respects_retry_after(monkeypatch):

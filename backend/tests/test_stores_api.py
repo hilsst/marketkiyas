@@ -91,6 +91,12 @@ async def test_prices_follow_selected_stores(client, auth_headers, db, fake):
     names = [g["name"] for g in (await client.get("/api/products", params={"q": "süt"}, headers=auth_headers)).json()]
     assert "Laktozsuz Süt 1 L" not in names
 
+    # Ürün detayı şube adını ve seçili şubelerdeki fiyatları gösterir
+    detail = (await client.get(f"/api/products/{group['id']}", headers=auth_headers)).json()
+    pinar = next(p for p in detail["products"] if p["price"] is not None)
+    assert pinar["store_name"] == "Kadıköy Rıhtım"
+    assert pinar["store_prices"] == [{"store_id": rihtim, "store_name": "Kadıköy Rıhtım", "price": "35.25"}]
+
     # Optimizasyon da seçili şubeyi kullanır ve şubeyi atar
     lid = (await client.post("/api/lists", json={"name": "L"}, headers=auth_headers)).json()["id"]
     await client.post(f"/api/lists/{lid}/items", json={"group_id": group["id"]}, headers=auth_headers)

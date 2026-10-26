@@ -21,8 +21,9 @@ export interface GroupSummary {
 export interface PricePoint { price: Money; recorded_at: string; }
 export interface GroupProduct {
   id: number; name: string; brand: string | null; market_id: number; price: Money | null;
-  regular_price: Money | null; store_id: number | null; is_available: boolean; image_url: string | null;
-  price_history: PricePoint[];
+  regular_price: Money | null; store_id: number | null; store_name: string | null; is_available: boolean;
+  image_url: string | null; price_history: PricePoint[];
+  store_prices: { store_id: number; store_name: string; price: Money }[]; // seçili şubeler, ucuzdan pahalıya
 }
 export interface GroupDetail extends GroupSummary { products: GroupProduct[]; }
 

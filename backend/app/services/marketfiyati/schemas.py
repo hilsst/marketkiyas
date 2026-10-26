@@ -73,6 +73,8 @@ class SearchProduct:
     volume_or_weight: str | None  # "1 L", "500 g"
     categories: tuple[str, ...]
     prices: tuple[DepotPrice, ...]
+    menu_category: str | None = None  # "Temel Gıda": sitenin üst menüsü
+    main_category: str | None = None  # "Ekmek ve Unlu Mamüller"
 
     @classmethod
     def from_raw(cls, raw: dict) -> "SearchProduct | None":
@@ -103,6 +105,8 @@ class SearchProduct:
             volume_or_weight=_str(raw.get("refinedVolumeOrWeight")),
             categories=tuple(c for c in (raw.get("categories") or []) if isinstance(c, str)),
             prices=tuple(prices),
+            menu_category=_str(raw.get("menu_category")),
+            main_category=_str(raw.get("main_category")),
         )
 
 
