@@ -141,14 +141,50 @@ def _cheapest(offers: list[Offer]) -> Offer | None:
     return min(offers, key=lambda o: (o.unit_price, o.market_id, o.product_id), default=None)
 
 
+def _pick_fewest_markets(candidates: dict[int, list[Offer]]) -> dict[int, Offer]:
+    """Her kalemin en ucuz fiyattaki adaylarından seçim yapar; fiyat eşitse daha az markete gidilsin.
+
+    Tek adayı olan kalemlerin marketleri zaten gidilecek marketlerdir. Eşitlikli kalemler önce bu
+    marketlere, kalanlar en çok eşitlikli kalemi kapsayan markete atanır (açgözlü küme örtüsü).
+    """
+    chosen: dict[int, Offer] = {}
+    visited: set[int] = set()
+    tied: dict[int, list[Offer]] = {}
+    for item_id, offers in candidates.items():
+        if len({o.market_id for o in offers}) == 1:
+            chosen[item_id] = _cheapest(offers)
+            visited.add(chosen[item_id].market_id)
+        else:
+            tied[item_id] = offers
+    while tied:
+        markets = {o.market_id for offers in tied.values() for o in offers}
+        # Önce zaten gidilen marketler, sonra en çok kalemi kapsayan, eşitse küçük market_id
+        market_id = min(
+            markets,
+            key=lambda m: (m not in visited, -sum(any(o.market_id == m for o in offers) for offers in tied.values()), m),
+        )
+        visited.add(market_id)
+        for item_id in [i for i, offers in tied.items() if any(o.market_id == market_id for o in offers)]:
+            chosen[item_id] = _cheapest([o for o in tied.pop(item_id) if o.market_id == market_id])
+    return chosen
+
+
 def _cheapest_plan(plan_type: PlanType, items: list[ItemInput], respect_brand: bool) -> Plan:
     plan = Plan(plan_type)
+    candidates: dict[int, list[Offer]] = {}
     for item in items:
-        offer = _cheapest(item.allowed_offers(respect_brand))
-        if offer is None:
+        offers = item.allowed_offers(respect_brand)
+        best = _cheapest(offers)
+        if best is None:
             plan.missing_item_ids.append(item.item_id)
         else:
-            plan.lines.append(PlanLine(item.item_id, item.group_id, item.group_name, item.quantity, offer))
+            candidates[item.item_id] = [o for o in offers if o.unit_price == best.unit_price]
+    chosen = _pick_fewest_markets(candidates)
+    for item in items:
+        if item.item_id in chosen:
+            plan.lines.append(
+                PlanLine(item.item_id, item.group_id, item.group_name, item.quantity, chosen[item.item_id])
+            )
     return plan
 
 
