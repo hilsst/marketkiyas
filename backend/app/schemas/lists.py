@@ -58,6 +58,8 @@ class ItemOut(BaseModel):
     is_checked: bool
     position: int
     note: str | None
+    added_by_id: int | None = None  # ortak listede kalemi ekleyen
+    added_by_name: str | None = None
     assigned: AssignedProduct | None
 
 
@@ -69,10 +71,19 @@ class ShoppingGroup(BaseModel):
     checked_count: int
 
 
+class ListMemberOut(BaseModel):
+    user_id: int
+    name: str | None
+    joined_at: datetime
+
+
 class ListSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    owner_id: int
+    owner_name: str | None = None
+    member_count: int = 0  # sahibi dışındaki üyeler; > 0 ise ortak liste
     name: str
     icon: str | None
     status: ListStatus
@@ -94,6 +105,16 @@ class ListDetail(ListSummary):
     completed_at: datetime | None
     items: list[ItemOut]
     shopping_groups: list[ShoppingGroup]  # plan uygulanmadıysa boş
+    share_code: str | None = None  # "Listeyi Paylaş" ile oluşur
+    members: list[ListMemberOut] = []
+
+
+class ShareCodeOut(BaseModel):
+    share_code: str
+
+
+class JoinListRequest(BaseModel):
+    code: str = Field(min_length=4, max_length=16)
 
 
 class PlanLineOut(BaseModel):

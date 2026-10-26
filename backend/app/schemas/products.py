@@ -56,3 +56,28 @@ class GroupProduct(BaseModel):
 
 class GroupDetail(GroupSummary):
     products: list[GroupProduct]
+
+
+class DealOut(BaseModel):
+    """Fırsatlar: son 30 günün en yüksek fiyatına (ya da kampanya öncesi fiyata) göre ucuzlayan ürün."""
+
+    group_id: int
+    group_name: str
+    category_id: int | None
+    image_url: str | None
+    quantity: Decimal | None
+    unit: Unit | None
+    product_id: int
+    product_name: str
+    brand: str | None
+    market_id: int
+    store_id: int | None
+    price: Decimal
+    previous_price: Decimal
+    discount_percent: int
+    is_campaign: bool  # kaynak "kampanyalı" dedi (aktüel/indirim)
+
+
+class BarcodeResult(BaseModel):
+    barcode: str
+    group_id: int

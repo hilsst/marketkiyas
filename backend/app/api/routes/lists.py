@@ -10,11 +10,13 @@ from app.schemas.lists import (
     ApplyPlanRequest,
     ItemCreate,
     ItemUpdate,
+    JoinListRequest,
     ListCreate,
     ListDetail,
     ListSummary,
     ListUpdate,
     OptimizeOut,
+    ShareCodeOut,
 )
 from app.schemas.savings import CompleteResponse
 from app.services import lists as svc
@@ -52,9 +54,34 @@ async def update_list(list_id: int, body: ListUpdate, user: CurrentUser, db: DbS
 
 @router.delete("/{list_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_list(list_id: int, user: CurrentUser, db: DbSession) -> Response:
-    """Liste silinir; Tasarruf Kasası kayıtları korunur."""
-    await db.delete(await svc.get_owned_list(db, user, list_id))
+    """Liste silinir; Tasarruf Kasası kayıtları korunur. Ortak listeyi yalnızca sahibi silebilir."""
+    await db.delete(await svc.get_owned_list(db, user, list_id, owner_only=True))
     await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# --- Ortak liste ----------------------------------------------------------------------------
+
+
+@router.post("/join", response_model=ListDetail)
+async def join_list(body: JoinListRequest, user: CurrentUser, db: DbSession) -> ListDetail:
+    """Davet koduyla ortak listeye katıl: liste iki tarafta da görünür, ikisi de düzenleyebilir."""
+    list_id = await svc.join_list(db, user, body.code)
+    return svc.to_detail(await svc.get_owned_list(db, user, list_id))
+
+
+@router.post("/{list_id}/share", response_model=ShareCodeOut)
+async def share_list(list_id: int, user: CurrentUser, db: DbSession) -> ShareCodeOut:
+    """"Listeyi Paylaş": davet kodu (yoksa oluşturulur)."""
+    shopping_list = await svc.get_owned_list(db, user, list_id)
+    return ShareCodeOut(share_code=await svc.ensure_share_code(db, shopping_list))
+
+
+@router.delete("/{list_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_member(list_id: int, member_id: int, user: CurrentUser, db: DbSession) -> Response:
+    """Sahip bir üyeyi çıkarır ya da üye listeden ayrılır."""
+    shopping_list = await svc.get_owned_list(db, user, list_id)
+    await svc.remove_member(db, user, shopping_list, member_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -81,7 +108,9 @@ async def add_item(list_id: int, body: ItemCreate, user: CurrentUser, db: DbSess
         )
     )
     svc.reset_plan(shopping_list)
-    item = ShoppingListItem(group_id=group.id, quantity=body.quantity, note=body.note, position=next_position)
+    item = ShoppingListItem(
+        group_id=group.id, quantity=body.quantity, note=body.note, position=next_position, added_by_user_id=user.id
+    )
     svc.set_preference(item, group, preference)
     shopping_list.items.append(item)
     await db.commit()
@@ -131,7 +160,7 @@ async def delete_item(list_id: int, item_id: int, user: CurrentUser, db: DbSessi
 async def optimize_list(list_id: int, user: CurrentUser, db: DbSession) -> OptimizeOut:
     """Üç sekmenin (Tek Market, Kombinasyon, Fırsatçı) hesaplaması ve tasarruf projeksiyonu."""
     shopping_list = await svc.get_owned_list(db, user, list_id)
-    return svc.to_optimize_out(await svc.run_optimizer(db, shopping_list))
+    return svc.to_optimize_out(await svc.run_optimizer(db, shopping_list, user.id))
 
 
 @router.post("/{list_id}/apply", response_model=ListDetail)
@@ -140,7 +169,7 @@ async def apply_plan(
 ) -> ListDetail:
     """"Listeye Uygula": kalemler markete göre gruplanır, liste Alışveriş Modu'na geçer."""
     shopping_list = await svc.get_owned_list(db, user, list_id)
-    await svc.apply_plan(db, shopping_list, body.plan_type)
+    await svc.apply_plan(db, shopping_list, body.plan_type, user.id)
     return svc.to_detail(await svc.get_owned_list(db, user, list_id))
 
 

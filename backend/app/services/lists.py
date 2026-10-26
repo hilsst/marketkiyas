@@ -1,13 +1,15 @@
+import secrets
 from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import (
     GroupMember,
+    ListMember,
     ListStatus,
     PlanType,
     Product,
@@ -21,6 +23,7 @@ from app.schemas.lists import (
     AssignedProduct,
     ItemOut,
     ListDetail,
+    ListMemberOut,
     ListSummary,
     MarketBreakdown,
     MarketTotalOut,
@@ -45,19 +48,75 @@ def _list_options():
         .selectinload(GroupMember.product),
         selectinload(ShoppingList.items).selectinload(ShoppingListItem.assigned_product),
         selectinload(ShoppingList.items).selectinload(ShoppingListItem.assigned_store),
+        selectinload(ShoppingList.items).selectinload(ShoppingListItem.added_by),
+        selectinload(ShoppingList.user),
+        selectinload(ShoppingList.members).selectinload(ListMember.user),
     )
 
 
-async def get_owned_list(db: AsyncSession, user: User, list_id: int) -> ShoppingList:
+def _visible_to(user: User):
+    """Kullanıcının kendi listeleri ve üye olduğu ortak listeler."""
+    return or_(
+        ShoppingList.user_id == user.id,
+        ShoppingList.id.in_(select(ListMember.list_id).where(ListMember.user_id == user.id)),
+    )
+
+
+async def get_owned_list(
+    db: AsyncSession, user: User, list_id: int, *, owner_only: bool = False
+) -> ShoppingList:
+    """Liste sahibine ve ortak liste üyelerine açıktır; silmek gibi işlemler yalnızca sahibine."""
     shopping_list = await db.scalar(
         select(ShoppingList)
-        .where(ShoppingList.id == list_id, ShoppingList.user_id == user.id)
+        .where(ShoppingList.id == list_id, _visible_to(user))
         .options(*_list_options())
         .execution_options(populate_existing=True)
     )
     if shopping_list is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Liste bulunamadı")
+    if owner_only and shopping_list.user_id != user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Bu işlemi yalnızca listenin sahibi yapabilir")
     return shopping_list
+
+
+# Karıştırılmayan harf ve rakamlar (0/O, 1/I yok)
+SHARE_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+SHARE_CODE_LENGTH = 8
+
+
+async def ensure_share_code(db: AsyncSession, shopping_list: ShoppingList) -> str:
+    while shopping_list.share_code is None:
+        code = "".join(secrets.choice(SHARE_CODE_ALPHABET) for _ in range(SHARE_CODE_LENGTH))
+        if await db.scalar(select(ShoppingList.id).where(ShoppingList.share_code == code)) is None:
+            shopping_list.share_code = code
+    await db.commit()
+    return shopping_list.share_code
+
+
+async def join_list(db: AsyncSession, user: User, code: str) -> int:
+    """Davet koduyla ortak listeye katılır; liste id'sini döner."""
+    shopping_list = await db.scalar(
+        select(ShoppingList)
+        .where(ShoppingList.share_code == code.strip().upper())
+        .options(selectinload(ShoppingList.members))
+    )
+    if shopping_list is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bu kodla bir liste bulunamadı")
+    if shopping_list.user_id != user.id and all(m.user_id != user.id for m in shopping_list.members):
+        shopping_list.members.append(ListMember(user_id=user.id))
+        await db.commit()
+    return shopping_list.id
+
+
+async def remove_member(db: AsyncSession, user: User, shopping_list: ShoppingList, member_id: int) -> None:
+    """Sahip herhangi bir üyeyi çıkarabilir; üye yalnızca kendini ("Listeden Ayrıl")."""
+    if user.id not in (shopping_list.user_id, member_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Başka bir üyeyi yalnızca listenin sahibi çıkarabilir")
+    member = next((m for m in shopping_list.members if m.user_id == member_id), None)
+    if member is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bu kullanıcı listenin üyesi değil")
+    shopping_list.members.remove(member)
+    await db.commit()
 
 
 def get_item(shopping_list: ShoppingList, item_id: int) -> ShoppingListItem:
@@ -141,9 +200,18 @@ def reset_plan(shopping_list: ShoppingList) -> None:
 # --- Serileştirme -------------------------------------------------------------------------
 
 
+def _display_name(user: User | None) -> str | None:
+    if user is None:
+        return None
+    return user.full_name or user.email.split("@")[0]
+
+
 def _summary_fields(shopping_list: ShoppingList) -> dict:
     return dict(
         id=shopping_list.id,
+        owner_id=shopping_list.user_id,
+        owner_name=_display_name(shopping_list.user),
+        member_count=len(shopping_list.members),
         name=shopping_list.name,
         icon=shopping_list.icon,
         status=shopping_list.status,
@@ -171,7 +239,7 @@ async def list_summaries(db: AsyncSession, user: User) -> list[ListSummary]:
     rows = (
         await db.scalars(
             select(ShoppingList)
-            .where(ShoppingList.user_id == user.id)
+            .where(_visible_to(user))
             .options(*_list_options())
             .order_by(ShoppingList.updated_at.desc(), ShoppingList.id.desc())
         )
@@ -206,6 +274,8 @@ def _item_out(item: ShoppingListItem) -> ItemOut:
         is_checked=item.is_checked,
         position=item.position,
         note=item.note,
+        added_by_id=item.added_by_user_id,
+        added_by_name=_display_name(item.added_by),
         assigned=assigned,
     )
 
@@ -237,6 +307,11 @@ def to_detail(shopping_list: ShoppingList) -> ListDetail:
         completed_at=shopping_list.completed_at,
         items=[_item_out(i) for i in shopping_list.items],
         shopping_groups=_shopping_groups(shopping_list),
+        share_code=shopping_list.share_code,
+        members=[
+            ListMemberOut(user_id=m.user_id, name=_display_name(m.user), joined_at=m.created_at)
+            for m in shopping_list.members
+        ],
     )
 
 
@@ -317,11 +392,14 @@ def _item_inputs(
     return inputs
 
 
-async def run_optimizer(db: AsyncSession, shopping_list: ShoppingList) -> OptimizationResult:
+async def run_optimizer(
+    db: AsyncSession, shopping_list: ShoppingList, user_id: int | None = None
+) -> OptimizationResult:
+    """user_id: fiyatları kimin şubelerinden alınacağı (ortak listede listeyi açan kişi)."""
     similar = await similar_groups(db, [item.group for item in shopping_list.items])
     product_ids = [m.product_id for item in shopping_list.items for m in item.group.members]
     product_ids += [m.product_id for groups in similar.values() for g in groups for m in g.members]
-    resolver = await build_resolver(db, shopping_list.user_id, product_ids)
+    resolver = await build_resolver(db, user_id or shopping_list.user_id, product_ids)
     market_ids = await candidate_market_ids(db, resolver)
     return optimizer.optimize(_item_inputs(shopping_list, resolver, similar), market_ids)
 
@@ -386,9 +464,11 @@ def to_optimize_out(result: OptimizationResult) -> OptimizeOut:
     )
 
 
-async def apply_plan(db: AsyncSession, shopping_list: ShoppingList, plan_type: PlanType) -> None:
+async def apply_plan(
+    db: AsyncSession, shopping_list: ShoppingList, plan_type: PlanType, user_id: int | None = None
+) -> None:
     """"Listeye Uygula": her kaleme marketini ve ürününü atar, listeyi Alışveriş Modu'na alır."""
-    result = await run_optimizer(db, shopping_list)
+    result = await run_optimizer(db, shopping_list, user_id)
     plan = result.plan(plan_type)
     if plan is None:
         raise HTTPException(
