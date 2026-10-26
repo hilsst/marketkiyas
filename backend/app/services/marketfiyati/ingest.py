@@ -388,7 +388,9 @@ async def sync_selected_stores(
 ) -> SyncStats:
     """Kullanıcıların seçtiği şubeler için fiyatları günceller: varsayılan olarak şubelerin tüm ürünleri.
 
-    Şubeler ~5 km'lik hücrelere bölünür; her hücre için tek bir bölgesel arama yapılır.
+    Şubeler ~5 km'lik hücrelere bölünür. marketfiyati her ürün için zincir başına yalnızca bir şubenin
+    fiyatını döndürdüğünden bir aramada her zincirden en fazla bir şube bulunur: aynı zincirin 3 şubesi
+    seçildiyse hücre 3 turda taranır.
     """
     stmt = select(Store).where(Store.latitude.is_not(None), Store.longitude.is_not(None))
     if store_ids is None:
@@ -401,8 +403,16 @@ async def sync_selected_stores(
     for store in stores:
         cells[(round(float(store.latitude) * 20), round(float(store.longitude) * 20))].append(store)
 
+    rounds: list[list[Store]] = []
+    for cell in cells.values():
+        by_market: dict[int, list[Store]] = defaultdict(list)
+        for store in cell:
+            by_market[store.market_id].append(store)
+        for i in range(max(len(s) for s in by_market.values())):
+            rounds.append([s[i] for s in by_market.values() if i < len(s)])
+
     total = SyncStats()
-    for cell_stores in cells.values():
+    for cell_stores in rounds:
         lat = sum(float(s.latitude) for s in cell_stores) / len(cell_stores)
         lon = sum(float(s.longitude) for s in cell_stores) / len(cell_stores)
         stats = await sync_area(
