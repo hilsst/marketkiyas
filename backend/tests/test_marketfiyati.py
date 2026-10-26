@@ -7,7 +7,13 @@ from sqlalchemy import func, select
 
 from app.models import Category, GroupMember, Market, PriceHistory, Product, ProductGroup, Store, StorePrice, Unit
 from app.services.marketfiyati.client import MarketFiyatiClient, MarketFiyatiError
-from app.services.marketfiyati.ingest import category_slug, market_slug, refresh_nearby_stores, sync_area
+from app.services.marketfiyati.ingest import (
+    category_slug,
+    market_slug,
+    refresh_nearby_stores,
+    sync_area,
+    sync_selected_stores,
+)
 from app.services.marketfiyati.schemas import SearchPage, SearchProduct
 from tests.marketfiyati_fake import FakeMarketFiyati, load
 
@@ -57,6 +63,22 @@ async def test_search_category_request_body():
     assert body["keywords"] == "Temel Gıda"
     assert body["menuCategory"] is True
     assert body["depots"] == ["bim-4501"]
+
+
+async def test_selected_stores_one_store_per_chain_per_request(db):
+    # marketfiyati bir üründe zincir başına tek şube döndürür; aynı zincirin şubeleri ayrı aranmalı
+    fake = FakeMarketFiyati()
+    async with fake.client() as client:
+        await sync_area(db, client, keywords=["süt"], **AREA)
+        store_ids = list(await db.scalars(select(Store.id).where(Store.external_id.like("a101-%") | (Store.external_id == "bim-4501"))))
+        fake.requests.clear()
+        await sync_selected_stores(db, client, store_ids=store_ids, categories=["Süt Ürünleri ve Kahvaltılık"])
+
+    depot_sets = [json.loads(r.content)["depots"] for r in fake.requests if json.loads(r.content)["pages"] == 0]
+    assert sorted(d for depots in depot_sets for d in depots) == ["a101-7788", "a101-7790", "bim-4501"]
+    for depots in depot_sets:
+        chains = [d.split("-")[0] for d in depots]
+        assert len(chains) == len(set(chains))
 
 
 async def test_category_sync_assigns_categories(db):
