@@ -21,7 +21,7 @@ export default function ListsPage() {
     try {
       const id = await createList(name.trim());
       setName(""); setCreating(false);
-      router.push("/lists/" + id + "/add"); // yeni liste boş: doğrudan ürün eklemeye
+      router.push("/lists/" + id); // yeni liste hemen açılsın
     } catch (e) { setToast((e as Error).message); }
   };
 

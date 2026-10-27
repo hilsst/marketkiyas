@@ -84,19 +84,22 @@ function runFireworks(canvas: HTMLCanvasElement, until: number) {
 }
 
 /**
- * "Alışverişi Bitir" sonrası tam ekran kutlama: tasarruf tutarı, havai fişek ve kumbara sesi; birkaç saniye
- * sonra (ya da dokununca) onDone. Tasarruf yoksa (ör. bu hafta zaten kaydedildi) sakin bir özet gösterilir.
+ * "Alışverişi Bitir" sonrası tam ekran kutlama: bu alışverişin tasarrufu, havai fişek ve kumbara sesi; birkaç
+ * saniye sonra (ya da dokununca) onDone. Gösterilen tutar kasaya eklenen tasarruf, o yoksa (Farketmez kalemler,
+ * haftalık sınır) bu alışverişte ortalama fiyatlara göre kazanılan. İkisi de sıfırsa sakin bir özet gösterilir.
  * "Hareketi azalt" açık cihazlarda animasyon oynatılmaz.
  */
 export default function Celebration({
-  savedAmount, vaultTotal, note, audio, onDone,
+  savedAmount, shoppingSavings = 0, vaultTotal, note, audio, onDone,
 }: {
-  savedAmount: number; vaultTotal: number; note?: string | null; audio?: AudioContext | null; onDone: () => void;
+  savedAmount: number; shoppingSavings?: number; vaultTotal: number; note?: string | null;
+  audio?: AudioContext | null; onDone: () => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const done = useRef(onDone);
   done.current = onDone;
-  const festive = savedAmount > 0;
+  const amount = savedAmount > 0 ? savedAmount : shoppingSavings;
+  const festive = amount > 0;
 
   useEffect(() => {
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -119,10 +122,14 @@ export default function Celebration({
         {festive ? (
           <>
             <div className="text-7xl mb-3 celebration-coin">🐷</div>
-            <div className="text-lg font-semibold opacity-90">Tebrikler! Kumbarana eklendi</div>
-            <div className="text-6xl font-black my-2 tracking-tight">{savedAmount.toFixed(2)} ₺</div>
-            <div className="text-sm opacity-90">Toplam tasarrufun: <b>{vaultTotal.toFixed(2)} ₺</b></div>
-            <div className="text-xs opacity-75 mt-1">Bu tempoyla yılda yaklaşık {(savedAmount * 52).toFixed(0)} ₺</div>
+            <div className="text-lg font-semibold opacity-90">
+              {savedAmount > 0 ? "Tebrikler! Kumbarana eklendi" : "Tebrikler! Bu alışverişte kazancın"}
+            </div>
+            <div className="text-6xl font-black my-2 tracking-tight">{amount.toFixed(2)} ₺</div>
+            {savedAmount <= 0 && <div className="text-xs opacity-85 -mt-1 mb-1">ortalama raf fiyatlarına göre</div>}
+            <div className="text-sm opacity-90">Kumbarandaki toplam: <b>{vaultTotal.toFixed(2)} ₺</b></div>
+            <div className="text-xs opacity-75 mt-1">Bu tempoyla yılda yaklaşık {(amount * 52).toFixed(0)} ₺</div>
+            {note && <div className="text-[11px] opacity-70 mt-2 max-w-xs mx-auto">{note}</div>}
           </>
         ) : (
           <>

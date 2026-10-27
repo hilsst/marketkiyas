@@ -262,6 +262,19 @@ async def test_completed_list_is_reusable_next_week(client, auth_headers, catalo
     assert D(vault["total_saved"]) == D("1.00")
 
 
+async def test_complete_reports_shopping_savings_for_celebration(client, auth_headers, catalog):
+    # Farketmez kalemde kasaya bir şey yazılmaz ama kutlama ortalama fiyata göre kazancı gösterir
+    _, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "L"}, headers=h)).json()["id"]
+    await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["milk"], "quantity": 2}, headers=h)
+    await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)
+    done = (await client.post(f"/api/lists/{lid}/complete", headers=h)).json()
+    assert D(done["saved_amount"]) == D("0.00")
+    # Süt: 32.50, 33.00, 34.90 -> ortalama 33.4667; en ucuz 32.50 alındı: 0.9667 x 2
+    assert D(done["shopping_savings"]) == D("1.93")
+
+
 async def test_same_list_adds_savings_once_per_week(client, auth_headers, catalog):
     # Planı tekrar tekrar uygulayıp bitirerek kasa şişirilemez
     _, ids = catalog

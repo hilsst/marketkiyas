@@ -29,5 +29,6 @@ class SavingsVault(BaseModel):
 class CompleteResponse(BaseModel):
     list_id: int
     saved_amount: Decimal  # kasaya eklenen; Fırsatçı uygulanmadıysa ya da bu hafta zaten eklendiyse 0
+    shopping_savings: Decimal = Decimal("0.00")  # bu alışverişte ortalama fiyatlara göre kazanılan (kutlama)
     vault_total: Decimal
     note: str | None = None  # tasarruf neden eklenmedi (kullanıcıya gösterilir)
