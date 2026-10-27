@@ -69,7 +69,7 @@ export interface SavingsRecord {
   optimized_total: Money; saved_amount: Money; item_count: number; created_at: string;
 }
 export interface SavingsVault { total_saved: Money; record_count: number; records: SavingsRecord[]; }
-export interface CompleteResponse { list_id: number; saved_amount: Money; vault_total: Money; }
+export interface CompleteResponse { list_id: number; saved_amount: Money; vault_total: Money; note: string | null; }
 
 export interface Store {
   id: number; name: string; market_id: number; market_slug: string; market_name: string;

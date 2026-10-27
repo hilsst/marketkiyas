@@ -38,7 +38,7 @@ pytest   # marketkiyas_test veritabanını kullanır
 | `group_members` | Ürün ↔ grup. Bir ürün tek gruba girer; `match_score` (pg_trgm similarity), `is_manual`. |
 | `shopping_lists` | `status` (active / shopping / completed), `applied_plan` (single_market / combination / opportunist). |
 | `shopping_list_items` | `group_id`, `quantity`, `preferred_brand` (**NULL = Farketmez**, dolu = kilitli marka), plan sonrası `assigned_market_id` / `assigned_product_id` / `assigned_unit_price` (Alışveriş Modu'nda market bazlı gruplama), `is_checked` (gri + üstü çizili), `position` (sıra korunur). |
-| `savings_records` | Tasarruf Kasası. "Alışverişi Bitir"de yazılır. `list_id` **ON DELETE SET NULL** + `list_name` snapshot: liste silinse de kasa kalır. Bir liste kasaya yalnızca bir kez eklenebilir (partial unique index). Haftalık/aylık(x4)/yıllık(x52) değerler `saved_amount`'tan hesaplanır. |
+| `savings_records` | Tasarruf Kasası. "Alışverişi Bitir"de yazılır. `list_id` **ON DELETE SET NULL** + `list_name` snapshot: liste silinse de kasa kalır. Liste haftalık kullanılır: bir liste 6 gün içinde kasaya yalnızca bir kez tasarruf yazar (`SAVINGS_COOLDOWN`); o sürede bitirilen alışveriş tamamlanır, tasarruf eklenmez. Haftalık/aylık(x4)/yıllık(x52) değerler `saved_amount`'tan hesaplanır. |
 
 ## Endpoint'ler
 
