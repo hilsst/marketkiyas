@@ -9,6 +9,7 @@ import { useGroupIcon, useLists } from "@/lib/store";
 import MarketLogo from "@/components/MarketLogo";
 import ItemTile from "@/components/ItemTile";
 import ItemSheet from "@/components/ItemSheet";
+import Celebration, { prepareCelebrationAudio } from "@/components/Celebration";
 import { recentGroups, rememberGroup, RecentGroup } from "@/lib/recent";
 
 type Tab = "items" | "by-market" | "optimize";
@@ -28,6 +29,9 @@ export default function ListDetailPage() {
   const [tab, setTab] = useState<Tab>("items");
   const [mode, setMode] = useState<Mode>("single");
   const [finishing, setFinishing] = useState(false); // "Alışverişi Bitir" çift tıklanmasın
+  const [celebration, setCelebration] = useState<
+    { saved: number; vault: number; note: string | null; audio: AudioContext | null } | null
+  >(null);
   const [detail, setDetail] = useState<ListDetail | null | undefined>(undefined);
   const [opt, setOpt] = useState<OptimizeResult | null>(null);
   const [sheetItemId, setSheetItemId] = useState<number | null>(null);
@@ -195,14 +199,23 @@ export default function ListDetailPage() {
   const handleFinishShopping = async () => {
     if (finishing) return;
     setFinishing(true);
+    const audio = prepareCelebrationAudio(); // ses izni dokunuş anında alınır
     try {
       const done = await api.complete(list.id);
-      setToast(num(done.saved_amount) > 0 ? "Tebrikler! Tasarruf kasaya eklendi." : done.note || "Alışveriş tamamlandı.");
-      setDetail(await api.list(list.id)); // Moddan çık; liste haftaya yeniden kullanılabilir
-      reoptimize();
+      setCelebration({ saved: num(done.saved_amount), vault: num(done.vault_total), note: done.note, audio });
       refreshLists();
-    } catch (e) { setToast((e as Error).message); }
-    finally { setFinishing(false); }
+    } catch (e) {
+      setToast((e as Error).message);
+      void audio?.close();
+      setFinishing(false);
+    }
+  };
+
+  // Kutlama bitince ana sayfaya; liste haftaya yeniden kullanılabilir hâlde kalır
+  const finishCelebration = () => {
+    void celebration?.audio?.close();
+    setCelebration(null);
+    router.push("/");
   };
 
   const isOwner = list.owner_id === user.id;
@@ -246,6 +259,13 @@ export default function ListDetailPage() {
   const cancelPlan = () => mutate(() => api.cancelPlan(list.id), { reopt: false });
 
   const toggle = (item: ListItem) => updateItem(item.id, { is_checked: !item.is_checked });
+
+  if (celebration) {
+    return (
+      <Celebration savedAmount={celebration.saved} vaultTotal={celebration.vault} note={celebration.note}
+        audio={celebration.audio} onDone={finishCelebration} />
+    );
+  }
 
   return (
     <main className="pb-4">
