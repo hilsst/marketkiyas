@@ -647,13 +647,27 @@ export default function ListDetailPage() {
             )}
 
             <div className="mt-2 pt-4 border-t border-gray-100">
-               <button
-                  onClick={() => handleApplyPlan(mode)}
-                  className={"w-full py-3 rounded-xl font-bold shadow-sm transition-colors flex items-center justify-center gap-2 " +
-                    (mode === "single" && !view.bestSingle ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white")}
-                >
-                  <span>🛒</span> Bu Planı Alışveriş Listeme Uygula
-                </button>
+               {/* Alışveriş sürerken ya da ürünlerin hepsi alınmışken yeni plan uygulanmaz; önce alışveriş bitirilir */}
+               {(() => {
+                 const blocked = appliedPlan != null
+                   ? "Plan uygulandı. Alışverişi Ürünler sekmesindeki \"Alışverişi Bitir\" ile tamamlayın."
+                   : totalItems > 0 && checkedCount === totalItems
+                     ? "Tüm ürünler alınmış görünüyor. Yeni alışveriş için işaretleri kaldırın."
+                     : null;
+                 const disabled = blocked != null || (mode === "single" && !view.bestSingle);
+                 return (
+                   <>
+                     <button
+                       onClick={() => handleApplyPlan(mode)} disabled={disabled}
+                       className={"w-full py-3 rounded-xl font-bold shadow-sm transition-colors flex items-center justify-center gap-2 " +
+                         (disabled ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white")}
+                     >
+                       <span>🛒</span> Bu Planı Alışveriş Listeme Uygula
+                     </button>
+                     {blocked && <p className="text-center text-xs text-gray-500 mt-2">{blocked}</p>}
+                   </>
+                 );
+               })()}
             </div>
 
             {mode === "combo" && view.savings > 0 && (

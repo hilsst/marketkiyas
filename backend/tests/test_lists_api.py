@@ -246,13 +246,15 @@ async def test_completed_list_is_reusable_next_week(client, auth_headers, catalo
     assert (await client.post(f"/api/lists/{lid}/complete", headers=h)).status_code == 409  # plan yok
 
     for _week in range(2):
-        await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)
+        applied = (await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)).json()
+        await client.patch(f"/api/lists/{lid}/items/{applied['items'][0]['id']}", json={"is_checked": True}, headers=h)
         done = (await client.post(f"/api/lists/{lid}/complete", headers=h)).json()
         assert D(done["saved_amount"]) == D("0.50")  # 33.00 (Şok Pınar) - 32.50 (BİM Sütaş)
         assert done["note"] is None
         detail = await _detail_of(client, h, lid)
         assert detail["status"] == "active" and detail["applied_plan"] is None
         assert detail["completed_at"] is not None
+        assert not any(i["is_checked"] for i in detail["items"])  # gelecek hafta için alınacaklar sıfırlandı
         # Bir hafta geçmiş gibi: önceki kayıt 7 gün öncesine
         await db.execute(update(SavingsRecord).values(created_at=SavingsRecord.created_at - timedelta(days=7)))
         await db.commit()

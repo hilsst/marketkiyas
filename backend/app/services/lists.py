@@ -550,6 +550,9 @@ async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingLis
     shopping = await shopping_savings(db, shopping_list)
     shopping_list.completed_at = datetime.now(timezone.utc)
     reset_plan(shopping_list)
+    # Alışveriş bitti: liste gelecek hafta için "alınacaklar" hâline döner (İptal Et'ten farklı olarak)
+    for item in shopping_list.items:
+        item.is_checked = False
     await db.commit()
     return CompleteResponse(
         list_id=shopping_list.id,

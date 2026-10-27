@@ -121,13 +121,13 @@ export default function Celebration({
       <div className="relative text-center text-white celebration-pop">
         {festive ? (
           <>
-            <div className="text-7xl mb-3 celebration-coin">🐷</div>
+            <div className="text-7xl mb-3 celebration-coin">💰</div>
             <div className="text-lg font-semibold opacity-90">
-              {savedAmount > 0 ? "Tebrikler! Kumbarana eklendi" : "Tebrikler! Bu alışverişte kazancın"}
+              {savedAmount > 0 ? "Tebrikler! Tasarruf kasana eklendi" : "Tebrikler! Bu alışverişte kazancın"}
             </div>
             <div className="text-6xl font-black my-2 tracking-tight">{amount.toFixed(2)} ₺</div>
             {savedAmount <= 0 && <div className="text-xs opacity-85 -mt-1 mb-1">ortalama raf fiyatlarına göre</div>}
-            <div className="text-sm opacity-90">Kumbarandaki toplam: <b>{vaultTotal.toFixed(2)} ₺</b></div>
+            <div className="text-sm opacity-90">Kasandaki toplam: <b>{vaultTotal.toFixed(2)} ₺</b></div>
             <div className="text-xs opacity-75 mt-1">Bu tempoyla yılda yaklaşık {(amount * 52).toFixed(0)} ₺</div>
             {note && <div className="text-[11px] opacity-70 mt-2 max-w-xs mx-auto">{note}</div>}
           </>
