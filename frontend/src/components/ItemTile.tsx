@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 export type TileVariant = "on" | "off" | "done" | "shared";
 
@@ -12,11 +12,12 @@ const VARIANTS: Record<TileVariant, string> = {
 
 /** Bring! tarzı kare ürün kutusu. Dokunma: onClick; basılı tutma (0,45 sn): onLongPress. */
 export default function ItemTile({
-  icon, name, sub, qty, locked, variant = "on", small, onClick, onLongPress,
+  icon, image, name, sub, qty, locked, variant = "on", small, onClick, onLongPress,
 }: {
-  icon: string; name: string; sub?: string | null; qty?: number; locked?: boolean;
+  icon: string; image?: string | null; name: string; sub?: string | null; qty?: number; locked?: boolean;
   variant?: TileVariant; small?: boolean; onClick?: () => void; onLongPress?: () => void;
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressed = useRef(false);
   const start = () => {
@@ -40,7 +41,14 @@ export default function ItemTile({
         </span>
       )}
       {locked && <span className="absolute top-1.5 left-2 text-[10px]">🔒</span>}
-      <span className={(small ? "text-2xl" : "text-3xl") + " leading-none " + (variant === "done" ? "opacity-50" : "")}>{icon}</span>
+      {image && !imageFailed ? (
+        // Ürün fotoğrafı beyaz zeminde; açılmazsa kategori simgesi
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={image} alt="" loading="lazy" draggable={false} onError={() => setImageFailed(true)}
+          className={(small ? "w-9 h-9" : "w-11 h-11") + " object-contain rounded-lg bg-white p-0.5 pointer-events-none " + (variant === "done" ? "opacity-50" : "")} />
+      ) : (
+        <span className={(small ? "text-2xl" : "text-3xl") + " leading-none " + (variant === "done" ? "opacity-50" : "")}>{icon}</span>
+      )}
       <span className={"font-semibold leading-tight mt-1 line-clamp-2 " + (small ? "text-[11px]" : "text-xs") + (variant === "done" ? " line-through" : "")}>
         {name}
       </span>

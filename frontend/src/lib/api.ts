@@ -141,8 +141,9 @@ export const api = {
 
   markets: () => request<Market[]>("GET", "/markets"),
   categories: () => request<Category[]>("GET", "/categories"),
-  searchProducts: (q: string, categoryId?: number | null) =>
-    request<GroupSummary[]>("GET", "/products" + qs({ q, category_id: categoryId, limit: 100 })),
+  // sort "popular": arama yokken temel ürünler (en çok marka/markette olanlar) önce
+  searchProducts: (q: string, categoryId?: number | null, opts: { sort?: "name" | "popular"; limit?: number } = {}) =>
+    request<GroupSummary[]>("GET", "/products" + qs({ q, category_id: categoryId, limit: opts.limit ?? 100, sort: opts.sort })),
   productGroup: (id: number) => request<GroupDetail>("GET", "/products/" + id),
 
   lists: () => request<ListSummary[]>("GET", "/lists"),

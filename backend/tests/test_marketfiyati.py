@@ -228,3 +228,36 @@ async def test_refresh_nearby_stores(db):
     assert len(ids) == 3
     store = await db.scalar(select(Store).where(Store.external_id == "bim-4501"))
     assert store.name == "Moda Şubesi" and store.latitude == D("40.986200")
+
+
+async def test_campaign_price_is_recorded_for_deals(db):
+    fake = FakeMarketFiyati()
+    # BİM Moda'da Pınar süt indirimde: 34,50 (önce 40,00)
+    fake.search["content"][0]["productDepotInfoList"][0].update(discount=True, discountlessPrice=40)
+    async with fake.client() as client:
+        await sync_area(db, client, keywords=["süt"], **AREA)
+    row = (
+        await db.execute(
+            select(PriceHistory.price, PriceHistory.regular_price, PriceHistory.is_campaign)
+            .join(Product)
+            .join(Market)
+            .where(Product.external_id == "mf-1001", Market.slug == "bim")
+        )
+    ).one()
+    assert tuple(row) == (D("34.50"), D("40.00"), True)
+
+    # Aynı veri tekrar gelince yeni satır yazılmaz; kampanya bitince yazılır
+    async with fake.client() as client:
+        await sync_area(db, client, keywords=["süt"], **AREA)
+        fake.search["content"][0]["productDepotInfoList"][0].update(discount=False)
+        await sync_area(db, client, keywords=["süt"], **AREA)
+    rows = (
+        await db.execute(
+            select(PriceHistory.is_campaign)
+            .join(Product)
+            .join(Market)
+            .where(Product.external_id == "mf-1001", Market.slug == "bim")
+            .order_by(PriceHistory.id)
+        )
+    ).scalars().all()
+    assert rows == [True, False]

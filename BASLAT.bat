@@ -21,13 +21,30 @@ rem marketfiyati.org.tr'den seçili şubelerin fiyatlarını 6 saatte bir günce
 start "MK-WORKER" /min cmd /c ".venv\Scripts\python.exe -m app.cli sync-selected --every-hours 6 > "%MK%\worker.log" 2>&1"
 
 cd /d "%~dp0frontend"
-start "MK-WEB" /min cmd /c "npm run dev > "%MK%\web.log" 2>&1"
+rem Tarayıcı API'ye arayüz üzerinden ulaşır (next.config.js); telefon da aynı adresi kullanabilir
+set "NEXT_PUBLIC_API_URL=/api"
+rem Hızlı mod: kod değiştiyse (ya da hiç derlenmediyse) bir kez derlenir, sonra hazır sayfalar sunulur
+for /f %%h in ('git -C "%~dp0." rev-parse HEAD 2^>nul') do set "HEAD=%%h"
+set "BUILT="
+if exist ".next\marketkiyas-head.txt" set /p BUILT=<".next\marketkiyas-head.txt"
+if not exist ".next\BUILD_ID" set "BUILT="
+if not "%BUILT%"=="%HEAD%" (
+  echo Uygulama güncellendiği için hazırlanıyor, bu bir-iki dakika sürebilir...
+  call npm run build > "%MK%\build.log" 2>&1 || (
+    echo !!! Hazırlama başarısız oldu. %MK%\build.log dosyasını Claude'a gönderin.
+    pause
+    exit /b 1
+  )
+  >".next\marketkiyas-head.txt" echo %HEAD%
+)
+start "MK-WEB" /min cmd /c "npm run start -- -H 0.0.0.0 -p 3000 > "%MK%\web.log" 2>&1"
 
-echo Birkaç saniye bekleniyor...
-timeout /t 15 /nobreak >nul
+timeout /t 5 /nobreak >nul
 start "" http://localhost:3000
 echo.
 echo Uygulama tarayıcıda açıldı: http://localhost:3000
-echo Sayfa ilk açılışta yarım dakika kadar yüklenebilir.
+echo Aynı Wi-Fi'deki telefondan açmak için tarayıcıya şu adreslerden birini yazın:
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do for /f "tokens=*" %%b in ("%%a") do echo    http://%%b:3000
+echo (Windows güvenlik duvarı sorarsa "Özel ağlar"a izin verin.)
 echo Kapatmak için DURDUR dosyasına çift tıklayın.
-timeout /t 10 >nul
+timeout /t 30 >nul

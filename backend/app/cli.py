@@ -14,6 +14,7 @@ import logging
 
 from app.core.config import settings
 from app.db.session import SessionLocal
+from app.services.grouping import regroup
 from app.services.marketfiyati.client import MarketFiyatiClient
 from app.services.marketfiyati.ingest import (
     DEFAULT_KEYWORDS,
@@ -51,9 +52,17 @@ async def _sync_selected(args: argparse.Namespace) -> None:
             else:
                 stats = await sync_selected_stores(db, client)
             log.info("bitti: %s", stats)
+        async with SessionLocal() as db:
+            # Yeni gelen ürünlerle aynı ürünü anlatan gruplar birleşsin
+            await regroup(db)
         if not args.every_hours:
             return
         await asyncio.sleep(args.every_hours * 3600)
+
+
+async def _regroup(args: argparse.Namespace) -> None:
+    async with SessionLocal() as db:
+        await regroup(db)
 
 
 async def _scrape_once(market: str, limit: int | None) -> None:
@@ -117,6 +126,9 @@ def main() -> None:
     p.add_argument("--keywords", nargs="+", help="verilmezse şubelerin tüm ürünleri (bütün kategoriler) çekilir")
     p.add_argument("--every-hours", type=float, default=0, help="0 = bir kez çalış")
     p.set_defaults(func=_sync_selected)
+
+    p = sub.add_parser("regroup", help="yanlış gruplanan ürünleri ayır, aynı ürünü anlatan grupları birleştir")
+    p.set_defaults(func=_regroup)
 
     p = sub.add_parser("scrape", help="market sitelerinden fiyat topla (robots.txt'ye uyar)")
     p.add_argument("--market", choices=[*SCRAPERS, "all"], default="all")

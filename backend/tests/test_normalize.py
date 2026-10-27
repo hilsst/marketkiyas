@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 
 from app.models.enums import Unit
-from app.services.normalize import normalize_name, normalize_text, parse_quantity
+from app.services.normalize import normalize_name, normalize_text, parse_quantity, same_product
 
 
 @pytest.mark.parametrize(
@@ -29,3 +29,22 @@ def test_turkish_dotted_i():
 def test_parse_quantity():
     assert parse_quantity("Ayçiçek Yağı 5 L") == (Decimal(5000), Unit.ML)
     assert parse_quantity("Ekmek") is None
+
+
+@pytest.mark.parametrize(
+    ("a", "b", "same"),
+    [
+        ("UHT Süt %3.1 Yağlı 1 Lt", "Tam Yağlı Süt 1L", True),  # zincirler aynı sütü farklı yazar
+        ("%1.5 Yağlı Süt 1 Lt", "Yarım Yağlı Süt 1L", True),
+        ("Tam Buğday Ekmeği", "Tam Buğday Ekmek", True),
+        ("Sıvı Bulaşık Deterjanı 750 ml", "Ultra Sıvı Bulaşık Deterjanı 750 ml", True),
+        ("Su 500 Ml", "Süt 500 Ml", False),  # harfçe benzer, ürün farklı
+        ("%1 Yağlı Süt", "%2.5 Yağlı Süt", False),
+        ("Tam Yağlı Süt", "Tam Yağlı Laktozsuz Süt", False),  # ürünü değiştiren kelime
+        ("Süt", "Laktozsuz Süt", False),  # tek kelimelik adlar alt küme kuralına girmez
+        ("Çilekli Süt", "Kakaolu Süt", False),
+    ],
+)
+def test_same_product(a, b, same):
+    assert same_product(a, b) is same
+    assert same_product(b, a) is same

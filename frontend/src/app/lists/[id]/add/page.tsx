@@ -28,12 +28,18 @@ export default function AddItemsPage() {
   useEffect(() => {
     let cancelled = false;
     const t = setTimeout(() => {
-      api.searchProducts(q.trim(), cat)
+      // Arama yokken "Tümü": her kategoriden en temel 12 ürün; kategori seçiliyse o kategorinin temel ürünleri
+      const load = q.trim()
+        ? api.searchProducts(q.trim(), cat)
+        : cat != null
+          ? api.searchProducts("", cat, { sort: "popular" })
+          : Promise.all(categories.map(c => api.searchProducts("", c.id, { sort: "popular", limit: 12 }))).then(r => r.flat());
+      load
         .then(r => { if (!cancelled) setResults(r); })
         .catch(e => { if (!cancelled) { setResults([]); setToast(e.message); } });
     }, q ? 250 : 0);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [q, cat, setToast]);
+  }, [q, cat, categories, setToast]);
 
   const itemByGroup = useMemo(() => new Map((detail?.items || []).map(i => [i.group_id, i])), [detail]);
 
@@ -106,7 +112,7 @@ export default function AddItemsPage() {
               {s.groups.map(g => {
                 const item = itemByGroup.get(g.id);
                 return (
-                  <ItemTile key={g.id} small icon={groupIcon(g.category_id)} name={g.name}
+                  <ItemTile key={g.id} small icon={groupIcon(g.category_id)} image={g.image_url} name={g.name}
                     variant={item ? "on" : "off"} qty={item ? num(item.quantity) : undefined}
                     locked={item?.preferred_brand != null}
                     sub={g.min_price != null ? num(g.min_price).toFixed(2) + " ₺" : null}

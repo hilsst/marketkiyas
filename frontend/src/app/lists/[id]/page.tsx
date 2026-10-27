@@ -343,7 +343,7 @@ export default function ListDetailPage() {
                     {left.length ? (
                       <div className="grid grid-cols-3 gap-2.5">
                         {left.map(item => (
-                          <ItemTile key={item.id} icon={groupIcon(item.category_id)} name={item.group_name}
+                          <ItemTile key={item.id} icon={groupIcon(item.category_id)} image={item.image_url} name={item.group_name}
                             qty={num(item.quantity)} locked={item.preferred_brand != null}
                             sub={[item.assigned?.brand, (num(item.assigned?.unit_price) * num(item.quantity)).toFixed(2) + " ₺"].filter(Boolean).join(" · ")}
                             onClick={() => toggle(item)} onLongPress={() => setSheetItemId(item.id)} />
@@ -361,7 +361,7 @@ export default function ListDetailPage() {
                   <div className="text-xs font-bold text-gray-500 tracking-wide mb-2">ALINDI ✓</div>
                   <div className="grid grid-cols-4 gap-2">
                     {list.items.filter(it => it.is_checked).map(item => (
-                      <ItemTile key={item.id} small variant="done" icon={groupIcon(item.category_id)} name={item.group_name}
+                      <ItemTile key={item.id} small variant="done" icon={groupIcon(item.category_id)} image={item.image_url} name={item.group_name}
                         onClick={() => toggle(item)} />
                     ))}
                   </div>
@@ -386,7 +386,7 @@ export default function ListDetailPage() {
                   const byOther = shared && it.added_by_id != null && it.added_by_id !== user.id;
                   const price = line ? num(line.unit_price).toFixed(2) + " ₺" : null;
                   return (
-                    <ItemTile key={it.id} icon={groupIcon(it.category_id)} name={it.group_name}
+                    <ItemTile key={it.id} icon={groupIcon(it.category_id)} image={it.image_url} name={it.group_name}
                       qty={num(it.quantity)} locked={locked}
                       variant={it.is_checked ? "done" : byOther ? "shared" : "on"}
                       sub={byOther ? it.added_by_name + " ekledi" : [locked ? line?.brand || it.preferred_brand : null, price].filter(Boolean).join(" · ")}

@@ -94,9 +94,18 @@ async def _resolver_for(db: AsyncSession, user_id: int | None, groups: Sequence[
 
 
 async def search_groups(
-    db: AsyncSession, q: str | None, category_id: int | None, limit: int, user_id: int | None = None
+    db: AsyncSession,
+    q: str | None,
+    category_id: int | None,
+    limit: int,
+    user_id: int | None = None,
+    sort: str = "name",
 ) -> list[GroupSummary]:
-    """Kullanıcı şube seçtiyse fiyatlar o şubelerden; şubelerinde hiç satılmayan gruplar listelenmez."""
+    """Kullanıcı şube seçtiyse fiyatlar o şubelerden; şubelerinde hiç satılmayan gruplar listelenmez.
+
+    sort="popular" (arama yokken): en çok marka/markette bulunan temel ürünler önce ("Tam Yağlı Süt 1 L"
+    "%100 Fıstık Ezmesi"nden önce gelsin), eşitse kısa ad önce.
+    """
     stmt = select(ProductGroup).options(_with_members())
     if category_id is not None:
         stmt = stmt.where(ProductGroup.category_id == category_id)
@@ -114,15 +123,24 @@ async def search_groups(
             func.similarity(ProductGroup.normalized_name, needle).desc(),
             ProductGroup.name,
         )
+    elif sort == "popular":
+        members = (
+            select(func.count())
+            .select_from(GroupMember)
+            .where(GroupMember.group_id == ProductGroup.id)
+            .scalar_subquery()
+        )
+        stmt = stmt.order_by(members.desc(), func.length(ProductGroup.name), ProductGroup.name)
     else:
         stmt = stmt.order_by(ProductGroup.name)
-    groups = (await db.scalars(stmt.limit(limit))).all()
+    # Şube seçen kullanıcıda fiyatsız gruplar sonradan elenir; liste kısa kalmasın diye fazla çekilir
+    groups = (await db.scalars(stmt.limit(limit * 3 if user_id else limit))).all()
     resolver = await _resolver_for(db, user_id, groups)
     campaigns = await campaign_prices(db, [m.product_id for g in groups for m in g.members])
     summaries = [group_summary(g, resolver, campaigns) for g in groups]
     if resolver.uses_stores:
         summaries = [s for s in summaries if s.min_price is not None]
-    return summaries
+    return summaries[:limit]
 
 
 async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None = None) -> GroupDetail | None:
