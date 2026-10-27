@@ -27,6 +27,7 @@ export default function ListDetailPage() {
   const groupIcon = useGroupIcon();
   const [tab, setTab] = useState<Tab>("items");
   const [mode, setMode] = useState<Mode>("single");
+  const [finishing, setFinishing] = useState(false); // "Alışverişi Bitir" çift tıklanmasın
   const [detail, setDetail] = useState<ListDetail | null | undefined>(undefined);
   const [opt, setOpt] = useState<OptimizeResult | null>(null);
   const [sheetItemId, setSheetItemId] = useState<number | null>(null);
@@ -192,13 +193,16 @@ export default function ListDetailPage() {
   };
 
   const handleFinishShopping = async () => {
+    if (finishing) return;
+    setFinishing(true);
     try {
       const done = await api.complete(list.id);
-      setToast(num(done.saved_amount) > 0 ? "Tebrikler! Tasarruf kasaya eklendi." : "Alışveriş tamamlandı.");
+      setToast(num(done.saved_amount) > 0 ? "Tebrikler! Tasarruf kasaya eklendi." : done.note || "Alışveriş tamamlandı.");
       setDetail(await api.list(list.id)); // Moddan çık; liste haftaya yeniden kullanılabilir
       reoptimize();
       refreshLists();
     } catch (e) { setToast((e as Error).message); }
+    finally { setFinishing(false); }
   };
 
   const isOwner = list.owner_id === user.id;
@@ -369,11 +373,13 @@ export default function ListDetailPage() {
               )}
 
               <div className="pt-2">
-                <button onClick={handleFinishShopping}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold shadow-lg transition-colors">
-                  ✅ Alışverişi Bitir ve Tasarrufu Kaydet
+                <button onClick={handleFinishShopping} disabled={finishing}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white py-4 rounded-2xl font-bold shadow-lg transition-colors">
+                  {finishing ? "Kaydediliyor…" : "✅ Alışverişi Bitir ve Tasarrufu Kaydet"}
                 </button>
-                <p className="text-center text-xs text-gray-500 mt-2">Tasarrufunuz Profil sayfanızda saklanır.</p>
+                <p className="text-center text-xs text-gray-500 mt-2">
+                  Tasarrufunuz Profil sayfanızda saklanır. Bir liste haftada bir kez kasaya eklenir.
+                </p>
               </div>
             </div>
           ) : (

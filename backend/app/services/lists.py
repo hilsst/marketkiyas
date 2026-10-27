@@ -1,5 +1,5 @@
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -507,15 +507,30 @@ async def vault_total(db: AsyncSession, user: User) -> Decimal:
     return Decimal(total).quantize(Decimal("0.01"))
 
 
+# Haftalık alışveriş listesi: bir liste bu süre içinde kasaya yalnızca bir kez tasarruf yazar
+SAVINGS_COOLDOWN = timedelta(days=6)
+
+
 async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingList) -> CompleteResponse:
     """"Alışverişi Bitir": Fırsatçı tasarrufunu kalıcı kasaya ekler ve Alışveriş Modu'ndan çıkar.
 
     Liste silinmez; gelecek hafta yeniden optimize edilip kullanılabilir. Plan sıfırlandığı için
-    aynı alışveriş ikinci kez kasaya yazılamaz (çift tıklama 409 döner)."""
+    aynı alışveriş ikinci kez kasaya yazılamaz (çift tıklama 409 döner). Planı yeniden uygulayıp
+    bitirerek kasayı şişirmemek için bir liste SAVINGS_COOLDOWN içinde yalnızca bir kez kasaya yazılır;
+    o sürede bitirilen alışveriş tamamlanır ama tasarruf eklenmez."""
     if shopping_list.applied_plan is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Bu listede uygulanmış bir alışveriş planı yok")
 
     saved = shopping_list.expected_savings or Decimal("0.00")
+    note = None
+    last_saved_at = await db.scalar(
+        select(func.max(SavingsRecord.created_at)).where(
+            SavingsRecord.user_id == user.id, SavingsRecord.list_id == shopping_list.id
+        )
+    )
+    if last_saved_at and last_saved_at > datetime.now(timezone.utc) - SAVINGS_COOLDOWN and saved > 0:
+        saved = Decimal("0.00")
+        note = "Bu listenin bu haftaki tasarrufu zaten kasada; aynı hafta tekrar eklenmez."
     if shopping_list.applied_plan is PlanType.OPPORTUNIST and saved > 0:
         db.add(
             SavingsRecord(
@@ -536,5 +551,5 @@ async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingLis
     reset_plan(shopping_list)
     await db.commit()
     return CompleteResponse(
-        list_id=shopping_list.id, saved_amount=saved, vault_total=await vault_total(db, user)
+        list_id=shopping_list.id, saved_amount=saved, vault_total=await vault_total(db, user), note=note
     )

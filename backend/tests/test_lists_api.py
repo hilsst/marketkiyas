@@ -1,9 +1,10 @@
+from datetime import timedelta
 from decimal import Decimal as D
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 
-from app.models import GroupMember, Market, PriceHistory, Product, ProductGroup, Unit
+from app.models import GroupMember, Market, PriceHistory, Product, ProductGroup, SavingsRecord, Unit
 from app.services.normalize import normalize_name
 from app.services.optimizer import NO_COMPLETE_MARKET_WARNING
 
@@ -236,7 +237,7 @@ async def test_clear_preferences_and_cancel_plan(client, auth_headers, catalog):
     assert body["items"][0]["is_checked"] is True  # İptal Et işaretleri silmez
 
 
-async def test_completed_list_is_reusable_next_week(client, auth_headers, catalog):
+async def test_completed_list_is_reusable_next_week(client, auth_headers, catalog, db):
     _, ids = catalog
     h = auth_headers
     lid = (await client.post("/api/lists", json={"name": "Haftalık"}, headers=h)).json()["id"]
@@ -248,13 +249,37 @@ async def test_completed_list_is_reusable_next_week(client, auth_headers, catalo
         await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)
         done = (await client.post(f"/api/lists/{lid}/complete", headers=h)).json()
         assert D(done["saved_amount"]) == D("0.50")  # 33.00 (Şok Pınar) - 32.50 (BİM Sütaş)
+        assert done["note"] is None
         detail = await _detail_of(client, h, lid)
         assert detail["status"] == "active" and detail["applied_plan"] is None
         assert detail["completed_at"] is not None
+        # Bir hafta geçmiş gibi: önceki kayıt 7 gün öncesine
+        await db.execute(update(SavingsRecord).values(created_at=SavingsRecord.created_at - timedelta(days=7)))
+        await db.commit()
 
     vault = (await client.get("/api/savings", headers=h)).json()
     assert vault["record_count"] == 2
     assert D(vault["total_saved"]) == D("1.00")
+
+
+async def test_same_list_adds_savings_once_per_week(client, auth_headers, catalog):
+    # Planı tekrar tekrar uygulayıp bitirerek kasa şişirilemez
+    _, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "Haftalık"}, headers=h)).json()["id"]
+    await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["milk"], "preferred_brand": "Pınar"}, headers=h)
+
+    saved = []
+    for _ in range(3):
+        await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)
+        done = (await client.post(f"/api/lists/{lid}/complete", headers=h)).json()
+        saved.append(D(done["saved_amount"]))
+    assert saved == [D("0.50"), D("0.00"), D("0.00")]
+    assert "zaten" in done["note"]
+
+    vault = (await client.get("/api/savings", headers=h)).json()
+    assert vault["record_count"] == 1
+    assert D(vault["total_saved"]) == D("0.50")
 
 
 async def test_list_summary_has_estimate_and_top_market(client, auth_headers, catalog):
