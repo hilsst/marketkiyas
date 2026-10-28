@@ -132,6 +132,8 @@ async def _merge(db: AsyncSession, survivor: ProductGroup, loser: ProductGroup) 
         delete(PriceAlert).where(PriceAlert.group_id == loser.id, PriceAlert.user_id.in_(survivor_users))
     )
     await db.execute(update(PriceAlert).where(PriceAlert.group_id == loser.id).values(group_id=survivor.id))
+    if survivor.subcategory_id is None and loser.subcategory_id is not None:
+        survivor.subcategory_id = loser.subcategory_id
     if survivor.category_id is None and loser.category_id is not None:
         survivor.category_id = loser.category_id
     if survivor.image_url is None:

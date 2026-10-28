@@ -18,6 +18,7 @@ class GroupSummary(BaseModel):
     id: int
     name: str
     category_id: int | None
+    subcategory_id: int | None = None  # alt kategori ("Peynir")
     quantity: Decimal | None
     unit: Unit | None
     image_url: str | None

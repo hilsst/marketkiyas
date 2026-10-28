@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 
 from fastapi import APIRouter
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.api.deps import DbSession
-from app.models import Category, Market
+from app.models import Category, Market, ProductGroup
 from app.schemas.catalog import CategoryOut, MarketOut
 
 router = APIRouter(tags=["catalog"])
@@ -17,4 +17,13 @@ async def list_markets(db: DbSession) -> Sequence[Market]:
 
 @router.get("/categories", response_model=list[CategoryOut])
 async def list_categories(db: DbSession) -> Sequence[Category]:
-    return (await db.scalars(select(Category).order_by(Category.sort_order, Category.id))).all()
+    """Üst kategoriler sabit sırada; alt kategoriler en çok ürünü olandan aza ("Süt", "Peynir" önce)."""
+    group_count = (
+        select(func.count())
+        .select_from(ProductGroup)
+        .where(ProductGroup.subcategory_id == Category.id)
+        .scalar_subquery()
+    )
+    return (
+        await db.scalars(select(Category).order_by(Category.sort_order, group_count.desc(), Category.id))
+    ).all()

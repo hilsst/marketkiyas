@@ -17,6 +17,7 @@ interface Ctx {
   logout: () => void;
   markets: Market[]; marketById: (id: number | null | undefined) => Market | undefined;
   categories: Category[]; categoryById: (id: number | null | undefined) => Category | undefined;
+  subcategoriesOf: (id: number) => Category[];
   lists: ListSummary[]; refreshLists: () => Promise<void>;
   createList: (name: string) => Promise<number>;
   addItem: (listId: number, groupId: number, preferredProductId?: number | null) => Promise<void>;
@@ -118,11 +119,17 @@ export function ListProvider({ children }: { children: ReactNode }) {
   const categoryMap = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
   const marketById = useCallback((id: number | null | undefined) => (id == null ? undefined : marketMap.get(id)), [marketMap]);
   const categoryById = useCallback((id: number | null | undefined) => (id == null ? undefined : categoryMap.get(id)), [categoryMap]);
+  // API alt kategorileri de döner ("Süt & Kahvaltılık" > "Peynir"); ana listeler yalnızca üst kategorileri gösterir
+  const topCategories = useMemo(() => categories.filter(c => c.parent_id == null), [categories]);
+  const subcategoriesOf = useCallback(
+    (id: number) => categories.filter(c => c.parent_id === id), // API en kalabalık alt kategoriyi önce verir
+    [categories],
+  );
 
   return (
     <AppCtx.Provider value={{
       user, hydrated, login, register, logout,
-      markets, marketById, categories, categoryById,
+      markets, marketById, categories: topCategories, categoryById, subcategoriesOf,
       lists, refreshLists, createList, addItem, toast, setToast, unreadAlerts, refreshAlerts,
     }}>
       {children}

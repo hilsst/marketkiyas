@@ -25,12 +25,15 @@ async def search_products(
     category_id: int | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 30,
     sort: Annotated[str, Query(pattern="^(name|popular)$")] = "name",
+    subcategory_id: int | None = None,
 ) -> list[GroupSummary]:
     """Ürün grubu araması (pg_trgm). Her grup için market bazında en ucuz fiyat ve markalar döner.
 
     Giriş yapmış ve şube seçmiş kullanıcıya yalnızca seçtiği şubelerin fiyatları gösterilir.
     Arama yokken sort=popular temel ürünleri öne alır."""
-    return await catalog.search_groups(db, q, category_id, limit, user.id if user else None, sort)
+    return await catalog.search_groups(
+        db, q, category_id, limit, user.id if user else None, sort, subcategory_id
+    )
 
 
 @router.get("/deals", response_model=list[DealOut])
