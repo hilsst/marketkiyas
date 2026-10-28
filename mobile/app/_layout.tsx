@@ -65,6 +65,7 @@ function RootLayoutNav() {
         <Stack.Screen name="search" options={{ title: 'Ara' }} />
         <Stack.Screen name="product/[id]" options={{ title: 'Ürün' }} />
         <Stack.Screen name="stores" options={{ title: 'Marketlerim' }} />
+        <Stack.Screen name="list/[id]" options={{ title: 'Liste' }} />
       </Stack>
     </ThemeProvider>
   );

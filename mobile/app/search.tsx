@@ -10,7 +10,8 @@ import { api, GroupSummary } from '@/lib/api';
 /** Ürün araması. Ana sayfadaki arama çubuğu buraya açılır. */
 export default function SearchScreen() {
   const t = useTheme();
-  const params = useLocalSearchParams<{ q?: string }>();
+  // listId: liste ekranındaki 'Ürün ekle'den gelindiyse ürün doğrudan o listeye eklenir
+  const params = useLocalSearchParams<{ q?: string; listId?: string }>();
   const [q, setQ] = useState(params.q ?? '');
   const [results, setResults] = useState<GroupSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export default function SearchScreen() {
       {q.trim() !== '' && results?.length === 0 && <Muted style={{ textAlign: 'center', marginTop: 24 }}>Sonuç bulunamadı</Muted>}
       {results?.map((g, i) => (
         <Fragment key={g.id}>
-          <ProductRow group={g} onPress={() => router.push({ pathname: '/product/[id]', params: { id: String(g.id) } })} />
+          <ProductRow group={g} onPress={() => router.push({ pathname: '/product/[id]', params: params.listId ? { id: String(g.id), listId: params.listId } : { id: String(g.id) } })} />
           {i % 4 === 3 && <AdSlot placement="list" />}
         </Fragment>
       ))}

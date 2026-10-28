@@ -28,6 +28,45 @@ export interface GroupProduct {
   price_history: PricePoint[]; store_prices: { store_id: number; store_name: string; price: Money }[];
 }
 export interface GroupDetail extends GroupSummary { products: GroupProduct[]; }
+export type PlanType = 'single_market' | 'combination' | 'opportunist';
+export interface AssignedProduct {
+  market_id: number | null; product_id: number | null; product_name: string | null; brand: string | null;
+  unit_price: Money | null; store_id: number | null; store_name: string | null;
+}
+export interface ListItem {
+  id: number; group_id: number; group_name: string; category_id: number | null; image_url: string | null;
+  quantity: Money; preferred_brand: string | null; preferred_product_id: number | null; is_checked: boolean;
+  position: number; note: string | null; assigned: AssignedProduct | null;
+  added_by_id: number | null; added_by_name: string | null;
+}
+export interface ShoppingGroup { market_id: number | null; item_ids: number[]; checked_count: number; }
+export interface ListSummary {
+  id: number; owner_id: number; owner_name: string | null; member_count: number; name: string; icon: string | null;
+  status: 'active' | 'shopping' | 'completed'; applied_plan: PlanType | null; planned_total: Money | null;
+  item_count: number; checked_count: number; created_at: string; updated_at: string;
+  estimated_total: Money | null; top_market_id: number | null;
+}
+export interface ListDetail extends ListSummary {
+  preference_total: Money | null; expected_savings: Money | null; applied_at: string | null;
+  completed_at: string | null; items: ListItem[]; shopping_groups: ShoppingGroup[]; share_code: string | null;
+}
+export interface PlanLine {
+  item_id: number; group_id: number; group_name: string; quantity: Money; product_id: number;
+  product_name: string; brand: string | null; market_id: number; unit_price: Money; store_id: number | null;
+  line_total: Money; substituted: boolean;
+}
+export interface MarketBreakdown { market_id: number; total: Money; item_ids: number[]; }
+export interface Plan { plan_type: PlanType; total: Money; lines: PlanLine[]; missing_item_ids: number[]; by_market: MarketBreakdown[]; }
+export interface MarketTotal { market_id: number; total: Money; found: number; missing: number; substituted: number; }
+export interface OptimizeResult {
+  single_market: { available: boolean; warning: string | null; plan: Plan | null; markets: MarketTotal[] };
+  combination: Plan; opportunist: Plan;
+  savings: { preference_total: Money; opportunist_total: Money; weekly: Money; monthly: Money; yearly: Money };
+}
+export interface CompleteResponse {
+  list_id: number; saved_amount: Money; vault_total: Money; note: string | null; shopping_savings: Money;
+}
+export type ItemPatch = Partial<{ quantity: number; is_checked: boolean; preferred_product_id: number | null; preferred_brand: string | null }>;
 export interface Deal {
   group_id: number; group_name: string; category_id: number | null; image_url: string | null;
   quantity: Money | null; unit: Unit | null; product_id: number; product_name: string; brand: string | null;
@@ -110,6 +149,19 @@ export const api = {
       q, category_id: categoryId, subcategory_id: opts.subcategoryId, limit: opts.limit ?? 50, sort: opts.sort,
     })),
   savings: () => request<SavingsVault>('GET', '/savings'),
+  lists: () => request<ListSummary[]>('GET', '/lists'),
+  list: (id: number) => request<ListDetail>('GET', '/lists/' + id),
+  createList: (name: string) => request<ListDetail>('POST', '/lists', { name }),
+  deleteList: (id: number) => request<void>('DELETE', '/lists/' + id),
+  addItem: (listId: number, groupId: number, preferredProductId?: number | null) =>
+    request<ListDetail>('POST', `/lists/${listId}/items`, { group_id: groupId, preferred_product_id: preferredProductId ?? null }),
+  updateItem: (listId: number, itemId: number, patch: ItemPatch) =>
+    request<ListDetail>('PATCH', `/lists/${listId}/items/${itemId}`, patch),
+  removeItem: (listId: number, itemId: number) => request<ListDetail>('DELETE', `/lists/${listId}/items/${itemId}`),
+  optimize: (listId: number) => request<OptimizeResult>('GET', `/lists/${listId}/optimize`),
+  applyPlan: (listId: number, plan_type: PlanType) => request<ListDetail>('POST', `/lists/${listId}/apply`, { plan_type }),
+  cancelPlan: (listId: number) => request<ListDetail>('DELETE', `/lists/${listId}/plan`),
+  complete: (listId: number) => request<CompleteResponse>('POST', `/lists/${listId}/complete`),
   productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
   deals: () => request<Deal[]>('GET', '/products/deals'),
   myStores: () => request<Store[]>('GET', '/me/stores'),
