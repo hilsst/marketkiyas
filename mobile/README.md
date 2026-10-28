@@ -1,4 +1,6 @@
-# MarketKıyas telefon uygulaması (React Native + Expo)
+# Ucuzu telefon uygulaması (React Native + Expo)
+
+Mağaza adı: **Ucuzu** (Kemal, 28 Ekim 2026; marka tescili kontrolü bekliyor). Depo ve sunucu hâlâ MarketKıyas adını taşır.
 
 Sunucu: `backend/` (FastAPI). Uygulama sunucuya `EXPO_PUBLIC_API_URL` ile bağlanır; geliştirmede aynı Wi-Fi'deki
 bilgisayarın web arayüzü vekili kullanılır (`BASLAT.bat` çalışırken `http://<bilgisayar-ip>:3000/api`).

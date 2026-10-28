@@ -39,7 +39,7 @@ export default function ProfileScreen() {
       {!user ? <LoginPrompt what="Tasarrufunu ve marketlerini görmek" /> : (
         <>
           <Card style={{ gap: 4 }}>
-            <Text style={{ color: t.text, fontSize: 17, fontWeight: '700' }}>{user.full_name || 'MarketKıyas üyesi'}</Text>
+            <Text style={{ color: t.text, fontSize: 17, fontWeight: '700' }}>{user.full_name || 'Ucuzu üyesi'}</Text>
             <Muted>{user.email}</Muted>
           </Card>
           <View style={{ backgroundColor: t.tint, borderRadius: 16, padding: 18, gap: 4 }}>

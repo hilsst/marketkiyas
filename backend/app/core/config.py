@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""
-    mail_from: str = "MarketKıyas <no-reply@marketkiyas.app>"
+    mail_from: str = "Ucuzu <no-reply@ucuzu.app>"
 
     # Google ile giriş: kabul edilen OAuth istemci kimlikleri (Android, iOS, web), virgülle ayrılmış
     google_client_ids: str = ""

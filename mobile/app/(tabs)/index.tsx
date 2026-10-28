@@ -26,7 +26,7 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <Title>🛒 MarketKıyas</Title>
+      <Title>🛒 Ucuzu</Title>
       <Input placeholder="🔍  Ürün ara (örn. süt, ekmek, deterjan)" value={q} onChangeText={setQ}
         returnKeyType="search" autoCorrect={false} />
       {error && <Text style={{ color: t.danger }}>{error}</Text>}

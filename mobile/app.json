@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "MarketKıyas",
-    "slug": "marketkiyas",
+    "name": "Ucuzu",
+    "slug": "ucuzu",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "marketkiyas",
+    "scheme": "ucuzu",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.marketkiyas"
+      "bundleIdentifier": "app.ucuzu"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "app.marketkiyas"
+      "package": "app.ucuzu"
     },
     "web": {
       "bundler": "metro",

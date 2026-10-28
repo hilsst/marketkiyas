@@ -119,7 +119,7 @@ async def request_password_reset(body: PasswordResetRequest, db: DbSession) -> d
             await db.commit()
             await send_mail(
                 user.email,
-                "MarketKıyas şifre sıfırlama kodunuz",
+                "Ucuzu şifre sıfırlama kodunuz",
                 f"Şifre sıfırlama kodunuz: {code}\n\nKod 1 saat geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı yok sayın.",
             )
     return {"detail": "Kayıtlı bir hesapsa e-postasına kod gönderildi"}
