@@ -3,19 +3,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import AlertSheet from '@/components/AlertSheet';
 import Flyer from '@/components/Flyer';
 import ListPicker from '@/components/ListPicker';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Button, Card, Muted, Screen, useTheme } from '@/components/ui';
-import { api, formatSize, GroupDetail, num } from '@/lib/api';
+import { api, formatSize, GroupDetail, num, PriceAlert } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
 
 /**
  * Ürün sayfası: seçili şubelerdeki her fiyat ayrı satır (web'deki gibi "BİM · Karlıdağ").
  * Bir satıra dokununca o ürün (marka) seçilir; seçilmezse listeye "Farketmez" (en ucuzu) eklenir.
- * Listeden gelindiyse (?listId=) ürün doğrudan o listeye eklenir. Fiyat alarmı 7. adımda.
+ * Listeden gelindiyse (?listId=) ürün doğrudan o listeye eklenir. 🔔 ile fiyatı takip edilir (Alarmlar sekmesi).
  */
 export default function ProductScreen() {
   const t = useTheme();
@@ -28,10 +29,21 @@ export default function ProductScreen() {
   const [adding, setAdding] = useState(false);
   const { marketById, categoryIcon, categoryById } = useCatalog();
   const [group, setGroup] = useState<GroupDetail | null | undefined>(undefined);
+  const [alert, setAlert] = useState<PriceAlert | null>(null);
+  const [alertSheet, setAlertSheet] = useState(false);
+  const [alertNote, setAlertNote] = useState<string | null>(null);
 
   useEffect(() => {
     api.productGroup(Number(id)).then(setGroup).catch(() => setGroup(null));
   }, [id]);
+  useEffect(() => {
+    if (!user) return;
+    api.alerts().then(all => setAlert(all.find(a => a.group_id === Number(id)) || null)).catch(() => {});
+  }, [id, user]);
+  const openAlert = () => {
+    if (!user) { router.push('/login'); return; }
+    setAlertSheet(true);
+  };
 
   const offers = useMemo(() => (group?.products ?? [])
     .filter(p => p.price != null)
@@ -101,10 +113,23 @@ export default function ProductScreen() {
       </Card>
 
       <Muted>{selectedProduct ? `Seçili marka: ${selectedProduct.brand || selectedProduct.name} (tekrar dokunarak kaldırabilirsin)` : 'Marka seçmezsen listeye "Farketmez" eklenir, her zaman en ucuzu alınır.'}</Muted>
-      <Button title={listId ? 'Bu listeye ekle' : 'Listeye ekle'} onPress={onAdd} busy={adding} />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flex: 1 }}><Button title={listId ? 'Bu listeye ekle' : 'Listeye ekle'} onPress={onAdd} busy={adding} /></View>
+        <Pressable onPress={openAlert} accessibilityLabel="Fiyatını takip et"
+          style={{ paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, justifyContent: 'center',
+            borderColor: alert ? '#f59e0b' : t.border, backgroundColor: alert ? '#fef3c7' : t.card }}>
+          <Text style={{ color: alert ? '#92400e' : t.text, fontWeight: '700' }}>{alert ? '🔔 Takipte' : '🔔 Takip et'}</Text>
+        </Pressable>
+      </View>
+      {alertNote && <Text style={{ color: t.tint, textAlign: 'center', fontWeight: '600' }}>{alertNote}</Text>}
       {added && <Text style={{ color: t.danger, textAlign: 'center', fontWeight: '600' }}>{added}</Text>}
       {flyer && <Flyer title="Listeye eklendi" subtitle={flyer} onDone={afterFlyer} />}
       <ListPicker visible={picking} onClose={() => setPicking(false)} onPick={addTo} />
+      {alertSheet && (
+        <AlertSheet visible onClose={() => setAlertSheet(false)} groupId={group.id} groupName={group.name}
+          cheapest={offers[0]?.price ?? null} alert={alert}
+          onChange={(a, message) => { setAlert(a); setAlertSheet(false); setAlertNote(message); }} />
+      )}
     </SafeAreaView>
   );
 }

@@ -69,6 +69,13 @@ export interface CompleteResponse {
   list_id: number; saved_amount: Money; vault_total: Money; note: string | null; shopping_savings: Money;
 }
 export type ItemPatch = Partial<{ quantity: number; is_checked: boolean; preferred_product_id: number | null; preferred_brand: string | null }>;
+// Fiyat alarmı: current_price kullanıcının şubelerindeki en ucuz fiyat; triggered = eşiğin altına indi
+export interface PriceAlert {
+  id: number; group_id: number; group_name: string; category_id: number | null; image_url: string | null;
+  quantity: Money | null; unit: Unit | null; target_price: Money | null; baseline_price: Money | null;
+  current_price: Money | null; current_market_id: number | null; triggered: boolean; triggered_at: string | null;
+  unread: boolean; created_at: string;
+}
 export interface Deal {
   group_id: number; group_name: string; category_id: number | null; image_url: string | null;
   quantity: Money | null; unit: Unit | null; product_id: number; product_name: string; brand: string | null;
@@ -182,6 +189,11 @@ export const api = {
   productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
   deals: () => request<Deal[]>('GET', '/products/deals'),
   myStores: () => request<Store[]>('GET', '/me/stores'),
+  alerts: () => request<PriceAlert[]>('GET', '/alerts'),
+  createAlert: (groupId: number, targetPrice?: number | null) =>
+    request<PriceAlert[]>('POST', '/alerts', { group_id: groupId, target_price: targetPrice ?? null }),
+  deleteAlert: (id: number) => request<void>('DELETE', '/alerts/' + id),
+  markAlertsSeen: () => request<void>('POST', '/alerts/seen'),
   family: () => request<MyFamily>('GET', '/family'),
   createFamily: (name: string) => request<MyFamily>('POST', '/family', { name }),
   joinFamily: (code: string) => request<MyFamily>('POST', '/family/join', { code }),
