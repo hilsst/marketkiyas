@@ -32,13 +32,17 @@ class ProductGroup(TimestampMixin, Base):
     category_id: Mapped[int | None] = mapped_column(
         ForeignKey("categories.id", ondelete="SET NULL"), index=True
     )
+    # Alt kategori (categories.parent_id = category_id): "Süt & Kahvaltılık" > "Peynir"
+    subcategory_id: Mapped[int | None] = mapped_column(
+        ForeignKey("categories.id", ondelete="SET NULL"), index=True
+    )
     quantity: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
     unit: Mapped[Unit | None] = mapped_column(
         Enum(Unit, native_enum=False, length=8, values_callable=enum_values)
     )
     image_url: Mapped[str | None] = mapped_column(String(1024))
 
-    category: Mapped[Category | None] = relationship()
+    category: Mapped[Category | None] = relationship(foreign_keys=[category_id])
     members: Mapped[list["GroupMember"]] = relationship(
         back_populates="group", cascade="all, delete-orphan"
     )

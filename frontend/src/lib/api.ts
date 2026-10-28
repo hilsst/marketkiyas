@@ -15,7 +15,7 @@ export interface Category { id: number; slug: string; name: string; icon: string
 
 export interface MarketPrice { market_id: number; min_price: Money; regular_price: Money | null; }
 export interface GroupSummary {
-  id: number; name: string; category_id: number | null; quantity: Money | null; unit: Unit | null;
+  id: number; name: string; category_id: number | null; subcategory_id?: number | null; quantity: Money | null; unit: Unit | null;
   image_url: string | null; min_price: Money | null; market_prices: MarketPrice[]; brands: string[];
 }
 export interface PricePoint { price: Money; recorded_at: string; }
@@ -145,8 +145,8 @@ export const api = {
   markets: () => request<Market[]>("GET", "/markets"),
   categories: () => request<Category[]>("GET", "/categories"),
   // sort "popular": arama yokken temel ürünler (en çok marka/markette olanlar) önce
-  searchProducts: (q: string, categoryId?: number | null, opts: { sort?: "name" | "popular"; limit?: number } = {}) =>
-    request<GroupSummary[]>("GET", "/products" + qs({ q, category_id: categoryId, limit: opts.limit ?? 100, sort: opts.sort })),
+  searchProducts: (q: string, categoryId?: number | null, opts: { sort?: "name" | "popular"; limit?: number; subcategoryId?: number | null } = {}) =>
+    request<GroupSummary[]>("GET", "/products" + qs({ q, category_id: categoryId, subcategory_id: opts.subcategoryId, limit: opts.limit ?? 100, sort: opts.sort })),
   productGroup: (id: number) => request<GroupDetail>("GET", "/products/" + id),
 
   lists: () => request<ListSummary[]>("GET", "/lists"),

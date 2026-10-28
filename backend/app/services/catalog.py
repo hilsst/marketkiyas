@@ -73,6 +73,7 @@ def group_summary(
         id=group.id,
         name=group.name,
         category_id=group.category_id,
+        subcategory_id=group.subcategory_id,
         quantity=group.quantity,
         unit=group.unit,
         image_url=group.image_url,
@@ -100,6 +101,7 @@ async def search_groups(
     limit: int,
     user_id: int | None = None,
     sort: str = "name",
+    subcategory_id: int | None = None,
 ) -> list[GroupSummary]:
     """Kullanıcı şube seçtiyse fiyatlar o şubelerden; şubelerinde hiç satılmayan gruplar listelenmez.
 
@@ -107,6 +109,8 @@ async def search_groups(
     "%100 Fıstık Ezmesi"nden önce gelsin), eşitse kısa ad önce.
     """
     stmt = select(ProductGroup).options(_with_members())
+    if subcategory_id is not None:
+        stmt = stmt.where(ProductGroup.subcategory_id == subcategory_id)
     if category_id is not None:
         stmt = stmt.where(ProductGroup.category_id == category_id)
     if q:

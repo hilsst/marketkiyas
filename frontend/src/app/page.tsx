@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { api, formatSize, num, unitPrice, Deal, GroupSummary, SavingsVault, Store } from "@/lib/api";
+import { api, formatSize, num, unitPrice, Category, Deal, GroupSummary, SavingsVault, Store } from "@/lib/api";
 import { useGroupIcon, useLists } from "@/lib/store";
 import MarketLogo from "@/components/MarketLogo";
 import ProductImage from "@/components/ProductImage";
@@ -27,10 +27,11 @@ type ShowcaseItem = { groupId: number; name: string; image: string | null; categ
  * Arama yapılınca ya da kategori seçilince bölümler yerine sonuç listesi gösterilir.
  */
 export default function HomePage() {
-  const { user, categories, marketById } = useLists();
+  const { user, categories, marketById, subcategoriesOf } = useLists();
   const groupIcon = useGroupIcon();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<number | null>(null); // null = ana sayfa bölümleri
+  const [sub, setSub] = useState<number | null>(null); // kategori içinde alt kategori (null = Tümü)
   const [results, setResults] = useState<GroupSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -41,17 +42,27 @@ export default function HomePage() {
   const [stores, setStores] = useState<Store[] | null>(null);
 
   const searching = q.trim() !== "" || cat != null;
+  const subcats = useMemo(() => (cat != null && !q.trim() ? subcategoriesOf(cat) : []), [cat, q, subcategoriesOf]);
+  const openCategory = (id: number | null) => { setCat(id); setSub(null); };
 
   useEffect(() => {
     if (!searching) { setResults(null); return; }
     let cancelled = false;
     const t = setTimeout(() => {
-      api.searchProducts(q.trim(), cat, q.trim() ? {} : { sort: "popular" })
+      // Kategori "Tümü": her alt kategorinin en temel 8 ürünü; alt kategori seçiliyse onun ürünleri
+      const load = q.trim()
+        ? api.searchProducts(q.trim(), cat)
+        : sub == null && subcats.length
+          ? Promise.all(subcats.map(s => api.searchProducts("", cat, { sort: "popular", subcategoryId: s.id, limit: 8 })))
+              .then(async parts => [...parts.flat(), ...(await api.searchProducts("", cat, { sort: "popular", limit: 30 }))
+                .filter(g => !subcats.some(s => s.id === g.subcategory_id))])
+          : api.searchProducts("", cat, { sort: "popular", subcategoryId: sub });
+      load
         .then(r => { if (!cancelled) { setResults(r); setError(null); } })
         .catch(e => { if (!cancelled) setError(e.message); });
     }, q ? 250 : 0);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [q, cat, searching]);
+  }, [q, cat, sub, subcats, searching]);
 
   useEffect(() => {
     if (!user) { setVault(null); setStores(null); return; }
@@ -120,7 +131,8 @@ export default function HomePage() {
       {searching ? (
         <SearchResults
           title={q.trim() ? null : categories.find(c => c.id === cat)?.name ?? null}
-          onBack={() => { setQ(""); setCat(null); }}
+          onBack={() => { setQ(""); openCategory(null); }}
+          subcats={subcats} sub={sub} setSub={setSub}
           results={results} error={error} byUnit={byUnit} setByUnit={setByUnit}
           groupIcon={groupIcon} marketName={id => marketById(id)?.name} />
       ) : (
@@ -157,7 +169,7 @@ export default function HomePage() {
             <h2 className="font-bold text-gray-800 mb-2">Kategoriler</h2>
             <div className="grid grid-cols-4 gap-2">
               {categories.map(c => (
-                <button key={c.id} onClick={() => setCat(c.id)}
+                <button key={c.id} onClick={() => openCategory(c.id)}
                   className="card py-3 px-1 flex flex-col items-center text-center hover:border-emerald-200">
                   <span className="text-2xl leading-none">{c.icon || "🛒"}</span>
                   <span className="text-[11px] text-gray-700 mt-1.5 leading-tight line-clamp-2">{c.name}</span>
@@ -227,13 +239,37 @@ export default function HomePage() {
   );
 }
 
+// Alt kategori şeridindeki simgeler; eşleşmezse üst kategorinin simgesi
+const SUB_ICONS: [RegExp, string][] = [
+  [/peynir/i, "🧀"], [/yo[gğ]urt|ayran|kefir/i, "🥛"], [/s[uü]t/i, "🥛"], [/yumurta/i, "🥚"], [/zeytin/i, "🫒"],
+  [/bal|re[cç]el|pekmez|helva|tahin/i, "🍯"], [/tereya[gğ]|margarin/i, "🧈"], [/gevrek|granola/i, "🥣"],
+  [/ekmek|unlu/i, "🍞"], [/[cç]ay/i, "🍵"], [/kahve/i, "☕"], [/su$|maden/i, "💧"], [/meyve suyu|nektar/i, "🧃"],
+  [/gazl|kola/i, "🥤"], [/[cç]ikolata/i, "🍫"], [/bisk[uü]vi|kraker|kek|gofret/i, "🍪"], [/cips|kuruyemi/i, "🥜"],
+  [/dondurma/i, "🍦"], [/[sş]eker/i, "🍬"], [/k[iı]rm[iı]z[iı] et|sakatat/i, "🥩"], [/beyaz et|tavuk/i, "🍗"],
+  [/deniz|bal[iı]k/i, "🐟"], [/[sş]ark[uü]teri|sucuk|salam/i, "🌭"], [/meyve/i, "🍎"], [/sebze/i, "🥕"],
+  [/makarna|eri[sş]te/i, "🍝"], [/bakliyat|pirin[cç]|bulgur/i, "🌾"], [/ya[gğ]/i, "🫗"], [/sal[cç]a|sos|ket[cç]ap/i, "🥫"],
+  [/baharat|tuz/i, "🧂"], [/deterjan|temizle|bula[sş][iı]k|[cç]ama[sş][iı]r/i, "🧴"], [/ka[gğ][iı]t|pe[cç]ete|havlu/i, "🧻"],
+  [/sa[cç]|[sş]ampuan/i, "💇"], [/a[gğ][iı]z|di[sş]/i, "🪥"], [/bebek|mama|bez/i, "🍼"], [/hijyen|ped/i, "🩹"],
+];
+const subIcon = (name: string, fallback: string) => SUB_ICONS.find(([re]) => re.test(name))?.[1] ?? fallback;
+
 function SearchResults({
-  title, onBack, results, error, byUnit, setByUnit, groupIcon, marketName,
+  title, onBack, results, error, byUnit, setByUnit, groupIcon, marketName, subcats = [], sub = null, setSub,
 }: {
   title: string | null; onBack: () => void; results: GroupSummary[] | null; error: string | null;
   byUnit: boolean; setByUnit: (f: (v: boolean) => boolean) => void;
   groupIcon: (categoryId: number | null | undefined) => string; marketName: (id: number) => string | undefined;
+  // Kategori ekranında alt kategori şeridi: Tümü / Süt / Peynir / Zeytin…
+  subcats?: Category[]; sub?: number | null; setSub?: (id: number | null) => void;
 }) {
+  const sorted = byUnit && results ? [...results].sort((a, b) => unitValue(a) - unitValue(b)) : results || [];
+  // "Tümü"de ürünler alt kategori başlıkları altında; alt kategorisi bilinmeyenler en sonda "Diğer"
+  const sections = subcats.length && sub == null
+    ? [...subcats.map(s => ({ key: String(s.id), subId: s.id as number | null, title: s.name, icon: subIcon(s.name, s.icon || ""), groups: sorted.filter(g => g.subcategory_id === s.id) })),
+       { key: "other", subId: null as number | null, title: "Diğer", icon: "", groups: sorted.filter(g => !subcats.some(s => s.id === g.subcategory_id)) }]
+        .filter(s => s.groups.length)
+    : [{ key: "all", subId: null as number | null, title: null as string | null, icon: "", groups: sorted }];
+  const row = (group: GroupSummary) => <ProductRow key={group.id} group={group} groupIcon={groupIcon} marketName={marketName} />;
   return (
     <>
       <div className="flex items-center justify-between mb-2">
@@ -246,13 +282,52 @@ function SearchResults({
         )}
       </div>
       {title && <h2 className="font-bold text-gray-800 mb-2">{title}</h2>}
+      {subcats.length > 0 && setSub && (
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 mb-2 sticky top-0 z-10 bg-gray-50 pt-1">
+          {[{ id: null as number | null, name: "Tümü", icon: "▦" }, ...subcats.map(s => ({ id: s.id as number | null, name: s.name, icon: subIcon(s.name, s.icon || "🛒") }))].map(c => (
+            <button key={c.id ?? "all"} onClick={() => setSub(c.id)}
+              className={"whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border shadow-sm " + (sub === c.id
+                ? "bg-emerald-700 text-white border-emerald-700 font-semibold"
+                : "bg-white text-gray-700 border-gray-200")}>
+              <span>{c.icon}</span>{c.name}
+            </button>
+          ))}
+        </div>
+      )}
       {error && <div className="card p-4 text-sm text-red-600 mb-3">Ürünler yüklenemedi: {error}</div>}
       <div className="space-y-3">
-        {(byUnit && results ? [...results].sort((a, b) => unitValue(a) - unitValue(b)) : results || []).map(group => {
+        {sections.map(s => s.title ? (
+          <section key={s.key} className="space-y-3">
+            <div className="flex items-baseline justify-between pt-2">
+              <h3 className="text-sm font-bold text-gray-600">{s.icon} {s.title}</h3>
+              {s.subId != null && setSub && (
+                <button onClick={() => setSub(s.subId)} className="text-xs text-emerald-700 font-medium">Tümünü gör ›</button>
+              )}
+            </div>
+            {s.groups.map(row)}
+          </section>
+        ) : s.groups.map(row))}
+        {results === null && !error && <div className="text-center text-gray-400 py-12">Yükleniyor…</div>}
+        {results?.length === 0 && (
+          <div className="text-center text-gray-500 py-12">
+            <div className="text-4xl mb-2">🔍</div>
+            <div>Sonuç bulunamadı</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function ProductRow({
+  group, groupIcon, marketName,
+}: {
+  group: GroupSummary; groupIcon: (categoryId: number | null | undefined) => string; marketName: (id: number) => string | undefined;
+}) {
           const cheapest = cheapestOf(group);
           const perUnit = cheapest && unitPrice(cheapest.min_price, group.quantity, group.unit);
           return (
-            <Link key={group.id} href={"/products/" + group.id}
+            <Link href={"/products/" + group.id}
               className="card p-4 block hover:border-emerald-200">
               <div className="flex items-start gap-3">
                 <ProductImage src={group.image_url} icon={groupIcon(group.category_id)} size={48} />
@@ -277,15 +352,4 @@ function SearchResults({
               </div>
             </Link>
           );
-        })}
-        {results === null && !error && <div className="text-center text-gray-400 py-12">Yükleniyor…</div>}
-        {results?.length === 0 && (
-          <div className="text-center text-gray-500 py-12">
-            <div className="text-4xl mb-2">🔍</div>
-            <div>Sonuç bulunamadı</div>
-          </div>
-        )}
-      </div>
-    </>
-  );
 }

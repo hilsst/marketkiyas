@@ -218,6 +218,24 @@ class Ingestor:
         slug = category_slug(product)
         return self._categories.get(slug) if slug else None
 
+    async def subcategory_id(self, product: SearchProduct, category_id: int | None) -> int | None:
+        """Sitenin alt kategorisi ("Peynir", "Zeytin") uygulama kategorisinin altında bir kategori olur;
+        ilk görüldüğünde oluşturulur. Slug: "<üst-slug>--<alt-ad>"."""
+        if category_id is None or not product.main_category or self._categories is None:
+            return None
+        parent_slug = next((s for s, i in self._categories.items() if i == category_id), None)
+        if parent_slug is None:
+            return None
+        slug = f"{parent_slug}--{re.sub(r'[^a-z0-9]+', '-', normalize_text(product.main_category)).strip('-')}"[:64]
+        if slug not in self._categories:
+            stmt = insert(Category).values(
+                slug=slug, name=product.main_category.strip()[:120], parent_id=category_id, sort_order=0
+            )
+            self._categories[slug] = await self.db.scalar(
+                stmt.on_conflict_do_update(index_elements=[Category.slug], set_={"slug": slug}).returning(Category.id)
+            )
+        return self._categories[slug]
+
     async def group_id(self, product: SearchProduct, category_id: int | None = None) -> int:
         display, key, qty = group_key(product)
         quantity, unit = qty if qty else (None, None)
@@ -272,6 +290,18 @@ class Ingestor:
         _, _, qty = group_key(product)
         category_id = await self.category_id(product)
         group_id = await self.group_id(product, category_id)
+        subcategory_id = await self.subcategory_id(product, category_id)
+        if subcategory_id is not None:
+            # Grubun ilk tanınan alt kategorisi kalır; aynı kategorideki gruplara yazılır
+            await self.db.execute(
+                ProductGroup.__table__.update()
+                .where(
+                    ProductGroup.id == group_id,
+                    ProductGroup.subcategory_id.is_(None),
+                    ProductGroup.category_id == category_id,
+                )
+                .values(subcategory_id=subcategory_id)
+            )
 
         by_market: dict[int, list] = defaultdict(list)
         for depot_price in product.prices:

@@ -95,6 +95,11 @@ async def test_category_sync_assigns_categories(db):
     products = (await db.scalars(select(Product))).all()
     assert products and all(p.category_id == category_id for p in products)
 
+    # Sitenin alt kategorisi ("Süt") kategorinin altında bir alt kategori olur ve gruplara yazılır
+    sub = await db.scalar(select(Category).where(Category.parent_id == category_id))
+    assert (sub.name, sub.slug) == ("Süt", "sut-kahvaltilik--sut")
+    assert all(g.subcategory_id == sub.id for g in groups)
+
 
 async def test_client_retries_and_respects_retry_after(monkeypatch):
     calls = []
