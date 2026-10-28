@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import (
+    FamilyMember,
     GroupMember,
     ListMember,
     ListStatus,
@@ -55,10 +56,12 @@ def _list_options():
 
 
 def _visible_to(user: User):
-    """Kullanıcının kendi listeleri ve üye olduğu ortak listeler."""
+    """Kullanıcının kendi listeleri, kodla katıldığı ortak listeler ve ailesindeki herkesin listeleri."""
+    my_family = select(FamilyMember.family_id).where(FamilyMember.user_id == user.id)
     return or_(
         ShoppingList.user_id == user.id,
         ShoppingList.id.in_(select(ListMember.list_id).where(ListMember.user_id == user.id)),
+        ShoppingList.user_id.in_(select(FamilyMember.user_id).where(FamilyMember.family_id.in_(my_family))),
     )
 
 
@@ -525,7 +528,8 @@ async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingLis
     note = None
     last_saved_at = await db.scalar(
         select(func.max(SavingsRecord.created_at)).where(
-            SavingsRecord.user_id == user.id, SavingsRecord.list_id == shopping_list.id
+            # Liste kimde bitirilirse bitirilsin (aile, ortak liste) haftada bir kez kasaya yazılır
+            SavingsRecord.list_id == shopping_list.id
         )
     )
     if last_saved_at and last_saved_at > datetime.now(timezone.utc) - SAVINGS_COOLDOWN and saved > 0:

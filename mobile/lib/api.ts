@@ -99,6 +99,15 @@ const qs = (params: Record<string, string | number | null | undefined>) => {
   return parts.length ? '?' + parts.join('&') : '';
 };
 
+export type FamilyMember = { user_id: number; name: string; is_owner: boolean; joined_at: string };
+export type Family = {
+  id: number; name: string; owner_id: number; invite_code: string; members: FamilyMember[];
+  pending_invites: string[]; month_saved: Money; max_members: number;
+};
+export type FamilyInvite = { id: number; family_name: string; invited_by: string | null };
+// Aile üyeleri birbirinin bütün listelerini kodsuz görür; ailesi yoksa bana gelen davetler
+export type MyFamily = { family: Family | null; invites: FamilyInvite[] };
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
@@ -171,4 +180,11 @@ export const api = {
   productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
   deals: () => request<Deal[]>('GET', '/products/deals'),
   myStores: () => request<Store[]>('GET', '/me/stores'),
+  family: () => request<MyFamily>('GET', '/family'),
+  createFamily: (name: string) => request<MyFamily>('POST', '/family', { name }),
+  joinFamily: (code: string) => request<MyFamily>('POST', '/family/join', { code }),
+  inviteToFamily: (email: string) => request<MyFamily>('POST', '/family/invites', { email }),
+  acceptFamilyInvite: (id: number) => request<MyFamily>('POST', '/family/invites/' + id + '/accept'),
+  declineFamilyInvite: (id: number) => request<void>('DELETE', '/family/invites/' + id),
+  removeFamilyMember: (userId: number) => request<void>('DELETE', '/family/members/' + userId),
 };

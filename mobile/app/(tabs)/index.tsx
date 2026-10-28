@@ -1,13 +1,14 @@
-import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import AdSlot from '@/components/AdSlot';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { cheapestOf } from '@/components/ProductRow';
+import FamilyInviteCard from '@/components/FamilyInviteCard';
 import { Card, Muted, Screen, Title, useTheme } from '@/components/ui';
-import { api, num, SavingsVault, Store } from '@/lib/api';
+import { api, MyFamily, num, SavingsVault, Store } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
 
@@ -33,9 +34,18 @@ export default function HomeScreen() {
   const [stores, setStores] = useState<Store[] | null>(null);
   const [showcase, setShowcase] = useState<{ title: string; items: ShowcaseItem[] } | null>(null);
 
-  useEffect(() => {
+  const [family, setFamily] = useState<MyFamily | null>(null);
+
+  // Sekmeye her dönüşte: ailedeki biri alışverişi bitirmiş ya da davet gelmiş olabilir
+  const refresh = useCallback(() => {
     if (!user) return;
     api.savings().then(setVault).catch(() => setVault(null));
+    api.family().then(setFamily).catch(() => setFamily(null));
+  }, [user]);
+  useFocusEffect(refresh);
+
+  useEffect(() => {
+    if (!user) return;
     api.myStores().then(setStores).catch(() => setStores([]));
   }, [user]);
 
@@ -82,6 +92,8 @@ export default function HomeScreen() {
 
       <AdSlot placement="home-top" />
 
+      {user && family?.invites.map(inv => <FamilyInviteCard key={inv.id} invite={inv} onDone={setFamily} />)}
+
       {/* 2) Bu ayki tasarruf */}
       {user ? (
         <Pressable onPress={() => router.push('/profile')} style={{ backgroundColor: t.tint, borderRadius: 18, padding: 18, gap: 4 }}>
@@ -90,6 +102,11 @@ export default function HomeScreen() {
           <Text style={{ color: '#fff', fontSize: 12, opacity: 0.85 }}>
             Toplam: {num(vault?.total_saved).toFixed(2)} ₺ · {monthSaved > 0 ? 'Böyle devam!' : 'Bir liste oluştur, Fırsatçı planla başla'}
           </Text>
+          {family?.family && (
+            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700', marginTop: 6 }}>
+              👨‍👩‍👧 Ailenin bu ayki tasarrufu: {num(family.family.month_saved).toFixed(2)} ₺
+            </Text>
+          )}
         </Pressable>
       ) : (
         <Pressable onPress={() => router.push('/login')}>

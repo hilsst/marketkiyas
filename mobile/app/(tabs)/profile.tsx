@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import FamilySection from '@/components/FamilySection';
 import { Button, Card, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
 import { api, num, SavingsVault } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -47,6 +48,7 @@ export default function ProfileScreen() {
             <Text style={{ color: '#fff', fontSize: 36, fontWeight: '900' }}>{num(vault?.total_saved).toFixed(2)} ₺</Text>
             <Text style={{ color: '#fff', fontSize: 12, opacity: 0.85 }}>{vault?.record_count ?? 0} alışveriş</Text>
           </View>
+          <FamilySection user={user} />
           <Button title="Çıkış yap" kind="secondary" onPress={logout} />
 
           {!deleting ? (
