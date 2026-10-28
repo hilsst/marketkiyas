@@ -15,7 +15,7 @@ export interface Category { id: number; slug: string; name: string; icon: string
 
 export interface MarketPrice { market_id: number; min_price: Money; regular_price: Money | null; }
 export interface GroupSummary {
-  id: number; name: string; category_id: number | null; quantity: Money | null; unit: Unit | null;
+  id: number; name: string; category_id: number | null; subcategory_id?: number | null; quantity: Money | null; unit: Unit | null;
   image_url: string | null; min_price: Money | null; market_prices: MarketPrice[]; brands: string[];
 }
 export interface PricePoint { price: Money; recorded_at: string; }
@@ -69,7 +69,10 @@ export interface SavingsRecord {
   optimized_total: Money; saved_amount: Money; item_count: number; created_at: string;
 }
 export interface SavingsVault { total_saved: Money; record_count: number; records: SavingsRecord[]; }
-export interface CompleteResponse { list_id: number; saved_amount: Money; vault_total: Money; note: string | null; }
+export interface CompleteResponse {
+  list_id: number; saved_amount: Money; vault_total: Money; note: string | null;
+  shopping_savings: Money; // bu alışverişte ortalama fiyatlara göre kazanılan (kutlama ekranı)
+}
 
 export interface Store {
   id: number; name: string; market_id: number; market_slug: string; market_name: string;
@@ -142,8 +145,8 @@ export const api = {
   markets: () => request<Market[]>("GET", "/markets"),
   categories: () => request<Category[]>("GET", "/categories"),
   // sort "popular": arama yokken temel ürünler (en çok marka/markette olanlar) önce
-  searchProducts: (q: string, categoryId?: number | null, opts: { sort?: "name" | "popular"; limit?: number } = {}) =>
-    request<GroupSummary[]>("GET", "/products" + qs({ q, category_id: categoryId, limit: opts.limit ?? 100, sort: opts.sort })),
+  searchProducts: (q: string, categoryId?: number | null, opts: { sort?: "name" | "popular"; limit?: number; subcategoryId?: number | null } = {}) =>
+    request<GroupSummary[]>("GET", "/products" + qs({ q, category_id: categoryId, subcategory_id: opts.subcategoryId, limit: opts.limit ?? 100, sort: opts.sort })),
   productGroup: (id: number) => request<GroupDetail>("GET", "/products/" + id),
 
   lists: () => request<ListSummary[]>("GET", "/lists"),

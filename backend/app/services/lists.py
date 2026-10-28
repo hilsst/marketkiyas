@@ -547,9 +547,34 @@ async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingLis
     else:
         saved = Decimal("0.00")
 
+    shopping = await shopping_savings(db, shopping_list)
     shopping_list.completed_at = datetime.now(timezone.utc)
     reset_plan(shopping_list)
+    # Alışveriş bitti: liste gelecek hafta için "alınacaklar" hâline döner (İptal Et'ten farklı olarak)
+    for item in shopping_list.items:
+        item.is_checked = False
     await db.commit()
     return CompleteResponse(
-        list_id=shopping_list.id, saved_amount=saved, vault_total=await vault_total(db, user), note=note
+        list_id=shopping_list.id,
+        saved_amount=saved,
+        shopping_savings=shopping,
+        vault_total=await vault_total(db, user),
+        note=note,
     )
+
+
+async def shopping_savings(db: AsyncSession, shopping_list: ShoppingList) -> Decimal:
+    """Uygulanan planla bu alışverişte kazanılan: her kalem için seçilebilecek ürünlerin (kullanıcının
+    şubelerindeki) ortalama fiyatı ile plandaki fiyat farkı. Kasadaki "tercihlere göre" tasarruftan
+    bağımsızdır; Farketmez kalemlerde ve kasa haftalık sınırdayken de kutlamada gösterilir."""
+    product_ids = [m.product_id for item in shopping_list.items for m in item.group.members]
+    resolver = await build_resolver(db, shopping_list.user_id, product_ids)
+    inputs = {i.item_id: i for i in _item_inputs(shopping_list, resolver)}
+    total = Decimal("0.00")
+    for item in shopping_list.items:
+        offers = inputs[item.id].offers
+        if item.assigned_unit_price is None or not offers:
+            continue
+        average = sum((o.unit_price for o in offers), Decimal(0)) / len(offers)
+        total += max(average - item.assigned_unit_price, Decimal(0)) * item.quantity
+    return total.quantize(Decimal("0.01"))

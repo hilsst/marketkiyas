@@ -246,13 +246,15 @@ async def test_completed_list_is_reusable_next_week(client, auth_headers, catalo
     assert (await client.post(f"/api/lists/{lid}/complete", headers=h)).status_code == 409  # plan yok
 
     for _week in range(2):
-        await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)
+        applied = (await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)).json()
+        await client.patch(f"/api/lists/{lid}/items/{applied['items'][0]['id']}", json={"is_checked": True}, headers=h)
         done = (await client.post(f"/api/lists/{lid}/complete", headers=h)).json()
         assert D(done["saved_amount"]) == D("0.50")  # 33.00 (Şok Pınar) - 32.50 (BİM Sütaş)
         assert done["note"] is None
         detail = await _detail_of(client, h, lid)
         assert detail["status"] == "active" and detail["applied_plan"] is None
         assert detail["completed_at"] is not None
+        assert not any(i["is_checked"] for i in detail["items"])  # gelecek hafta için alınacaklar sıfırlandı
         # Bir hafta geçmiş gibi: önceki kayıt 7 gün öncesine
         await db.execute(update(SavingsRecord).values(created_at=SavingsRecord.created_at - timedelta(days=7)))
         await db.commit()
@@ -260,6 +262,19 @@ async def test_completed_list_is_reusable_next_week(client, auth_headers, catalo
     vault = (await client.get("/api/savings", headers=h)).json()
     assert vault["record_count"] == 2
     assert D(vault["total_saved"]) == D("1.00")
+
+
+async def test_complete_reports_shopping_savings_for_celebration(client, auth_headers, catalog):
+    # Farketmez kalemde kasaya bir şey yazılmaz ama kutlama ortalama fiyata göre kazancı gösterir
+    _, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "L"}, headers=h)).json()["id"]
+    await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["milk"], "quantity": 2}, headers=h)
+    await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)
+    done = (await client.post(f"/api/lists/{lid}/complete", headers=h)).json()
+    assert D(done["saved_amount"]) == D("0.00")
+    # Süt: 32.50, 33.00, 34.90 -> ortalama 33.4667; en ucuz 32.50 alındı: 0.9667 x 2
+    assert D(done["shopping_savings"]) == D("1.93")
 
 
 async def test_same_list_adds_savings_once_per_week(client, auth_headers, catalog):

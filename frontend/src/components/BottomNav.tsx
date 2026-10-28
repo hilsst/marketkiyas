@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLists } from "@/lib/store";
 const TABS = [
-  { href: "/",        label: "Ara",       icon: "🔍" },
+  { href: "/",        label: "Ana Sayfa", icon: "🏠" },
   { href: "/deals",   label: "Fırsatlar", icon: "🏷️" },
   { href: "/lists",   label: "Listeler",  icon: "📋" },
   { href: "/alerts",  label: "Alarmlar",  icon: "🔔" },

@@ -3,14 +3,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   api, num,
-  ListDetail, ListItem, OptimizeResult, PlanLine, PlanType,
+  GroupProduct, ListDetail, ListItem, OptimizeResult, PlanLine, PlanType,
 } from "@/lib/api";
 import { useGroupIcon, useLists } from "@/lib/store";
 import MarketLogo from "@/components/MarketLogo";
-import ItemTile from "@/components/ItemTile";
-import ItemSheet from "@/components/ItemSheet";
 import Celebration, { prepareCelebrationAudio } from "@/components/Celebration";
-import { recentGroups, rememberGroup, RecentGroup } from "@/lib/recent";
 
 type Tab = "items" | "by-market" | "optimize";
 type Mode = "single" | "combo" | "cheapest";
@@ -30,11 +27,12 @@ export default function ListDetailPage() {
   const [mode, setMode] = useState<Mode>("single");
   const [finishing, setFinishing] = useState(false); // "Alışverişi Bitir" çift tıklanmasın
   const [celebration, setCelebration] = useState<
-    { saved: number; vault: number; note: string | null; audio: AudioContext | null } | null
+    { saved: number; shopping: number; vault: number; note: string | null; audio: AudioContext | null } | null
   >(null);
   const [detail, setDetail] = useState<ListDetail | null | undefined>(undefined);
   const [opt, setOpt] = useState<OptimizeResult | null>(null);
-  const [sheetItemId, setSheetItemId] = useState<number | null>(null);
+  const [pickerItemId, setPickerItemId] = useState<number | null>(null);
+  const [pickerAlternatives, setPickerAlternatives] = useState<GroupProduct[] | null>(null);
   const [sharing, setSharing] = useState(false);
   // Hızlı art arda tıklamalarda yalnızca son isteğin cevabı ekrana yazılır
   const seq = useRef(0);
@@ -75,8 +73,6 @@ export default function ListDetailPage() {
   };
 
   const removeItem = async (itemId: number) => {
-    const it = detail?.items.find(i => i.id === itemId);
-    if (it) rememberGroup({ group_id: it.group_id, name: it.group_name, category_id: it.category_id });
     const removed = await mutate(() => api.removeItem(listId, itemId), {
       optimistic: d => ({ ...d, items: d.items.filter(i => i.id !== itemId) }),
     });
@@ -154,15 +150,15 @@ export default function ListDetailPage() {
     return { groups, unassigned };
   }, [detail]);
 
-  const sheetItem = detail?.items.find(i => i.id === sheetItemId);
-
-  // Son kullanılanlar: bu cihazda listeden çıkarılanlar, listede olmayanlar
-  const [recent, setRecent] = useState<RecentGroup[]>([]);
-  const groupIds = detail?.items.map(i => i.group_id).join(",");
+  const pickerItem = detail?.items.find(i => i.id === pickerItemId);
+  const pickerGroupId = pickerItem?.group_id;
   useEffect(() => {
-    const inList = new Set((groupIds || "").split(",").map(Number));
-    setRecent(recentGroups().filter(g => !inList.has(g.group_id)).slice(0, 8));
-  }, [groupIds]);
+    setPickerAlternatives(null);
+    if (pickerGroupId == null) return;
+    api.productGroup(pickerGroupId)
+      .then(g => setPickerAlternatives(g.products.filter(p => p.price != null).sort((a, b) => num(a.price) - num(b.price))))
+      .catch(() => setPickerAlternatives([]));
+  }, [pickerGroupId]);
 
   if (!hydrated || !user || detail === undefined) return <div className="p-6">Yükleniyor…</div>;
   if (!detail) return <div className="p-6 text-center">Liste bulunamadı</div>;
@@ -202,7 +198,10 @@ export default function ListDetailPage() {
     const audio = prepareCelebrationAudio(); // ses izni dokunuş anında alınır
     try {
       const done = await api.complete(list.id);
-      setCelebration({ saved: num(done.saved_amount), vault: num(done.vault_total), note: done.note, audio });
+      setCelebration({
+        saved: num(done.saved_amount), shopping: num(done.shopping_savings), vault: num(done.vault_total),
+        note: done.note, audio,
+      });
       refreshLists();
     } catch (e) {
       setToast((e as Error).message);
@@ -262,50 +261,43 @@ export default function ListDetailPage() {
 
   if (celebration) {
     return (
-      <Celebration savedAmount={celebration.saved} vaultTotal={celebration.vault} note={celebration.note}
-        audio={celebration.audio} onDone={finishCelebration} />
+      <Celebration savedAmount={celebration.saved} shoppingSavings={celebration.shopping}
+        vaultTotal={celebration.vault} note={celebration.note} audio={celebration.audio} onDone={finishCelebration} />
     );
   }
 
   return (
     <main className="pb-4">
-      <div className="bg-emerald-600 text-white px-4 pt-4 pb-5 rounded-b-3xl mb-3">
-        <div className="flex justify-between items-center text-sm">
-          <button onClick={() => router.push("/lists")} className="opacity-90">← Listeler</button>
-          <div className="flex items-center gap-2">
-            <button onClick={openShare} aria-label={isOwner ? "Listeyi paylaş" : "Kişiler"} className="flex items-center">
-              {shared ? (
-                <span className="flex -space-x-2">
-                  {[list.owner_name, ...list.members.map(m => m.name)].slice(0, 4).map((n, i) => (
-                    <span key={i} className={"w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center border-2 border-emerald-600 " +
-                      ["bg-amber-300 text-amber-900", "bg-sky-300 text-sky-900", "bg-pink-300 text-pink-900", "bg-violet-300 text-violet-900"][i]}>
-                      {(n || "?")[0].toLocaleUpperCase("tr")}
-                    </span>
-                  ))}
-                </span>
-              ) : (
-                <span className="text-xs font-semibold bg-white/15 px-2 py-1 rounded-lg">👥 Paylaş</span>
-              )}
+      <div className="p-4 pb-2">
+        <div className="flex justify-between items-start">
+          <button onClick={() => router.back()} className="text-gray-600 mb-2">← Geri</button>
+          <div className="flex gap-2">
+            <button onClick={openShare} className="text-sky-700 text-xs font-semibold px-2 py-1 bg-sky-50 rounded">
+              👥 {isOwner ? "Paylaş" : "Kişiler"}
             </button>
-            <button onClick={isOwner ? handleDeleteList : handleLeave}
-              aria-label={isOwner ? "Listeyi sil" : "Listeden ayrıl"}
-              className="text-xs font-semibold bg-white/15 px-2 py-1 rounded-lg">
-              {isOwner ? "🗑️" : "🚪 Ayrıl"}
-            </button>
+            {isOwner ? (
+              <button onClick={handleDeleteList} className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 bg-red-50 rounded">
+                🗑️ Listeyi Sil
+              </button>
+            ) : (
+              <button onClick={handleLeave} className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 bg-red-50 rounded">
+                🚪 Listeden Ayrıl
+              </button>
+            )}
           </div>
         </div>
-        <h1 className="text-2xl font-extrabold mt-2">{list.name}</h1>
-        <div className="text-xs opacity-90 mt-0.5">
-          {totalItems} ürün
-          {shared && " · " + [list.owner_name, ...list.members.map(m => m.name)].filter(Boolean).join(" ve ") + " ile ortak"}
-        </div>
-        {!appliedPlan && (
-          <button onClick={() => router.push(`/lists/${list.id}/add`)}
-            className="mt-3 w-full bg-white rounded-xl flex items-center px-3 py-2.5 text-gray-400 text-sm shadow text-left">
-            🔍&nbsp; Ne lazım? (örn. süt)
-            <span className="ml-auto text-emerald-600 text-xs font-semibold">+ Ekle</span>
-          </button>
+        <h1 className="text-2xl font-bold">{list.name}</h1>
+        {shared && (
+          <div className="text-xs text-sky-700 mt-0.5">
+            👥 Ortak liste: {[list.owner_name, ...list.members.map(m => m.name)].filter(Boolean).join(", ")}
+          </div>
         )}
+        <div className="text-xs text-gray-500 mt-1">
+          {totalItems} ürün · Tamamlanan: {checkedCount}/{totalItems}
+        </div>
+        <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-full bg-emerald-500 transition-all" style={{ width: (totalItems ? (checkedCount / totalItems) * 100 : 0) + "%" }} />
+        </div>
       </div>
 
       <div className="px-4 mb-3">
@@ -320,9 +312,10 @@ export default function ListDetailPage() {
       </div>
 
       {tab === "items" && (
-        <div className="px-4 pb-28">
+        <div className="px-4 space-y-3">
           {appliedPlan && shoppingGroups ? (
             <div className="space-y-4">
+
               {appliedPlan === "cheapest" && expectedSavings > 0 && (
                 <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4 rounded-xl shadow-md text-center">
                   <div className="text-sm font-medium opacity-90">Fırsatçı Kombinasyon Seçildi!</div>
@@ -335,17 +328,13 @@ export default function ListDetailPage() {
                 </div>
               )}
 
-              <div className="bg-gray-900 text-white p-3 rounded-xl shadow-sm">
-                <div className="flex justify-between items-center">
-                  <div className="text-sm font-bold">
-                    🛒 Alışveriş Modu · {appliedPlan === "cheapest" ? "Fırsatçı" : appliedPlan === "combo" ? "Kombinasyon" : "Tek Market"}
-                  </div>
-                  <button onClick={cancelPlan} className="text-xs bg-white/15 px-2 py-1 rounded">İptal Et</button>
+              <div className="bg-emerald-600 text-white p-3 rounded-lg flex justify-between items-center shadow-sm">
+                <div className="text-sm font-semibold">
+                  🛒 Alışveriş Modu: {appliedPlan === 'cheapest' ? 'Fırsatçı' : appliedPlan === 'combo' ? 'Kombinasyon' : 'Tek Market'}
                 </div>
-                <div className="mt-2 h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-400 transition-all" style={{ width: (totalItems ? (checkedCount / totalItems) * 100 : 0) + "%" }} />
-                </div>
-                <div className="text-xs opacity-80 mt-1">{checkedCount} / {totalItems} alındı · Rafta aldığın ürünün kutusuna dokun</div>
+                <button onClick={cancelPlan} className="text-xs bg-emerald-700 hover:bg-emerald-800 px-2 py-1 rounded">
+                  İptal Et
+                </button>
               </div>
 
               {shoppingGroups.unassigned > 0 && (
@@ -354,47 +343,45 @@ export default function ListDetailPage() {
                 </div>
               )}
 
-              {shoppingGroups.groups.map(group => {
-                const left = group.items.filter(it => !it.is_checked);
-                const store = group.items.find(it => it.assigned?.store_name)?.assigned?.store_name;
-                return (
-                  <div key={group.marketId}>
-                    <div className="flex items-center gap-2 mb-2 text-xs font-bold text-gray-500 tracking-wide">
-                      <MarketLogo id={group.marketId} size={20} />
-                      <span>{(marketById(group.marketId)?.name || "").toLocaleUpperCase("tr")}{store ? " · " + store.toLocaleUpperCase("tr") : ""}</span>
-                      <span className="ml-auto text-gray-900">{group.total.toFixed(2)} ₺</span>
-                    </div>
-                    {left.length ? (
-                      <div className="grid grid-cols-3 gap-2.5">
-                        {left.map(item => (
-                          <ItemTile key={item.id} icon={groupIcon(item.category_id)} image={item.image_url} name={item.group_name}
-                            qty={num(item.quantity)} locked={item.preferred_brand != null}
-                            sub={[item.assigned?.brand, (num(item.assigned?.unit_price) * num(item.quantity)).toFixed(2) + " ₺"].filter(Boolean).join(" · ")}
-                            onClick={() => toggle(item)} onLongPress={() => setSheetItemId(item.id)} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">✓ Bu marketteki her şey alındı</div>
-                    )}
+              {shoppingGroups.groups.map(group => (
+                <div key={group.marketId} className="card overflow-hidden border-2 border-emerald-100">
+                  <div className="p-3 flex items-center gap-2 bg-emerald-50 border-b border-emerald-100">
+                    <MarketLogo id={group.marketId} size={24} />
+                    <span className="font-bold text-emerald-900">{marketById(group.marketId)?.name}</span>
+                    <span className="text-xs text-emerald-700 ml-auto font-semibold">{group.total.toFixed(2)} ₺</span>
                   </div>
-                );
-              })}
-
-              {checkedCount > 0 && (
-                <div>
-                  <div className="text-xs font-bold text-gray-500 tracking-wide mb-2">ALINDI ✓</div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {list.items.filter(it => it.is_checked).map(item => (
-                      <ItemTile key={item.id} small variant="done" icon={groupIcon(item.category_id)} image={item.image_url} name={item.group_name}
-                        onClick={() => toggle(item)} />
+                  <div className="divide-y divide-gray-100">
+                    {group.items.map(item => (
+                      <div key={item.id}
+                        onClick={() => toggle(item)}
+                        className={"px-3 py-3 flex items-center gap-3 cursor-pointer transition-all " + (item.is_checked ? "opacity-40 grayscale bg-gray-50" : "hover:bg-gray-50")}>
+                        <input type="checkbox" checked={item.is_checked} readOnly
+                          className="w-5 h-5 accent-emerald-600 pointer-events-none" />
+                        <span className="text-xl">{groupIcon(item.category_id)}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className={"text-sm font-medium " + (item.is_checked ? "line-through text-gray-500" : "")}>
+                            {item.group_name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {item.assigned?.brand || item.assigned?.product_name} × {num(item.quantity)}
+                            {item.assigned?.store_name && <span> · {item.assigned.store_name}</span>}
+                          </div>
+                        </div>
+                        <div className={"font-bold " + (item.is_checked ? "text-gray-400" : "text-gray-900")}>
+                          {(num(item.assigned?.unit_price) * num(item.quantity)).toFixed(2)} ₺
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
-              )}
+              ))}
 
-              <div className="pt-2">
-                <button onClick={handleFinishShopping} disabled={finishing}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white py-4 rounded-2xl font-bold shadow-lg transition-colors">
+              {/* Alışverişi Bitir Butonu */}
+              <div className="pt-4 border-t border-gray-200 mt-4">
+                <button
+                  onClick={handleFinishShopping} disabled={finishing}
+                  className="w-full bg-gray-900 hover:bg-black disabled:opacity-60 text-white py-4 rounded-xl font-bold shadow-md transition-colors flex justify-center items-center gap-2"
+                >
                   {finishing ? "Kaydediliyor…" : "✅ Alışverişi Bitir ve Tasarrufu Kaydet"}
                 </button>
                 <p className="text-center text-xs text-gray-500 mt-2">
@@ -404,57 +391,59 @@ export default function ListDetailPage() {
             </div>
           ) : (
             <>
-              <div className="text-xs font-bold text-gray-500 tracking-wide mb-2">ALINACAKLAR</div>
-              <div className="grid grid-cols-3 gap-2.5">
-                {list.items.map(it => {
-                  const line = view?.combo.get(it.id);
-                  const locked = it.preferred_product_id != null || it.preferred_brand != null;
-                  const byOther = shared && it.added_by_id != null && it.added_by_id !== user.id;
-                  const price = line ? num(line.unit_price).toFixed(2) + " ₺" : null;
-                  return (
-                    <ItemTile key={it.id} icon={groupIcon(it.category_id)} image={it.image_url} name={it.group_name}
-                      qty={num(it.quantity)} locked={locked}
-                      variant={it.is_checked ? "done" : byOther ? "shared" : "on"}
-                      sub={byOther ? it.added_by_name + " ekledi" : [locked ? line?.brand || it.preferred_brand : null, price].filter(Boolean).join(" · ")}
-                      onClick={() => setSheetItemId(it.id)} onLongPress={() => setSheetItemId(it.id)} />
-                  );
-                })}
-                <ItemTile variant="off" icon="➕" name="Ürün ekle" onClick={() => router.push(`/lists/${list.id}/add`)} />
-              </div>
-              <div className="text-center text-[11px] text-gray-400 mt-2">Kutuya dokun: marka, adet ve marketlerdeki fiyatlar</div>
+              {list.items.map(it => {
+                const line = view?.combo.get(it.id);
+                const locked = it.preferred_product_id != null || it.preferred_brand != null;
+                const qty = num(it.quantity);
 
-              {recent.length > 0 && (
-                <>
-                  <div className="text-xs font-bold text-gray-500 tracking-wide mt-5 mb-2">
-                    SON KULLANILANLAR <span className="font-normal">· dokun, listeye ekle</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {recent.map(g => (
-                      <ItemTile key={g.group_id} small variant="off" icon={groupIcon(g.category_id)} name={g.name}
-                        onClick={async () => {
-                          const added = await mutate(() => api.addItem(list.id, g.group_id));
-                          if (added) refreshLists();
-                        }} />
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {view && totalItems > 0 && (
-                <div className="fixed left-0 right-0 bottom-[68px] z-30 px-3">
-                  <div className="max-w-md mx-auto bg-gray-900 text-white rounded-2xl px-4 py-3 flex items-center shadow-lg">
-                    <div>
-                      <div className="text-[11px] opacity-70">En ucuz toplam ({view.cheapestBreakdown.length} market)</div>
-                      <div className="text-lg font-extrabold">
-                        {view.cheapestComboTotal.toFixed(2)} ₺
-                        {view.savings > 0 && <span className="text-emerald-400 text-xs font-bold"> {view.savings.toFixed(2)} ₺ tasarruf</span>}
+                return (
+                  <div key={it.id} className={"card p-3 flex flex-col gap-2 transition-all " + (it.is_checked ? "opacity-50 bg-gray-50 grayscale" : "")}>
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" checked={it.is_checked}
+                        onChange={e => updateItem(it.id, { is_checked: e.target.checked })}
+                        className="w-5 h-5 accent-emerald-600" />
+                      <span className="text-2xl">{groupIcon(it.category_id)}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className={"text-sm font-medium " + (it.is_checked ? "line-through text-gray-400" : "")}>
+                          {it.group_name}
+                        </div>
+                        {shared && it.added_by_name && it.added_by_id !== user.id && (
+                          <div className="text-[11px] text-sky-700">{it.added_by_name} ekledi</div>
+                        )}
+                        {line && (
+                          <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
+                            <span className={"px-1.5 py-0.5 rounded " + (locked ? "bg-orange-100 text-orange-700" : "bg-gray-100 text-gray-600")}>
+                              {locked ? (line.brand || it.preferred_brand) : "Farketmez (En Ucuz)"}
+                            </span>
+                            <span>{num(line.unit_price).toFixed(2)} ₺</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/* Miktar 1'deyken eksi yerine çöp kutusu: ürünü listeden çıkarır */}
+                        {qty > 1 ? (
+                          <button onClick={() => updateItem(it.id, { quantity: qty - 1 })} className="w-7 h-7 rounded-full bg-gray-100 text-gray-700">−</button>
+                        ) : (
+                          <button onClick={() => removeItem(it.id)} aria-label="Listeden çıkar" className="w-7 h-7 rounded-full bg-red-50 text-red-500 text-sm">🗑</button>
+                        )}
+                        <span className="w-6 text-center text-sm font-semibold">{qty}</span>
+                        <button onClick={() => qty < 99 && updateItem(it.id, { quantity: qty + 1 })} className="w-7 h-7 rounded-full bg-gray-100 text-gray-700">+</button>
                       </div>
                     </div>
-                    <button onClick={() => { setMode("cheapest"); setTab("optimize"); }}
-                      className="ml-auto bg-emerald-500 rounded-xl px-3 py-2 text-sm font-bold">Planı Gör →</button>
+                    <div className="flex justify-end gap-4">
+                      <button onClick={() => removeItem(it.id)} className="text-xs text-red-500 underline font-medium">
+                        Listeden Çıkar
+                      </button>
+                      <button onClick={() => setPickerItemId(it.id)} className="text-xs text-emerald-600 underline font-medium">
+                        Marka Değiştir
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })}
+              <button onClick={() => router.push("/")} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-3 text-gray-500 text-sm">
+                + Ürün ekle
+              </button>
             </>
           )}
         </div>
@@ -658,13 +647,27 @@ export default function ListDetailPage() {
             )}
 
             <div className="mt-2 pt-4 border-t border-gray-100">
-               <button
-                  onClick={() => handleApplyPlan(mode)}
-                  className={"w-full py-3 rounded-xl font-bold shadow-sm transition-colors flex items-center justify-center gap-2 " +
-                    (mode === "single" && !view.bestSingle ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white")}
-                >
-                  <span>🛒</span> Bu Planı Alışveriş Listeme Uygula
-                </button>
+               {/* Alışveriş sürerken ya da ürünlerin hepsi alınmışken yeni plan uygulanmaz; önce alışveriş bitirilir */}
+               {(() => {
+                 const blocked = appliedPlan != null
+                   ? "Plan uygulandı. Alışverişi Ürünler sekmesindeki \"Alışverişi Bitir\" ile tamamlayın."
+                   : totalItems > 0 && checkedCount === totalItems
+                     ? "Tüm ürünler alınmış görünüyor. Yeni alışveriş için işaretleri kaldırın."
+                     : null;
+                 const disabled = blocked != null || (mode === "single" && !view.bestSingle);
+                 return (
+                   <>
+                     <button
+                       onClick={() => handleApplyPlan(mode)} disabled={disabled}
+                       className={"w-full py-3 rounded-xl font-bold shadow-sm transition-colors flex items-center justify-center gap-2 " +
+                         (disabled ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 text-white")}
+                     >
+                       <span>🛒</span> Bu Planı Alışveriş Listeme Uygula
+                     </button>
+                     {blocked && <p className="text-center text-xs text-gray-500 mt-2">{blocked}</p>}
+                   </>
+                 );
+               })()}
             </div>
 
             {mode === "combo" && view.savings > 0 && (
@@ -724,11 +727,40 @@ export default function ListDetailPage() {
         </div>
       )}
 
-      {sheetItem && (
-        <ItemSheet groupId={sheetItem.group_id} icon={groupIcon(sheetItem.category_id)} item={sheetItem}
-          onClose={() => setSheetItemId(null)}
-          onPatch={patch => updateItem(sheetItem.id, patch)}
-          onRemove={() => { setSheetItemId(null); removeItem(sheetItem.id); }} />
+      {pickerItem && (
+        <div className="fixed inset-0 bg-black/40 flex items-end z-50" onClick={() => setPickerItemId(null)}>
+          <div className="bg-white w-full max-w-md mx-auto rounded-t-2xl p-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <div className="text-lg font-bold">{pickerItem.group_name}</div>
+                <div className="text-xs text-gray-500">Tercih ettiğiniz markayı seçin</div>
+              </div>
+              <button onClick={() => setPickerItemId(null)} className="text-gray-400 text-2xl">&times;</button>
+            </div>
+
+            <div className="space-y-2">
+              <button onClick={() => { updateItem(pickerItem.id, { preferred_product_id: null }); setPickerItemId(null); }}
+                className={"w-full text-left p-3 rounded-lg border " + (pickerItem.preferred_product_id == null && pickerItem.preferred_brand == null ? "border-emerald-500 bg-emerald-50" : "border-gray-200")}>
+                <div className="font-semibold text-emerald-700">Farketmez (En Ucuzu Al)</div>
+                <div className="text-xs text-gray-500">Otomatik olarak en uygun fiyatlı markayı seçer.</div>
+              </button>
+
+              {pickerAlternatives === null && <div className="text-center text-sm text-gray-400 py-3">Yükleniyor…</div>}
+              {pickerAlternatives?.map(p => (
+                <button key={p.id} onClick={() => { updateItem(pickerItem.id, { preferred_product_id: p.id }); setPickerItemId(null); }}
+                  className={"w-full text-left p-3 rounded-lg border flex items-center justify-between " + (pickerItem.preferred_product_id === p.id ? "border-emerald-500 bg-emerald-50" : "border-gray-200")}>
+                  <div>
+                    <div className="font-semibold flex items-center gap-2">
+                       <MarketLogo id={p.market_id} size={18} /> {p.brand || p.name}
+                    </div>
+                    <div className="text-xs text-gray-500">{marketById(p.market_id)?.name}</div>
+                  </div>
+                  <div className="font-bold text-gray-800">{num(p.price).toFixed(2)} ₺</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
     </main>
