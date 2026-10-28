@@ -1,6 +1,7 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Flyer from '@/components/Flyer';
 import ListPicker from '@/components/ListPicker';
@@ -62,8 +63,9 @@ export default function ProductScreen() {
   if (group === undefined) return <Screen safeTop={false}><ActivityIndicator color={t.tint} style={{ marginTop: 40 }} /></Screen>;
   if (group === null) return <Screen safeTop={false}><Muted>Ürün bulunamadı.</Muted></Screen>;
 
+  // Ürün kartı ve "Listeye ekle" sabit kalır; fiyat listesi aradaki kutunun içinde kayar (uzun listede düğme kaybolmasın)
   return (
-    <Screen safeTop={false}>
+    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: t.background, padding: 16, gap: 12 }}>
       <Stack.Screen options={{ title: group.name }} />
       <Card style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
         <ProductImage uri={group.image_url} icon={categoryIcon(group.category_id)} size={80} />
@@ -73,10 +75,11 @@ export default function ProductScreen() {
         </View>
       </Card>
 
-      <Card style={{ padding: 0 }}>
+      <Card style={{ padding: 0, flex: 1, overflow: 'hidden' }}>
         <Text style={{ color: t.text, fontWeight: '700', padding: 14 }}>
           {new Set(offers.map(o => o.product.market_id)).size} markette bulundu
         </Text>
+        <ScrollView>
         {offers.map((o, i) => (
           <Pressable key={o.key} onPress={() => setSelected(selected === o.product.id ? null : o.product.id)}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderTopWidth: 1, borderTopColor: t.border,
@@ -94,6 +97,7 @@ export default function ProductScreen() {
             </View>
           </Pressable>
         ))}
+        </ScrollView>
       </Card>
 
       <Muted>{selectedProduct ? `Seçili marka: ${selectedProduct.brand || selectedProduct.name} (tekrar dokunarak kaldırabilirsin)` : 'Marka seçmezsen listeye "Farketmez" eklenir, her zaman en ucuzu alınır.'}</Muted>
@@ -101,6 +105,6 @@ export default function ProductScreen() {
       {added && <Text style={{ color: t.danger, textAlign: 'center', fontWeight: '600' }}>{added}</Text>}
       {flyer && <Flyer title="Listeye eklendi" subtitle={flyer} onDone={afterFlyer} />}
       <ListPicker visible={picking} onClose={() => setPicking(false)} onPick={addTo} />
-    </Screen>
+    </SafeAreaView>
   );
 }

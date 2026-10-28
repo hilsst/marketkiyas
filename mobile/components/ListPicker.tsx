@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { api, ListSummary } from '@/lib/api';
@@ -9,6 +10,7 @@ export default function ListPicker({ visible, onClose, onPick }: {
   visible: boolean; onClose: () => void; onPick: (listId: number) => Promise<void>;
 }) {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const [lists, setLists] = useState<ListSummary[] | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -38,9 +40,11 @@ export default function ListPicker({ visible, onClose, onPick }: {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={onClose} />
-      <View style={{ backgroundColor: t.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, gap: 10, maxHeight: '75%' }}>
+      <View style={{ backgroundColor: t.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 20 + insets.bottom, gap: 10, maxHeight: '75%' }}>
         <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>Hangi listeye?</Text>
         {lists === null && !error && <ActivityIndicator color={t.tint} />}
+        {/* Çok listede liste kutusu kayar, oluşturma satırı ve düğmeler görünür kalır */}
+        <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 10 }}>
         {lists?.map(l => (
           <Pressable key={l.id} onPress={() => pick(l.id)} disabled={busy}
             style={{ padding: 14, borderRadius: 12, backgroundColor: t.card, borderWidth: 1, borderColor: t.border }}>
@@ -48,6 +52,7 @@ export default function ListPicker({ visible, onClose, onPick }: {
             <Muted>{l.item_count} ürün</Muted>
           </Pressable>
         ))}
+        </ScrollView>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <View style={{ flex: 1 }}><Input placeholder="Yeni liste adı" value={name} onChangeText={setName} /></View>
           <Button title="Oluştur" onPress={createAndPick} busy={busy} disabled={!name.trim()} />
