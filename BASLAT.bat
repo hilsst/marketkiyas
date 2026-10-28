@@ -1,6 +1,8 @@
 @echo off
 chcp 65001 >nul
 setlocal
+rem Dışarıdan gelen ayar (ör. test veritabanı) uygulamayı yanlış veritabanına bağlamasın
+set "DATABASE_URL="
 cd /d "%~dp0"
 set "MK=%LOCALAPPDATA%\MarketKiyas"
 set "PG=%MK%\pgsql\bin"
