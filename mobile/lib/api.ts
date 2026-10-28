@@ -49,7 +49,9 @@ export interface ListSummary {
 export interface ListDetail extends ListSummary {
   preference_total: Money | null; expected_savings: Money | null; applied_at: string | null;
   completed_at: string | null; items: ListItem[]; shopping_groups: ShoppingGroup[]; share_code: string | null;
+  members: ListMember[]; // ortak listeye kodla katılanlar (sahip hariç)
 }
+export interface ListMember { user_id: number; name: string | null; joined_at: string; }
 export interface PlanLine {
   item_id: number; group_id: number; group_name: string; quantity: Money; product_id: number;
   product_name: string; brand: string | null; market_id: number; unit_price: Money; store_id: number | null;
@@ -162,6 +164,10 @@ export const api = {
   applyPlan: (listId: number, plan_type: PlanType) => request<ListDetail>('POST', `/lists/${listId}/apply`, { plan_type }),
   cancelPlan: (listId: number) => request<ListDetail>('DELETE', `/lists/${listId}/plan`),
   complete: (listId: number) => request<CompleteResponse>('POST', `/lists/${listId}/complete`),
+  // Ortak liste: sahip davet kodu alır, aile üyesi kodla katılır; üye kendini, sahip herkesi çıkarabilir
+  shareList: (listId: number) => request<{ share_code: string }>('POST', `/lists/${listId}/share`),
+  joinList: (code: string) => request<ListDetail>('POST', '/lists/join', { code }),
+  removeMember: (listId: number, userId: number) => request<void>('DELETE', `/lists/${listId}/members/${userId}`),
   productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
   deals: () => request<Deal[]>('GET', '/products/deals'),
   myStores: () => request<Store[]>('GET', '/me/stores'),

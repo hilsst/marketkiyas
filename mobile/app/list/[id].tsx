@@ -1,15 +1,17 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, Share, Text, View } from 'react-native';
 
 import Celebration from '@/components/Celebration';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Button, Card, Muted, Screen, useTheme } from '@/components/ui';
 import { api, CompleteResponse, ItemPatch, ListDetail, ListItem, num, OptimizeResult, Plan, PlanType } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
 
 type Tab = 'items' | 'optimize';
+const SYNC_MS = 8000; // ortak listede diğer üyelerin değişiklikleri bu aralıkla çekilir
 const MODES: { key: PlanType; label: string }[] = [
   { key: 'single_market', label: 'Tek Market' },
   { key: 'combination', label: 'Kombinasyon' },
@@ -34,6 +36,8 @@ export default function ListScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const listId = Number(id);
   const { marketById, categoryIcon } = useCatalog();
+  const { user } = useAuth();
+  const [sharing, setSharing] = useState(false);
   const [detail, setDetail] = useState<ListDetail | null | undefined>(undefined);
   const [opt, setOpt] = useState<OptimizeResult | null>(null);
   const [tab, setTab] = useState<Tab>('items');
@@ -48,8 +52,16 @@ export default function ListScreen() {
     api.list(listId).then(setDetail).catch(() => setDetail(null));
     reoptimize();
   }, [listId, reoptimize]);
-  // Ürün ekleyip geri dönünce liste tazelensin
-  useFocusEffect(load);
+  // Ürün ekleyip geri dönünce liste tazelensin; ortak listede ekran açıkken diğer telefonun eklediği ürünler de gelsin
+  useFocusEffect(useCallback(() => {
+    load();
+    const timer = setInterval(() => {
+      api.list(listId).then(fresh => {
+        setDetail(prev => (prev && prev.updated_at === fresh.updated_at ? prev : fresh));
+      }).catch(() => {});
+    }, SYNC_MS);
+    return () => clearInterval(timer);
+  }, [load, listId]));
 
   /** Sunucu değişikliği: son isteğin cevabı ekrana yazılır, kalem değişince planlar yeniden hesaplanır */
   const mutate = async (call: () => Promise<ListDetail>, reopt = true) => {
@@ -96,9 +108,21 @@ export default function ListScreen() {
     const applied = await mutate(() => api.applyPlan(list.id, mode), false);
     if (applied) setTab('items');
   };
+  const isOwner = list.owner_id === user?.id;
   const deleteList = () => confirmAsk('Liste silinsin mi?', 'Kaydettiğin tasarruflar Profil sayfanda kalır.', async () => {
     try { await api.deleteList(list.id); router.back(); } catch (e) { setError((e as Error).message); }
   });
+  const leaveList = () => confirmAsk('Listeden ayrılınsın mı?', 'Liste sahibinde kalmaya devam eder.', async () => {
+    try { if (user) await api.removeMember(list.id, user.id); router.back(); } catch (e) { setError((e as Error).message); }
+  });
+  /** Davet kodunu oluşturur ve telefonun paylaş penceresini açar (WhatsApp, SMS…) */
+  const shareInvite = async () => {
+    try {
+      const code = list.share_code || (await api.shareList(list.id)).share_code;
+      setDetail({ ...list, share_code: code });
+      await Share.share({ message: `"${list.name}" alışveriş listeme katıl! Ucuzu'da Listeler > "Kodla ortak listeye katıl" deyip bu kodu yaz: ${code}` });
+    } catch (e) { setError((e as Error).message); }
+  };
   const blocked = shopping
     ? 'Plan uygulandı. Alışverişi Ürünler sekmesindeki "Alışverişi Bitir" ile tamamla.'
     : total > 0 && checked === total ? 'Tüm ürünler alınmış görünüyor. Yeni alışveriş için işaretleri kaldır.' : null;
@@ -117,6 +141,9 @@ export default function ListScreen() {
         <ProductImage uri={it.image_url} icon={categoryIcon(it.category_id)} size={40} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: t.text, fontWeight: '600', textDecorationLine: it.is_checked ? 'line-through' : 'none' }} numberOfLines={2}>{it.group_name}</Text>
+          {it.added_by_id != null && it.added_by_id !== user?.id && it.added_by_name && (
+            <Text style={{ color: '#0284c7', fontSize: 11, fontWeight: '600' }}>{it.added_by_name} ekledi</Text>
+          )}
           {inShopping ? (
             <Muted>{[it.assigned?.brand || it.assigned?.product_name, it.assigned?.store_name].filter(Boolean).join(' · ')} × {qty}</Muted>
           ) : (
@@ -145,9 +172,38 @@ export default function ListScreen() {
   return (
     <Screen safeTop={false}>
       <Stack.Screen options={{ title: list.name, headerRight: () => (
-        <Text onPress={deleteList} style={{ color: t.danger, fontWeight: '600', paddingHorizontal: 8 }}>Sil</Text>
+        <View style={{ flexDirection: 'row', gap: 14, paddingHorizontal: 8 }}>
+          <Text onPress={() => setSharing(v => !v)} style={{ color: t.tint, fontWeight: '700' }}>👥 Paylaş</Text>
+          {isOwner
+            ? <Text onPress={deleteList} style={{ color: t.danger, fontWeight: '600' }}>Sil</Text>
+            : <Text onPress={leaveList} style={{ color: t.danger, fontWeight: '600' }}>Ayrıl</Text>}
+        </View>
       ) }} />
-      <Muted>{total} ürün · alınan {checked}/{total}</Muted>
+      <Muted>{total} ürün · alınan {checked}/{total}{list.members.length > 0 || !isOwner ? ' · 👥 ortak liste' : ''}</Muted>
+
+      {sharing && (
+        <Card style={{ gap: 10 }}>
+          <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>👥 Ortak liste</Text>
+          <Muted>Kodu alan kişi kendi telefonunda bu listeyi görür, ürün ekler ve işaretler. Değişiklikler birkaç saniyede herkese yansır.</Muted>
+          {list.share_code && (
+            <Text selectable style={{ color: t.text, fontSize: 28, fontWeight: '900', letterSpacing: 4, textAlign: 'center' }}>{list.share_code}</Text>
+          )}
+          {isOwner && <Button title="📤 Davet gönder (WhatsApp, SMS…)" onPress={shareInvite} />}
+          <View style={{ gap: 4 }}>
+            <Text style={{ color: t.text, fontWeight: '700' }}>Listedekiler</Text>
+            <Muted>{list.owner_name || 'Sahip'}{isOwner ? ' (sen)' : ''} · sahibi</Muted>
+            {list.members.map(m => (
+              <View key={m.user_id} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Muted>{m.name || 'Üye'}{m.user_id === user?.id ? ' (sen)' : ''}</Muted>
+                {isOwner && <Text onPress={() => confirmAsk('Üye çıkarılsın mı?', `${m.name || 'Üye'} bu listeyi artık görmez.`, () => {
+                  api.removeMember(list.id, m.user_id).then(load).catch(e => setError(e.message));
+                })} style={{ color: t.danger }}>Çıkar</Text>}
+              </View>
+            ))}
+            {list.members.length === 0 && <Muted>Henüz kimse katılmadı.</Muted>}
+          </View>
+        </Card>
+      )}
 
       <View style={{ flexDirection: 'row', backgroundColor: t.border, borderRadius: 12, padding: 4 }}>
         {(['items', 'optimize'] as Tab[]).map(k => (
