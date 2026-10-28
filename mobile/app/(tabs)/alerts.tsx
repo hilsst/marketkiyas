@@ -16,7 +16,7 @@ import { useCatalog } from '@/lib/catalog';
 export default function AlertsScreen() {
   const t = useTheme();
   const { user } = useAuth();
-  const { categoryIcon } = useCatalog();
+  const { categoryIcon, marketById } = useCatalog();
   const [alerts, setAlerts] = useState<PriceAlert[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +63,7 @@ export default function AlertsScreen() {
                   <View style={{ flex: 1, gap: 3 }}>
                     {a.triggered && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '800' }}>📉 FİYATI DÜŞTÜ{a.unread ? ' · YENİ' : ''}</Text>}
                     <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{a.group_name}</Text>
+                    {a.product_id != null && <Muted>🎯 {a.brand || a.product_name}{a.current_market_id != null ? ` · ${marketById(a.current_market_id)?.name ?? ''}` : ''}</Muted>}
                     <Muted>
                       {formatSize(a.quantity, a.unit) ? `${formatSize(a.quantity, a.unit)} · ` : ''}
                       {a.target_price != null ? `${num(a.target_price).toFixed(2)} ₺ altına inince` : threshold != null ? `${threshold.toFixed(2)} ₺ altına inince` : 'Fiyat düşünce'}

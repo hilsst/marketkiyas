@@ -5,9 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { api, num, PriceAlert } from '@/lib/api';
 
-/** "Fiyatını takip et": fiyat düşünce ya da yazılan fiyatın altına inince Alarmlar sekmesinde haber verilir. */
-export default function AlertSheet({ visible, onClose, groupId, groupName, cheapest, alert, onChange }: {
+/**
+ * "Fiyatını takip et": fiyat düşünce ya da yazılan fiyatın altına inince Alarmlar sekmesinde haber verilir.
+ * Ürün sayfasında bir satır seçiliyse (marka/market) yalnızca o ürün takip edilir, değilse en ucuzu.
+ */
+export default function AlertSheet({ visible, onClose, groupId, groupName, cheapest, product, alert, onChange }: {
   visible: boolean; onClose: () => void; groupId: number; groupName: string; cheapest: number | null;
+  product: { id: number; label: string; price: number } | null;
   alert: PriceAlert | null; onChange: (alert: PriceAlert | null, message: string) => void;
 }) {
   const t = useTheme();
@@ -22,7 +26,7 @@ export default function AlertSheet({ visible, onClose, groupId, groupName, cheap
     setBusy(true);
     setError(null);
     try {
-      const all = await api.createAlert(groupId, withTarget ? value : null);
+      const all = await api.createAlert(groupId, withTarget ? value : null, product?.id ?? null);
       onChange(all.find(a => a.group_id === groupId) || null,
         withTarget ? `Fiyat ${value.toFixed(2)} ₺ altına inince haber vereceğiz` : 'Fiyat düşünce haber vereceğiz');
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
@@ -38,12 +42,16 @@ export default function AlertSheet({ visible, onClose, groupId, groupName, cheap
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={onClose} />
       <View style={{ backgroundColor: t.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 20 + insets.bottom, gap: 12 }}>
         <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>🔔 Fiyatını takip et</Text>
-        <Muted>{groupName} şu an en ucuz {cheapest != null ? `${cheapest.toFixed(2)} ₺` : '-'}. Fiyat düşünce Alarmlar sekmesinde haber veririz.</Muted>
+        {product ? (
+          <Muted>Seçtiğin ürün takip edilecek: <Text style={{ color: t.text, fontWeight: '700' }}>{product.label}</Text>, şu an {product.price.toFixed(2)} ₺. Fiyatı düşünce Alarmlar sekmesinde haber veririz.</Muted>
+        ) : (
+          <Muted>{groupName} şu an en ucuz {cheapest != null ? `${cheapest.toFixed(2)} ₺` : '-'}. Hangi marka olursa olsun en ucuz fiyat düşünce haber veririz. Belli bir markayı takip etmek için önce listeden o satıra dokun.</Muted>
+        )}
 
         <Pressable onPress={() => save(false)} disabled={busy}
           style={{ padding: 14, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.card, gap: 2 }}>
           <Text style={{ color: t.tint, fontWeight: '700' }}>Fiyatı düşünce haber ver</Text>
-          <Muted>Şu anki en ucuz fiyatın altına inince</Muted>
+          <Muted>{product ? 'Şu anki fiyatının altına inince' : 'Şu anki en ucuz fiyatın altına inince'}</Muted>
         </Pressable>
 
         <View style={{ padding: 14, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.card, gap: 8 }}>

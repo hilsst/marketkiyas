@@ -73,6 +73,7 @@ export type ItemPatch = Partial<{ quantity: number; is_checked: boolean; preferr
 export interface PriceAlert {
   id: number; group_id: number; group_name: string; category_id: number | null; image_url: string | null;
   quantity: Money | null; unit: Unit | null; target_price: Money | null; baseline_price: Money | null;
+  product_id: number | null; product_name: string | null; brand: string | null; // seçili ürün; null = en ucuzu
   current_price: Money | null; current_market_id: number | null; triggered: boolean; triggered_at: string | null;
   unread: boolean; created_at: string;
 }
@@ -190,8 +191,8 @@ export const api = {
   deals: () => request<Deal[]>('GET', '/products/deals'),
   myStores: () => request<Store[]>('GET', '/me/stores'),
   alerts: () => request<PriceAlert[]>('GET', '/alerts'),
-  createAlert: (groupId: number, targetPrice?: number | null) =>
-    request<PriceAlert[]>('POST', '/alerts', { group_id: groupId, target_price: targetPrice ?? null }),
+  createAlert: (groupId: number, targetPrice?: number | null, productId?: number | null) =>
+    request<PriceAlert[]>('POST', '/alerts', { group_id: groupId, target_price: targetPrice ?? null, product_id: productId ?? null }),
   deleteAlert: (id: number) => request<void>('DELETE', '/alerts/' + id),
   markAlertsSeen: () => request<void>('POST', '/alerts/seen'),
   family: () => request<MyFamily>('GET', '/family'),

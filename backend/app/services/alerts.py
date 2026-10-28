@@ -8,10 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import GroupMember, PriceAlert, ProductGroup, User
+from app.models import GroupMember, PriceAlert, Product, ProductGroup, User
 from app.schemas.alerts import AlertCreate, AlertOut
 from app.services.catalog import group_summary
-from app.services.pricing import build_resolver
+from app.services.pricing import PriceResolver, build_resolver
 
 
 def _threshold(alert: PriceAlert) -> Decimal | None:
@@ -20,6 +20,23 @@ def _threshold(alert: PriceAlert) -> Decimal | None:
     if alert.baseline_price is not None:
         return alert.baseline_price - Decimal("0.01")
     return None
+
+
+def _tracked(alert: PriceAlert) -> Product | None:
+    """Takip edilen ürün hâlâ bu grupta mı? (yeniden gruplanınca en ucuza dönülür)"""
+    if alert.product_id is None:
+        return None
+    return next((m.product for m in alert.group.members if m.product_id == alert.product_id), None)
+
+
+def _current(group: ProductGroup, product: Product | None, resolver: PriceResolver) -> tuple[Decimal | None, int | None]:
+    """(fiyat, market): seçili ürünün fiyatı, yoksa grubun kullanıcının şubelerindeki en ucuzu."""
+    if product is not None:
+        resolved = resolver.price(product)
+        return (resolved.price if resolved else None), product.market_id
+    summary = group_summary(group, resolver)
+    cheapest = min(summary.market_prices, key=lambda m: m.min_price, default=None)
+    return summary.min_price, (cheapest.market_id if cheapest else None)
 
 
 async def _load(db: AsyncSession, user: User) -> list[PriceAlert]:
@@ -44,9 +61,8 @@ async def evaluate(db: AsyncSession, user: User) -> list[AlertOut]:
     now = datetime.now(timezone.utc)
     out = []
     for alert in alerts:
-        summary = group_summary(alert.group, resolver)
-        current = summary.min_price
-        cheapest = min(summary.market_prices, key=lambda m: m.min_price, default=None)
+        product = _tracked(alert)
+        current, market_id = _current(alert.group, product, resolver)
         threshold = _threshold(alert)
         hit = current is not None and threshold is not None and current <= threshold
         if hit and alert.triggered_at is None:
@@ -64,10 +80,13 @@ async def evaluate(db: AsyncSession, user: User) -> list[AlertOut]:
                 image_url=alert.group.image_url,
                 quantity=alert.group.quantity,
                 unit=alert.group.unit,
+                product_id=product.id if product else None,
+                product_name=product.name if product else None,
+                brand=product.brand if product else None,
                 target_price=alert.target_price,
                 baseline_price=alert.baseline_price,
                 current_price=current,
-                current_market_id=cheapest.market_id if cheapest else None,
+                current_market_id=market_id,
                 triggered=hit,
                 triggered_at=alert.triggered_at,
                 unread=hit and alert.seen_at is None,
@@ -87,8 +106,13 @@ async def upsert(db: AsyncSession, user: User, body: AlertCreate) -> None:
     )
     if group is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ürün grubu bulunamadı")
+    product = None
+    if body.product_id is not None:
+        product = next((m.product for m in group.members if m.product_id == body.product_id), None)
+        if product is None:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Seçilen ürün bu ürün grubunda bulunmuyor")
     resolver = await build_resolver(db, user.id, [m.product_id for m in group.members])
-    current = group_summary(group, resolver).min_price
+    current, _ = _current(group, product, resolver)
 
     alert = await db.scalar(
         select(PriceAlert).where(PriceAlert.user_id == user.id, PriceAlert.group_id == group.id)
@@ -96,6 +120,7 @@ async def upsert(db: AsyncSession, user: User, body: AlertCreate) -> None:
     if alert is None:
         alert = PriceAlert(user_id=user.id, group_id=group.id)
         db.add(alert)
+    alert.product_id = body.product_id
     alert.target_price = body.target_price
     alert.baseline_price = current
     alert.triggered_at = alert.triggered_price = alert.seen_at = None

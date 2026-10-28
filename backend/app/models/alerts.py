@@ -9,6 +9,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.matching import ProductGroup
+    from app.models.catalog import Product
 
 
 class PriceAlert(Base):
@@ -25,6 +26,8 @@ class PriceAlert(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     group_id: Mapped[int] = mapped_column(ForeignKey("product_groups.id", ondelete="CASCADE"))
+    # Seçili ürün (marka/market): yalnızca onun fiyatı izlenir; boşsa grubun en ucuzu
+    product_id: Mapped[int | None] = mapped_column(ForeignKey("products.id", ondelete="SET NULL"))
     target_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     baseline_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     triggered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -33,3 +36,4 @@ class PriceAlert(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     group: Mapped["ProductGroup"] = relationship()
+    product: Mapped["Product | None"] = relationship()

@@ -119,6 +119,7 @@ export default function ProductScreen() {
           style={{ paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, justifyContent: 'center',
             borderColor: alert ? '#f59e0b' : t.border, backgroundColor: alert ? '#fef3c7' : t.card }}>
           <Text style={{ color: alert ? '#92400e' : t.text, fontWeight: '700' }}>{alert ? '🔔 Takipte' : '🔔 Takip et'}</Text>
+          {alert?.brand && <Text style={{ color: '#92400e', fontSize: 10 }} numberOfLines={1}>{alert.brand}</Text>}
         </Pressable>
       </View>
       {alertNote && <Text style={{ color: t.tint, textAlign: 'center', fontWeight: '600' }}>{alertNote}</Text>}
@@ -128,6 +129,11 @@ export default function ProductScreen() {
       {alertSheet && (
         <AlertSheet visible onClose={() => setAlertSheet(false)} groupId={group.id} groupName={group.name}
           cheapest={offers[0]?.price ?? null} alert={alert}
+          product={selectedProduct ? {
+            id: selectedProduct.id,
+            label: `${selectedProduct.brand || selectedProduct.name} · ${marketById(selectedProduct.market_id)?.name ?? ''}`,
+            price: Math.min(...offers.filter(o => o.product.id === selectedProduct.id).map(o => o.price)),
+          } : null}
           onChange={(a, message) => { setAlert(a); setAlertSheet(false); setAlertNote(message); }} />
       )}
     </SafeAreaView>

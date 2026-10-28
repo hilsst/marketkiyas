@@ -176,8 +176,9 @@ export const api = {
 
   alerts: () => request<PriceAlert[]>("GET", "/alerts"),
   unreadAlerts: () => request<{ unread: number }>("GET", "/alerts/unread"),
-  createAlert: (groupId: number, targetPrice?: number | null) =>
-    request<PriceAlert[]>("POST", "/alerts", { group_id: groupId, target_price: targetPrice ?? null }),
+  // productId: seçili ürün (marka/market) takip edilir; boşsa grubun en ucuzu
+  createAlert: (groupId: number, targetPrice?: number | null, productId?: number | null) =>
+    request<PriceAlert[]>("POST", "/alerts", { group_id: groupId, target_price: targetPrice ?? null, product_id: productId ?? null }),
   deleteAlert: (id: number) => request<void>("DELETE", "/alerts/" + id),
   markAlertsSeen: () => request<void>("POST", "/alerts/seen"),
 
