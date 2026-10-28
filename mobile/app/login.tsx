@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } fro
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 
-/** Giriş ve üyelik tek ekranda; Google/Apple ile giriş ve şifre sıfırlama 2. adımda gelir */
+/** Giriş ve üyelik tek ekranda. Google ile giriş, geliştirme sürümü (EAS) ve Google istemci kimliği gelince eklenir */
 export default function LoginScreen() {
   const t = useTheme();
   const { login, register } = useAuth();
@@ -60,6 +60,11 @@ export default function LoginScreen() {
 
         {error && <Text style={{ color: t.danger }}>{error}</Text>}
         <Button title={mode === 'login' ? 'Giriş yap' : 'Üye ol'} onPress={submit} busy={busy} />
+        {mode === 'login' && (
+          <Pressable onPress={() => router.push('/forgot-password')} style={{ alignSelf: 'center', padding: 8 }}>
+            <Text style={{ color: t.tint, fontWeight: '600' }}>Şifremi unuttum</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

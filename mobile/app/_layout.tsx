@@ -57,6 +57,7 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ presentation: 'modal', title: 'Giriş yap' }} />
+        <Stack.Screen name="forgot-password" options={{ title: 'Şifremi unuttum' }} />
       </Stack>
     </ThemeProvider>
   );

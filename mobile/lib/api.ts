@@ -11,7 +11,7 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.68.119
 export type Money = string; // sunucu Decimal'leri metin gönderir: "32.50"
 export type Unit = 'ml' | 'g' | 'adet';
 
-export interface User { id: number; email: string; full_name: string | null; }
+export interface User { id: number; email: string; full_name: string | null; has_password: boolean; }
 export interface AuthResponse { access_token: string; token_type: string; expires_in: number; user: User; }
 export interface Market { id: number; slug: string; name: string; color: string | null; logo_url: string | null; }
 export interface Category { id: number; slug: string; name: string; icon: string | null; parent_id: number | null; }
@@ -83,6 +83,10 @@ export const api = {
     request<AuthResponse>('POST', '/auth/register', { email, password, full_name: full_name || null }),
   login: (email: string, password: string) => request<AuthResponse>('POST', '/auth/login', { email, password }),
   me: () => request<User>('GET', '/auth/me'),
+  requestPasswordReset: (email: string) => request<{ detail: string }>('POST', '/auth/password-reset/request', { email }),
+  confirmPasswordReset: (email: string, code: string, new_password: string) =>
+    request<AuthResponse>('POST', '/auth/password-reset/confirm', { email, code, new_password }),
+  deleteAccount: (password?: string) => request<void>('DELETE', '/auth/me', { password: password || null }),
   markets: () => request<Market[]>('GET', '/markets'),
   categories: () => request<Category[]>('GET', '/categories'),
   searchProducts: (q: string, categoryId?: number | null, opts: { sort?: 'name' | 'popular'; limit?: number; subcategoryId?: number | null } = {}) =>

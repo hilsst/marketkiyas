@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { api, setApiToken, setUnauthorizedHandler, User } from '@/lib/api';
+import { api, AuthResponse, setApiToken, setUnauthorizedHandler, User } from '@/lib/api';
 import { loadToken, saveToken } from '@/lib/session';
 
 interface AuthState {
@@ -9,6 +9,8 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName?: string) => Promise<void>;
   logout: () => Promise<void>;
+  startSession: (r: AuthResponse) => Promise<void>; // şifre sıfırlama ve Google girişi oturumu buradan açar
+  deleteAccount: (password?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -51,6 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await start(r.access_token, r.user);
     },
     logout: signOut,
+    startSession: r => start(r.access_token, r.user),
+    deleteAccount: async password => { await api.deleteAccount(password); await signOut(); },
   }), [user, ready, start, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

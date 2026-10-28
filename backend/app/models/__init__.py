@@ -7,7 +7,7 @@ from app.models.matching import GroupMember, ProductGroup
 from app.models.savings import SavingsRecord
 from app.models.stores import Store, StorePrice, UserStore
 from app.models.shopping import ListMember, ShoppingList, ShoppingListItem
-from app.models.user import User
+from app.models.user import PasswordReset, User
 
 __all__ = [
     "Base",
@@ -27,6 +27,7 @@ __all__ = [
     "Store",
     "StorePrice",
     "Unit",
+    "PasswordReset",
     "User",
     "UserStore",
 ]
