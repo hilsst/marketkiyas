@@ -6,9 +6,9 @@ import { useGroupIcon, useLists } from "@/lib/store";
 import MarketLogo from "@/components/MarketLogo";
 import ProductImage from "@/components/ProductImage";
 import BarcodeScanner from "@/components/BarcodeScanner";
+import { activeFilterCount, applyFilters, cheapestPrice, DEFAULT_FILTERS, FilterSheet, Filters } from "@/components/ProductFilter";
 
 const cheapestOf = (g: GroupSummary) => [...g.market_prices].sort((a, b) => num(a.min_price) - num(b.min_price))[0];
-const unitValue = (g: GroupSummary) => unitPrice(cheapestOf(g)?.min_price, g.quantity, g.unit)?.value ?? Infinity;
 
 const QUICK_LINKS = [
   { href: "/lists", icon: "📋", label: "Listelerim" },
@@ -35,15 +35,15 @@ export default function HomePage() {
   const [results, setResults] = useState<GroupSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
-  // "Birim fiyat": 400 g ile 1 kg'ı kilo başına fiyatla karşılaştırır
-  const [byUnit, setByUnit] = useState(false);
+  // Sıralama ve süzme (market, marka, indirim, boyut); kategori değişince sıfırlanır
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [vault, setVault] = useState<SavingsVault | null>(null);
   const [showcase, setShowcase] = useState<{ title: string; items: ShowcaseItem[] } | null>(null);
   const [stores, setStores] = useState<Store[] | null>(null);
 
   const searching = q.trim() !== "" || cat != null;
   const subcats = useMemo(() => (cat != null && !q.trim() ? subcategoriesOf(cat) : []), [cat, q, subcategoriesOf]);
-  const openCategory = (id: number | null) => { setCat(id); setSub(null); };
+  const openCategory = (id: number | null) => { setCat(id); setSub(null); setFilters(DEFAULT_FILTERS); };
 
   useEffect(() => {
     if (!searching) { setResults(null); return; }
@@ -133,7 +133,7 @@ export default function HomePage() {
           title={q.trim() ? null : categories.find(c => c.id === cat)?.name ?? null}
           onBack={() => { setQ(""); openCategory(null); }}
           subcats={subcats} sub={sub} setSub={setSub}
-          results={results} error={error} byUnit={byUnit} setByUnit={setByUnit}
+          results={results} error={error} filters={filters} setFilters={setFilters}
           groupIcon={groupIcon} marketName={id => marketById(id)?.name} />
       ) : (
         <div className="space-y-5">
@@ -254,30 +254,32 @@ const SUB_ICONS: [RegExp, string][] = [
 const subIcon = (name: string, fallback: string) => SUB_ICONS.find(([re]) => re.test(name))?.[1] ?? fallback;
 
 function SearchResults({
-  title, onBack, results, error, byUnit, setByUnit, groupIcon, marketName, subcats = [], sub = null, setSub,
+  title, onBack, results, error, filters, setFilters, groupIcon, marketName, subcats = [], sub = null, setSub,
 }: {
   title: string | null; onBack: () => void; results: GroupSummary[] | null; error: string | null;
-  byUnit: boolean; setByUnit: (f: (v: boolean) => boolean) => void;
+  filters: Filters; setFilters: (f: Filters) => void;
   groupIcon: (categoryId: number | null | undefined) => string; marketName: (id: number) => string | undefined;
   // Kategori ekranında alt kategori şeridi: Tümü / Süt / Peynir / Zeytin…
   subcats?: Category[]; sub?: number | null; setSub?: (id: number | null) => void;
 }) {
-  const sorted = byUnit && results ? [...results].sort((a, b) => unitValue(a) - unitValue(b)) : results || [];
+  const [showFilter, setShowFilter] = useState(false);
+  const sorted = applyFilters(results || [], filters);
+  const active = activeFilterCount(filters);
   // "Tümü"de ürünler alt kategori başlıkları altında; alt kategorisi bilinmeyenler en sonda "Diğer"
   const sections = subcats.length && sub == null
     ? [...subcats.map(s => ({ key: String(s.id), subId: s.id as number | null, title: s.name, icon: subIcon(s.name, s.icon || ""), groups: sorted.filter(g => g.subcategory_id === s.id) })),
        { key: "other", subId: null as number | null, title: "Diğer", icon: "", groups: sorted.filter(g => !subcats.some(s => s.id === g.subcategory_id)) }]
         .filter(s => s.groups.length)
     : [{ key: "all", subId: null as number | null, title: null as string | null, icon: "", groups: sorted }];
-  const row = (group: GroupSummary) => <ProductRow key={group.id} group={group} groupIcon={groupIcon} marketName={marketName} />;
+  const row = (group: GroupSummary) => <ProductRow key={group.id} group={group} filters={filters} groupIcon={groupIcon} marketName={marketName} />;
   return (
     <>
       <div className="flex items-center justify-between mb-2">
         <button onClick={onBack} className="text-sm text-gray-600">← Ana sayfa</button>
-        {(results?.length ?? 0) > 1 && (
-          <button onClick={() => setByUnit(v => !v)}
-            className={"text-xs px-2.5 py-1 rounded-full border " + (byUnit ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-white border-gray-200 text-gray-600")}>
-            {byUnit ? "✓ " : ""}Kilo/litre fiyatına göre sırala
+        {((results?.length ?? 0) > 1 || active > 0) && (
+          <button onClick={() => setShowFilter(true)}
+            className={"text-sm px-3 py-1.5 rounded-xl border flex items-center gap-1.5 " + (active ? "bg-emerald-50 border-emerald-300 text-emerald-700 font-semibold" : "bg-white border-gray-200 text-gray-700")}>
+            <span>⚙︎</span>Filtre{active ? " · " + active : ""}
           </button>
         )}
       </div>
@@ -308,23 +310,27 @@ function SearchResults({
           </section>
         ) : s.groups.map(row))}
         {results === null && !error && <div className="text-center text-gray-400 py-12">Yükleniyor…</div>}
-        {results?.length === 0 && (
+        {results != null && sorted.length === 0 && (
           <div className="text-center text-gray-500 py-12">
             <div className="text-4xl mb-2">🔍</div>
             <div>Sonuç bulunamadı</div>
+            {active > 0 && <button onClick={() => setFilters(DEFAULT_FILTERS)} className="mt-2 text-sm text-emerald-700 underline">Filtreyi temizle</button>}
           </div>
         )}
       </div>
+      {showFilter && results && (
+        <FilterSheet results={results} value={filters} onChange={setFilters} onClose={() => setShowFilter(false)} marketName={marketName} />
+      )}
     </>
   );
 }
 
 function ProductRow({
-  group, groupIcon, marketName,
+  group, filters, groupIcon, marketName,
 }: {
-  group: GroupSummary; groupIcon: (categoryId: number | null | undefined) => string; marketName: (id: number) => string | undefined;
+  group: GroupSummary; filters: Filters; groupIcon: (categoryId: number | null | undefined) => string; marketName: (id: number) => string | undefined;
 }) {
-          const cheapest = cheapestOf(group);
+          const cheapest = cheapestPrice(group, filters); // market filtresi açıksa o marketlerin en ucuzu
           const perUnit = cheapest && unitPrice(cheapest.min_price, group.quantity, group.unit);
           return (
             <Link href={"/products/" + group.id}
