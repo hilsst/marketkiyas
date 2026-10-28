@@ -21,6 +21,22 @@ export interface GroupSummary {
   quantity: Money | null; unit: Unit | null; image_url: string | null; min_price: Money | null;
   market_prices: MarketPrice[]; brands: string[];
 }
+export interface PricePoint { price: Money; recorded_at: string; }
+export interface GroupProduct {
+  id: number; name: string; brand: string | null; market_id: number; price: Money | null; regular_price: Money | null;
+  store_id: number | null; store_name: string | null; is_available: boolean; image_url: string | null;
+  price_history: PricePoint[]; store_prices: { store_id: number; store_name: string; price: Money }[];
+}
+export interface GroupDetail extends GroupSummary { products: GroupProduct[]; }
+export interface Deal {
+  group_id: number; group_name: string; category_id: number | null; image_url: string | null;
+  quantity: Money | null; unit: Unit | null; product_id: number; product_name: string; brand: string | null;
+  market_id: number; store_id: number | null; price: Money; previous_price: Money; discount_percent: number; is_campaign: boolean;
+}
+export interface Store {
+  id: number; name: string; market_id: number; market_slug: string; market_name: string;
+  latitude: Money | null; longitude: Money | null; distance_km: number | null; selected: boolean;
+}
 export interface SavingsRecord { id: number; list_name: string; saved_amount: Money; created_at: string; }
 export interface SavingsVault { total_saved: Money; record_count: number; records: SavingsRecord[]; }
 
@@ -94,4 +110,7 @@ export const api = {
       q, category_id: categoryId, subcategory_id: opts.subcategoryId, limit: opts.limit ?? 50, sort: opts.sort,
     })),
   savings: () => request<SavingsVault>('GET', '/savings'),
+  productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
+  deals: () => request<Deal[]>('GET', '/products/deals'),
+  myStores: () => request<Store[]>('GET', '/me/stores'),
 };

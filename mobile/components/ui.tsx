@@ -12,12 +12,12 @@ export function useTheme() {
   return Colors[useColorScheme()];
 }
 
-/** Sekme ekranlarının kabuğu: güvenli alan + kaydırma + sayfa arka planı */
-export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
+/** Ekran kabuğu: güvenli alan + kaydırma + sayfa arka planı. Başlık çubuğu olan (yığındaki) ekranlarda safeTop={false} */
+export function Screen({ children, scroll = true, safeTop = true }: { children: ReactNode; scroll?: boolean; safeTop?: boolean }) {
   const t = useTheme();
   const body = <View style={styles.body}>{children}</View>;
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: t.background }}>
+    <SafeAreaView edges={safeTop ? ['top'] : []} style={{ flex: 1, backgroundColor: t.background }}>
       {scroll ? <ScrollView keyboardShouldPersistTaps="handled">{body}</ScrollView> : body}
     </SafeAreaView>
   );

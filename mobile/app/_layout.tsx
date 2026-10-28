@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { CatalogProvider } from '@/lib/catalog';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -36,7 +37,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <CatalogProvider>
+        <RootLayoutNav />
+      </CatalogProvider>
     </AuthProvider>
   );
 }
@@ -58,6 +61,10 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ presentation: 'modal', title: 'Giriş yap' }} />
         <Stack.Screen name="forgot-password" options={{ title: 'Şifremi unuttum' }} />
+        <Stack.Screen name="category/[id]" options={{ title: 'Kategori' }} />
+        <Stack.Screen name="search" options={{ title: 'Ara' }} />
+        <Stack.Screen name="product/[id]" options={{ title: 'Ürün' }} />
+        <Stack.Screen name="stores" options={{ title: 'Marketlerim' }} />
       </Stack>
     </ThemeProvider>
   );
