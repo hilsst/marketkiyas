@@ -122,7 +122,7 @@ export function ListProvider({ children }: { children: ReactNode }) {
   // API alt kategorileri de döner ("Süt & Kahvaltılık" > "Peynir"); ana listeler yalnızca üst kategorileri gösterir
   const topCategories = useMemo(() => categories.filter(c => c.parent_id == null), [categories]);
   const subcategoriesOf = useCallback(
-    (id: number) => categories.filter(c => c.parent_id === id).sort((a, b) => a.name.localeCompare(b.name, "tr")),
+    (id: number) => categories.filter(c => c.parent_id === id), // API en kalabalık alt kategoriyi önce verir
     [categories],
   );
 
