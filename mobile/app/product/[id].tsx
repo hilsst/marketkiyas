@@ -2,6 +2,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
+import Flyer from '@/components/Flyer';
 import ListPicker from '@/components/ListPicker';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
@@ -21,7 +22,8 @@ export default function ProductScreen() {
   const { user } = useAuth();
   const [selected, setSelected] = useState<number | null>(null); // seçili ürün = kilitli marka
   const [picking, setPicking] = useState(false);
-  const [added, setAdded] = useState<string | null>(null);
+  const [added, setAdded] = useState<string | null>(null); // hata mesajı
+  const [flyer, setFlyer] = useState<string | null>(null); // eklenen listenin adı
   const [adding, setAdding] = useState(false);
   const { marketById, categoryIcon, categoryById } = useCatalog();
   const [group, setGroup] = useState<GroupDetail | null | undefined>(undefined);
@@ -38,16 +40,22 @@ export default function ProductScreen() {
     .sort((a, b) => a.price - b.price), [group]);
 
   const addTo = async (target: number) => {
-    await api.addItem(target, Number(id), selected);
+    const updated = await api.addItem(target, Number(id), selected);
     setPicking(false);
-    setAdded('Listeye eklendi');
-    if (listId) router.back();
+    setAdded(null);
+    setFlyer(updated.name); // onay kartı, ardından yönlendirme (afterFlyer)
   };
   const onAdd = async () => {
     if (!user) { router.push('/login'); return; }
     if (!listId) { setPicking(true); return; }
     setAdding(true);
     try { await addTo(Number(listId)); } catch (e) { setAdded((e as Error).message); } finally { setAdding(false); }
+  };
+  // Kemal: eklendikten sonra onay kartı ve ana sayfaya dönüş. Listenin içinden ürün eklerken listeye geri dönülür.
+  const afterFlyer = () => {
+    setFlyer(null);
+    if (listId) router.dismissTo({ pathname: '/list/[id]', params: { id: listId } });
+    else router.dismissTo('/');
   };
   const selectedProduct = group?.products.find(p => p.id === selected);
 
@@ -90,7 +98,8 @@ export default function ProductScreen() {
 
       <Muted>{selectedProduct ? `Seçili marka: ${selectedProduct.brand || selectedProduct.name} (tekrar dokunarak kaldırabilirsin)` : 'Marka seçmezsen listeye "Farketmez" eklenir, her zaman en ucuzu alınır.'}</Muted>
       <Button title={listId ? 'Bu listeye ekle' : 'Listeye ekle'} onPress={onAdd} busy={adding} />
-      {added && <Text style={{ color: t.tint, textAlign: 'center', fontWeight: '600' }}>{added}</Text>}
+      {added && <Text style={{ color: t.danger, textAlign: 'center', fontWeight: '600' }}>{added}</Text>}
+      {flyer && <Flyer title="Listeye eklendi" subtitle={flyer} onDone={afterFlyer} />}
       <ListPicker visible={picking} onClose={() => setPicking(false)} onPick={addTo} />
     </Screen>
   );
