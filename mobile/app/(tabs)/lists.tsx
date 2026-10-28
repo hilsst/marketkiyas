@@ -85,6 +85,7 @@ export default function ListsScreen() {
                 {(l.member_count > 0 || l.owner_id !== user.id) && (
                   <Muted>👥 Ortak liste{l.owner_id !== user.id && l.owner_name ? ` · sahibi ${l.owner_name}` : ''}</Muted>
                 )}
+                {l.status === 'completed' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 12 }}>✅ Alışveriş tamamlandı</Text>}
                 {l.status === 'shopping' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 12 }}>🛒 Alışveriş sürüyor · {l.checked_count}/{l.item_count} alındı</Text>}
                 {l.estimated_total != null && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

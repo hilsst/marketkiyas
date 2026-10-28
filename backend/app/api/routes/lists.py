@@ -91,7 +91,7 @@ async def remove_member(list_id: int, member_id: int, user: CurrentUser, db: DbS
 @router.post("/{list_id}/items", response_model=ListDetail, status_code=status.HTTP_201_CREATED)
 async def add_item(list_id: int, body: ItemCreate, user: CurrentUser, db: DbSession) -> ListDetail:
     """Grup listede zaten varsa yeni kalem açılmaz: miktarı artar, gönderilen tercih uygulanır."""
-    shopping_list = await svc.get_owned_list(db, user, list_id)
+    shopping_list = await svc.get_owned_list(db, user, list_id, editable=True)
     group = await svc.get_group(db, body.group_id)
     preference = body.model_dump(include={"preferred_brand", "preferred_product_id"}, exclude_none=True)
     existing = next((i for i in shopping_list.items if i.group_id == group.id), None)
@@ -122,7 +122,7 @@ async def update_item(
     list_id: int, item_id: int, body: ItemUpdate, user: CurrentUser, db: DbSession
 ) -> ListDetail:
     """Marka kilitleme (sağa kaydır), miktar, "alındı" işareti ve sıralama."""
-    shopping_list = await svc.get_owned_list(db, user, list_id)
+    shopping_list = await svc.get_owned_list(db, user, list_id, editable=True)
     item = svc.get_item(shopping_list, item_id)
     changes = body.model_dump(exclude_unset=True)
 
@@ -145,7 +145,7 @@ async def update_item(
 
 @router.delete("/{list_id}/items/{item_id}", response_model=ListDetail)
 async def delete_item(list_id: int, item_id: int, user: CurrentUser, db: DbSession) -> ListDetail:
-    shopping_list = await svc.get_owned_list(db, user, list_id)
+    shopping_list = await svc.get_owned_list(db, user, list_id, editable=True)
     item = svc.get_item(shopping_list, item_id)
     svc.reset_plan(shopping_list)
     shopping_list.items.remove(item)
@@ -168,7 +168,7 @@ async def apply_plan(
     list_id: int, body: ApplyPlanRequest, user: CurrentUser, db: DbSession
 ) -> ListDetail:
     """"Listeye Uygula": kalemler markete göre gruplanır, liste Alışveriş Modu'na geçer."""
-    shopping_list = await svc.get_owned_list(db, user, list_id)
+    shopping_list = await svc.get_owned_list(db, user, list_id, editable=True)
     await svc.apply_plan(db, shopping_list, body.plan_type, user.id)
     return svc.to_detail(await svc.get_owned_list(db, user, list_id))
 
@@ -176,7 +176,7 @@ async def apply_plan(
 @router.post("/{list_id}/clear-preferences", response_model=ListDetail)
 async def clear_preferences(list_id: int, user: CurrentUser, db: DbSession) -> ListDetail:
     """Kombinasyon ipucu: tüm marka/ürün kilitlerini kaldırır ("MARKA FARKETMEZ")."""
-    shopping_list = await svc.get_owned_list(db, user, list_id)
+    shopping_list = await svc.get_owned_list(db, user, list_id, editable=True)
     changed = False
     for item in shopping_list.items:
         changed |= svc.set_preference(item, item.group, {"preferred_product_id": None})
@@ -189,7 +189,7 @@ async def clear_preferences(list_id: int, user: CurrentUser, db: DbSession) -> L
 @router.delete("/{list_id}/plan", response_model=ListDetail)
 async def cancel_plan(list_id: int, user: CurrentUser, db: DbSession) -> ListDetail:
     """Alışveriş Modu'nda "İptal Et": plan kaldırılır, alındı işaretleri korunur."""
-    shopping_list = await svc.get_owned_list(db, user, list_id)
+    shopping_list = await svc.get_owned_list(db, user, list_id, editable=True)
     svc.reset_plan(shopping_list)
     await db.commit()
     return svc.to_detail(await svc.get_owned_list(db, user, list_id))
@@ -198,6 +198,14 @@ async def cancel_plan(list_id: int, user: CurrentUser, db: DbSession) -> ListDet
 @router.post("/{list_id}/complete", response_model=CompleteResponse)
 async def complete_list(list_id: int, user: CurrentUser, db: DbSession) -> CompleteResponse:
     """"Alışverişi Bitir": Fırsatçı planı uygulandıysa tasarruf kalıcı kasaya eklenir; liste
-    Alışveriş Modu'ndan çıkar ve yeniden kullanılabilir."""
+    tamamlandı olarak kilitlenir; "Tekrar kullan" ile yeniden açılır."""
     shopping_list = await svc.get_owned_list(db, user, list_id)
     return await svc.complete_list(db, user, shopping_list)
+
+
+@router.post("/{list_id}/reopen", response_model=ListDetail)
+async def reopen_list(list_id: int, user: CurrentUser, db: DbSession) -> ListDetail:
+    """"Listeyi tekrar kullan": tamamlanmış liste aynı ürünlerle yeniden açılır, işaretler sıfırlanır."""
+    shopping_list = await svc.get_owned_list(db, user, list_id)
+    await svc.reopen_list(db, shopping_list)
+    return svc.to_detail(await svc.get_owned_list(db, user, list_id))

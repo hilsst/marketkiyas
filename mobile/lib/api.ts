@@ -173,6 +173,8 @@ export const api = {
   applyPlan: (listId: number, plan_type: PlanType) => request<ListDetail>('POST', `/lists/${listId}/apply`, { plan_type }),
   cancelPlan: (listId: number) => request<ListDetail>('DELETE', `/lists/${listId}/plan`),
   complete: (listId: number) => request<CompleteResponse>('POST', `/lists/${listId}/complete`),
+  // Tamamlanan liste kilitlidir; aynı ürünlerle yeniden açar
+  reopenList: (listId: number) => request<ListDetail>('POST', `/lists/${listId}/reopen`),
   // Ortak liste: sahip davet kodu alır, aile üyesi kodla katılır; üye kendini, sahip herkesi çıkarabilir
   shareList: (listId: number) => request<{ share_code: string }>('POST', `/lists/${listId}/share`),
   joinList: (code: string) => request<ListDetail>('POST', '/lists/join', { code }),

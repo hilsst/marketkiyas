@@ -45,7 +45,8 @@ export default function ListPicker({ visible, onClose, onPick }: {
         {lists === null && !error && <ActivityIndicator color={t.tint} />}
         {/* Çok listede liste kutusu kayar, oluşturma satırı ve düğmeler görünür kalır */}
         <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 10 }}>
-        {lists?.map(l => (
+        {/* Tamamlanan listeler kilitli, ürün eklenemez */}
+        {lists?.filter(l => l.status !== 'completed').map(l => (
           <Pressable key={l.id} onPress={() => pick(l.id)} disabled={busy}
             style={{ padding: 14, borderRadius: 12, backgroundColor: t.card, borderWidth: 1, borderColor: t.border }}>
             <Text style={{ color: t.text, fontWeight: '600' }}>{l.name}</Text>

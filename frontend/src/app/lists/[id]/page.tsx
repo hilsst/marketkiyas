@@ -168,6 +168,8 @@ export default function ListDetailPage() {
   const totalItems = list.items.length;
   const checkedCount = list.items.filter(i => i.is_checked).length;
   const expectedSavings = num(list.expected_savings);
+  // Alışverişi bitirilen liste kilitli: ürün eklenmez, "Tekrar kullan" ile yeniden açılır
+  const completed = list.status === "completed";
 
   const handleApplyPlan = async (plan: Mode) => {
     if (plan === "single" && !view?.bestSingle) {
@@ -300,7 +302,31 @@ export default function ListDetailPage() {
         </div>
       </div>
 
-      <div className="px-4 mb-3">
+      {completed && (
+        <div className="px-4 space-y-3">
+          <div className="border-2 border-emerald-500 rounded-xl p-4">
+            <div className="font-bold text-emerald-700">✅ Alışveriş tamamlandı</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {list.completed_at ? new Date(list.completed_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "long" }) + " · " : ""}
+              Bu listeye artık ürün eklenemez.
+            </div>
+          </div>
+          <div className="bg-white border rounded-xl divide-y">
+            {list.items.map(i => (
+              <div key={i.id} className="flex items-center gap-3 p-3 text-sm">
+                <span>{i.is_checked ? "✅" : "⬜"}</span>
+                <span className="flex-1">{i.group_name}</span>
+                <span className="text-gray-500">{num(i.quantity)} adet</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => mutate(() => api.reopenList(list.id))}
+            className="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold">🔁 Listeyi tekrar kullan</button>
+          <div className="text-xs text-gray-500 text-center">Aynı ürünlerle yeni bir alışverişe başlar, işaretler sıfırlanır.</div>
+        </div>
+      )}
+
+      {!completed && <div className="px-4 mb-3">
         <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
           {([["items","Ürünler"],["by-market","Markete Göre"],["optimize","Optimize"]] as [Tab, string][]).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
@@ -309,9 +335,9 @@ export default function ListDetailPage() {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
-      {tab === "items" && (
+      {!completed && tab === "items" && (
         <div className="px-4 space-y-3">
           {appliedPlan && shoppingGroups ? (
             <div className="space-y-4">
@@ -449,7 +475,7 @@ export default function ListDetailPage() {
         </div>
       )}
 
-      {tab === "by-market" && view && (
+      {!completed && tab === "by-market" && view && (
         <div className="px-4 space-y-3">
           <div className="card p-4 bg-emerald-50 border-emerald-200">
             <div className="text-xs text-emerald-700 font-semibold">SEÇTİĞİNİZ MARKALARLA TOPLAM</div>
@@ -497,7 +523,7 @@ export default function ListDetailPage() {
         <div className="px-4 text-center text-gray-400 py-8">Hesaplanıyor…</div>
       )}
 
-      {tab === "optimize" && view && (
+      {!completed && tab === "optimize" && view && (
         <div className="px-4 space-y-3">
           <div className="flex gap-2">
             {([["single","Tek Market"],["combo","Kombinasyon"],["cheapest","Fırsatçı 🚀"]] as [Mode, string][]).map(([m, l]) => (

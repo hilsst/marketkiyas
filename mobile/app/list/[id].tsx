@@ -97,6 +97,8 @@ export default function ListScreen() {
   const total = list.items.length;
   const checked = list.items.filter(i => i.is_checked).length;
   const shopping = list.applied_plan != null;
+  // Alışverişi bitirilen liste kilitli: ürün eklenmez, "Tekrar kullan" ile yeniden açılır
+  const completed = list.status === 'completed';
   const itemById = new Map(list.items.map(i => [i.id, i]));
 
   const finish = async () => {
@@ -205,16 +207,39 @@ export default function ListScreen() {
         </Card>
       )}
 
-      <View style={{ flexDirection: 'row', backgroundColor: t.border, borderRadius: 12, padding: 4 }}>
+      {!completed && <View style={{ flexDirection: 'row', backgroundColor: t.border, borderRadius: 12, padding: 4 }}>
         {(['items', 'optimize'] as Tab[]).map(k => (
           <Pressable key={k} onPress={() => setTab(k)} style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center', backgroundColor: tab === k ? t.card : 'transparent' }}>
             <Text style={{ color: tab === k ? t.tint : t.textMuted, fontWeight: '700' }}>{k === 'items' ? 'Ürünler' : 'Planlar'}</Text>
           </Pressable>
         ))}
-      </View>
+      </View>}
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
 
-      {tab === 'items' && shopping && (
+      {completed && (
+        <>
+          <Card style={{ gap: 4, borderColor: t.tint, borderWidth: 2 }}>
+            <Text style={{ color: t.tint, fontSize: 16, fontWeight: '800' }}>✅ Alışveriş tamamlandı</Text>
+            <Muted>
+              {list.completed_at ? new Date(list.completed_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' }) + ' · ' : ''}
+              Bu listeye artık ürün eklenemez.
+            </Muted>
+          </Card>
+          <Card style={{ padding: 0 }}>
+            {list.items.map(i => (
+              <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: t.border }}>
+                <Text style={{ fontSize: 16 }}>{i.is_checked ? '✅' : '⬜'}</Text>
+                <Text style={{ color: t.text, flex: 1 }} numberOfLines={2}>{i.group_name}</Text>
+                <Muted>{num(i.quantity)} adet</Muted>
+              </View>
+            ))}
+          </Card>
+          <Button title="🔁 Listeyi tekrar kullan" onPress={() => mutate(() => api.reopenList(list.id))} />
+          <Muted style={{ textAlign: 'center' }}>Aynı ürünlerle yeni bir alışverişe başlar, işaretler sıfırlanır.</Muted>
+        </>
+      )}
+
+      {!completed && tab === 'items' && shopping && (
         <>
           <Card style={{ backgroundColor: t.tint, borderColor: t.tint, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ color: '#fff', fontWeight: '700' }}>🛒 Alışveriş modu · {checked}/{total} alındı</Text>
@@ -239,7 +264,7 @@ export default function ListScreen() {
         </>
       )}
 
-      {tab === 'items' && !shopping && (
+      {!completed && tab === 'items' && !shopping && (
         <>
           <Card style={{ padding: 0 }}>
             {list.items.length === 0 && <Muted style={{ padding: 16 }}>Liste boş. Aşağıdan ürün ekle.</Muted>}
@@ -250,7 +275,7 @@ export default function ListScreen() {
         </>
       )}
 
-      {tab === 'optimize' && (
+      {!completed && tab === 'optimize' && (
         <>
           <View style={{ flexDirection: 'row', gap: 6 }}>
             {MODES.map(m => (

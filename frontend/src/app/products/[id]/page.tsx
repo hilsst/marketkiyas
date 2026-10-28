@@ -197,7 +197,7 @@ export default function ProductDetailPage() {
           <div className="bg-white w-full max-w-md mx-auto rounded-t-2xl p-4" onClick={e => e.stopPropagation()}>
             <div className="text-lg font-bold mb-3">Hangi listeye?</div>
             <div className="space-y-2">
-              {lists.map(l => (
+              {lists.filter(l => l.status !== "completed").map(l => (
                 <button key={l.id} onClick={() => handleAddToList(l.id)}
                   className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                   <div className="font-medium">{l.name}</div>
