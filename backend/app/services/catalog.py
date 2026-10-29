@@ -182,7 +182,7 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
     store_prices: dict[int, list[ProductStorePrice]] = defaultdict(list)
     if resolver.uses_stores and products:
         rows = await db.execute(
-            select(StorePrice.product_id, StorePrice.store_id, Store.name, StorePrice.price)
+            select(StorePrice.product_id, StorePrice.store_id, Store.name, StorePrice.price, StorePrice.updated_at)
             .join(Store, Store.id == StorePrice.store_id)
             .where(
                 StorePrice.product_id.in_([p.id for p in products]),
@@ -191,8 +191,10 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
             )
             .order_by(StorePrice.price, StorePrice.store_id)
         )
-        for product_id, store_id, store_name, price in rows:
-            store_prices[product_id].append(ProductStorePrice(store_id=store_id, store_name=store_name, price=price))
+        for product_id, store_id, store_name, price, updated_at in rows:
+            store_prices[product_id].append(
+                ProductStorePrice(store_id=store_id, store_name=store_name, price=price, updated_at=updated_at)
+            )
     store_names = {sp.store_id: sp.store_name for sps in store_prices.values() for sp in sps}
 
     prices = {p.id: resolver.price(p) for p in products}

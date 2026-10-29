@@ -10,6 +10,7 @@ from sqlalchemy import select, update
 from app.api.routes.products import get_barcode_client
 from app.main import app
 from app.models import GroupMember, Market, PriceHistory, Product, ProductGroup, Unit
+from app.services import similar
 from app.services.normalize import normalize_name
 from tests.marketfiyati_fake import FakeMarketFiyati, load
 
@@ -181,6 +182,9 @@ async def test_barcode_lookup(client, db, milk, fake):
     found = r.json()["group_id"]
     body = json.loads(fake.requests[-1].content)
     assert body["identity"] == "8690504000017" and body["latitude"] == 40.98
+    # Şube seçilmemişse konumun çevresindeki şubelerle aranır (şubesiz arama İstanbul fiyatı getirir)
+    assert fake.requests[-2].url.path == "/api/v2/nearest"
+    assert body["depots"] == ["bim-4501", "a101-7788", "far-1"]
 
     # İkinci okutma veritabanından
     before = len(fake.requests)
@@ -189,3 +193,36 @@ async def test_barcode_lookup(client, db, milk, fake):
 
     fake.fail_with = 503
     assert (await client.get("/api/products/barcode/8690504000099")).status_code == 503
+
+
+# --- Benzer ürünler ---------------------------------------------------------------------------
+
+
+async def test_similar_products(client, db, milk, fake):
+    similar._cache.clear()
+    group_id, _ = milk
+    assert (await client.get("/api/products/999999/similar")).status_code == 404
+
+    # Konum bilinmiyorsa kaynağa gidilmez (şubesiz arama başka şehrin fiyatını getirir)
+    assert (await client.get(f"/api/products/{group_id}/similar")).json() == []
+    assert fake.requests == []
+
+    fake.similar = load("marketfiyati_search_sut.json")
+    params = {"lat": 40.98, "lon": 29.02}
+    names = [g["name"] for g in (await client.get(f"/api/products/{group_id}/similar", params=params)).json()]
+    assert "Laktozsuz Süt 1 L" in names
+    assert "Süt 1 L" not in names  # grubun kendisi gösterilmez
+    body = json.loads(fake.requests[-1].content)
+    assert fake.requests[-1].url.path == "/api/v2/searchSmilarProduct"
+    assert body["id"] in ("bim-milk", "a101-milk") and body["depots"] == ["bim-4501", "a101-7788", "far-1"]
+
+    # Aynı ürün ve şubeler için tekrar sorulmaz
+    before = len(fake.requests)
+    assert [g["name"] for g in (await client.get(f"/api/products/{group_id}/similar", params=params)).json()] == names
+    assert len(fake.requests) == before + 1  # yalnızca /nearest
+    assert fake.requests[-1].url.path == "/api/v2/nearest"
+
+    # Kaynağa ulaşılamazsa sayfa bozulmaz
+    similar._cache.clear()
+    fake.fail_with = 503
+    assert (await client.get(f"/api/products/{group_id}/similar", params=params)).json() == []

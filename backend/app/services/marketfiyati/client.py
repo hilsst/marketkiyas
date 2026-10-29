@@ -45,6 +45,11 @@ class MarketFiyatiClient(PoliteClient):
         rows = data if isinstance(data, list) else (data or {}).get("content", [])
         return [d for d in (Depot.from_nearest(r) for r in rows) if d]
 
+    async def nearest_depot_ids(self, latitude: float, longitude: float, distance_km: int) -> list[str]:
+        """Aramalara verilecek şube id'leri. marketfiyati şube listesi boşsa konumu yok sayıp
+        varsayılan bölgenin (İstanbul Kadıköy) fiyatlarını döndürür; bu yüzden aramalar hep şubeyle yapılır."""
+        return [d.id for d in await self.nearest_depots(latitude, longitude, distance_km)]
+
     async def search(
         self,
         *,
@@ -110,6 +115,30 @@ class MarketFiyatiClient(PoliteClient):
         if depot_ids:
             body["depots"] = list(depot_ids)
         return SearchPage.from_raw(await self._request("POST", "/api/v2/searchByIdentity", body) or {})
+
+    async def similar_products(
+        self,
+        product_id: str,
+        title: str,
+        *,
+        latitude: float,
+        longitude: float,
+        distance_km: int,
+        depot_ids: Sequence[str] = (),
+        size: int = 20,
+    ) -> SearchPage:
+        """Bir ürüne benzeyen ürünler (sitenin /searchSmilarProduct ucu; addaki yazım hatası sitede de böyle)."""
+        body: dict[str, Any] = {
+            "id": product_id,
+            "keywords": title,
+            "pages": 0,
+            "size": min(size, MAX_PAGE_SIZE),
+            "latitude": latitude,
+            "longitude": longitude,
+            "distance": distance_km,
+            "depots": list(depot_ids),
+        }
+        return SearchPage.from_raw(await self._request("POST", "/api/v2/searchSmilarProduct", body) or {})
 
     async def search_all(self, max_pages: int = 20, *, menu_category: str | None = None, **kwargs) -> list:
         """Tüm sayfaları dolaşır (max_pages güvenlik sınırı). menu_category verilirse o kategori taranır."""
