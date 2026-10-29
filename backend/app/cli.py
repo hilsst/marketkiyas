@@ -5,6 +5,7 @@
     python -m app.cli sync-selected                             # seçili şubelerin tüm ürünleri
     python -m app.cli sync-selected --every-hours 6             # sürekli çalışan worker
     python -m app.cli scrape --market sok --limit 100           # market sitesinden (Şok, A101)
+    python -m app.cli aktuel --every-hours 12                   # BİM/Şok aktüel broşür ürünleri
     python -m app.cli seed-demo                                 # demo kataloğu + demo@marketkiyas.app
 """
 
@@ -95,6 +96,21 @@ async def _scrape(args: argparse.Namespace) -> None:
         await asyncio.sleep(args.every_hours * 3600)
 
 
+async def _aktuel(args: argparse.Namespace) -> None:
+    from app.services.aktuel import COLLECTORS, sync_aktuel
+
+    markets = tuple(COLLECTORS) if args.market == "all" else (args.market,)
+    while True:
+        try:
+            async with SessionLocal() as db, PoliteClient(min_interval=settings.scraper_min_interval_seconds) as http:
+                log.info("aktüeller: %s", await sync_aktuel(db, http, markets))
+        except Exception:
+            log.exception("aktüel taraması başarısız")
+        if not args.every_hours:
+            return
+        await asyncio.sleep(args.every_hours * 3600)
+
+
 async def _seed_demo(args: argparse.Namespace) -> None:
     from app.services.demo_seed import DEMO_EMAIL, DEMO_PASSWORD, seed_demo
 
@@ -135,6 +151,11 @@ def main() -> None:
     p.add_argument("--limit", type=int, default=None, help="market başına en fazla ürün")
     p.add_argument("--every-hours", type=float, default=0, help="0 = bir kez çalış")
     p.set_defaults(func=_scrape)
+
+    p = sub.add_parser("aktuel", help="marketlerin aktüel (broşür) ürünlerini topla (robots.txt'ye uyar)")
+    p.add_argument("--market", choices=["bim", "sok", "all"], default="all")
+    p.add_argument("--every-hours", type=float, default=0, help="0 = bir kez çalış")
+    p.set_defaults(func=_aktuel)
 
     p = sub.add_parser("seed-demo", help="demo kataloğunu ve örnek listeleri yükle (gerçek fiyat değil)")
     p.set_defaults(func=_seed_demo)

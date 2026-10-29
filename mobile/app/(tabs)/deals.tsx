@@ -41,6 +41,17 @@ export default function DealsScreen() {
       <Title>🏷️ Fırsatlar</Title>
       <Muted>{user ? 'Seçtiğin marketlerde' : 'Marketlerde'} son 30 güne göre ucuzlayan ve kampanyadaki ürünler.</Muted>
 
+      <Pressable onPress={() => router.push('/aktuel')}>
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
+          <Text style={{ fontSize: 28 }}>📰</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: t.text, fontWeight: '700' }}>Marketlerin aktüel broşürleri</Text>
+            <Muted>{"BİM ve Şok'un bu haftaki aktüel ürünleri"}</Muted>
+          </View>
+          <Text style={{ color: t.tint, fontWeight: '700' }}>›</Text>
+        </Card>
+      </Pressable>
+
       {marketIds.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           {chip('all', market == null, () => setMarket(null), chipText(market == null, 'Tüm marketler'))}
