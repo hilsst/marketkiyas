@@ -1,7 +1,7 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { api, formatSize, num, unitPrice, GroupDetail, GroupProduct, PriceAlert } from "@/lib/api";
+import { api, formatSize, num, unitPrice, updatedLabel, GroupDetail, GroupProduct, GroupSummary, PriceAlert } from "@/lib/api";
 import MarketLogo from "@/components/MarketLogo";
 import ProductImage from "@/components/ProductImage";
 import { useGroupIcon, useLists } from "@/lib/store";
@@ -18,10 +18,18 @@ export default function ProductDetailPage() {
   const [alertSheet, setAlertSheet] = useState(false);
   const [alert, setAlert] = useState<PriceAlert | null>(null);
   const [target, setTarget] = useState("");
+  const [similar, setSimilar] = useState<GroupSummary[]>([]);
 
   useEffect(() => {
     api.productGroup(groupId).then(setGroup).catch(() => setGroup(null));
   }, [groupId]);
+
+  // Benzer ürünler (muadiller) seçili şubelere göre; şube seçilmemişse boş gelir
+  useEffect(() => {
+    setSimilar([]);
+    if (!user) return;
+    api.similarGroups(groupId).then(setSimilar).catch(() => {});
+  }, [user, groupId]);
 
   useEffect(() => {
     if (!user) { setAlert(null); return; }
@@ -34,8 +42,8 @@ export default function ProductDetailPage() {
   // Şube seçildiyse her şubedeki fiyat ayrı satır ("CarrefourSA · Göksu Süper"), seçilmediyse zincir başına bir satır
   const offers = useMemo(() => products
     .flatMap(p => p.store_prices.length
-      ? p.store_prices.map(sp => ({ key: p.id + "-" + sp.store_id, product: p, storeName: sp.store_name as string | null, price: num(sp.price) }))
-      : [{ key: String(p.id), product: p, storeName: p.store_name, price: num(p.price) }])
+      ? p.store_prices.map(sp => ({ key: p.id + "-" + sp.store_id, product: p, storeName: sp.store_name as string | null, price: num(sp.price), updated: updatedLabel(sp.updated_at) }))
+      : [{ key: String(p.id), product: p, storeName: p.store_name, price: num(p.price), updated: null as string | null }])
     .sort((a, b) => a.price - b.price), [products]);
   const marketCount = new Set(products.map(p => p.market_id)).size;
   const storeCount = new Set(products.flatMap(p => p.store_prices.map(sp => sp.store_id))).size;
@@ -131,7 +139,7 @@ export default function ProductDetailPage() {
           {marketCount} markette{storeCount > marketCount ? ", " + storeCount + " şubede" : ""} bulundu
           {offers.length > Math.max(storeCount, marketCount) ? " · " + offers.length + " seçenek" : ""}
         </div>
-        {offers.map(({ key, product: p, storeName, price }, idx) => (
+        {offers.map(({ key, product: p, storeName, price, updated }, idx) => (
           <button key={key} onClick={() => setSelectedId(p.id)}
             className={"w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-50 " + (p.id===selected?.id?"bg-emerald-50/50":"")}>
             <MarketLogo id={p.market_id} size={32} />
@@ -141,6 +149,7 @@ export default function ProductDetailPage() {
                 {storeName && <span className="text-gray-500"> · {storeName}</span>}
               </div>
               <div className="text-xs text-gray-500 truncate">{p.brand ? p.brand + " · " : ""}{p.name}</div>
+              {updated && <div className="text-[10px] text-gray-400">Fiyat {updated} güncellendi</div>}
               {p.regular_price && (
                 <div className="text-xs text-orange-600 mt-0.5">
                   <span className="line-through text-gray-400">{num(p.regular_price).toFixed(2)}</span> promo
@@ -157,6 +166,21 @@ export default function ProductDetailPage() {
           </button>
         ))}
       </div>
+      {similar.length > 0 && (
+        <div className="card mb-4">
+          <div className="px-4 pt-3 text-sm font-semibold text-gray-700">Benzer ürünler</div>
+          <div className="flex gap-3 overflow-x-auto px-4 py-3">
+            {similar.map(g => (
+              <button key={g.id} onClick={() => router.push("/products/" + g.id)}
+                className="shrink-0 w-28 text-left">
+                <ProductImage src={g.image_url} icon={groupIcon(g.category_id)} size={64} />
+                <div className="text-xs mt-1 line-clamp-2">{g.name}</div>
+                {g.min_price && <div className="text-sm font-bold text-emerald-600">{num(g.min_price).toFixed(2)} ₺</div>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="flex gap-2">
         <button onClick={openPicker} className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-semibold">
           ➕ Listeye Ekle

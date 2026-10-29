@@ -23,7 +23,7 @@ export interface GroupProduct {
   id: number; name: string; brand: string | null; market_id: number; price: Money | null;
   regular_price: Money | null; store_id: number | null; store_name: string | null; is_available: boolean;
   image_url: string | null; price_history: PricePoint[];
-  store_prices: { store_id: number; store_name: string; price: Money }[]; // seçili şubeler, ucuzdan pahalıya
+  store_prices: { store_id: number; store_name: string; price: Money; updated_at: string | null }[]; // seçili şubeler, ucuzdan pahalıya
 }
 export interface GroupDetail extends GroupSummary { products: GroupProduct[]; }
 
@@ -148,6 +148,7 @@ export const api = {
   searchProducts: (q: string, categoryId?: number | null, opts: { sort?: "name" | "popular"; limit?: number; subcategoryId?: number | null } = {}) =>
     request<GroupSummary[]>("GET", "/products" + qs({ q, category_id: categoryId, subcategory_id: opts.subcategoryId, limit: opts.limit ?? 100, sort: opts.sort })),
   productGroup: (id: number) => request<GroupDetail>("GET", "/products/" + id),
+  similarGroups: (id: number) => request<GroupSummary[]>("GET", "/products/" + id + "/similar"),
 
   lists: () => request<ListSummary[]>("GET", "/lists"),
   list: (id: number) => request<ListDetail>("GET", "/lists/" + id),
@@ -207,6 +208,19 @@ export function unitPrice(price: Money | number | null | undefined, quantity: Mo
   if (price == null || !q || !unit) return null;
   const value = unit === "adet" ? num(price) / q : (num(price) / q) * 1000;
   return { value, label: value.toFixed(2).replace(".", ",") + " ₺/" + (unit === "ml" ? "L" : unit === "g" ? "kg" : "adet") };
+}
+
+/** Fiyatın güncellenme zamanı: "bugün 09:15", "dün 18:40", "3 gün önce". */
+export function updatedLabel(iso: string | null | undefined, now = new Date()): string | null {
+  if (!iso) return null;
+  const at = new Date(iso);
+  if (isNaN(at.getTime())) return null;
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((day(now) - day(at)) / 86400000);
+  const time = at.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  if (days <= 0) return "bugün " + time;
+  if (days === 1) return "dün " + time;
+  return days + " gün önce";
 }
 
 // Türkçe ses uyumu: 15'li, 30'lu, 6'lı, 4'lü

@@ -59,6 +59,7 @@ pytest   # marketkiyas_test veritabanını kullanır
 | `GET /api/stores/nearby?lat=&lon=&distance=5` | Çevredeki market şubeleri (marketfiyati.org.tr), `selected` bayrağıyla |
 | `GET/PUT /api/me/stores` `{"store_ids": [..]}` | "Çevremdeki marketler" seçimi. Yeni şubelerin fiyatları arka planda çekilir |
 | `GET /api/products/barcode/{barkod}` | Barkod Okut: önce veritabanı (barkod ya da marketfiyati ürün id'si), yoksa marketfiyati `/api/v2/searchByIdentity` (`identityType: "barcode"`); bulunan ürün kaydedilir |
+| `GET /api/products/{id}/similar?lat=&lon=` | Benzer ürünler (muadiller): marketfiyati `/api/v2/searchSmilarProduct`, kullanıcının şubeleri (ya da konumun çevresi) ile. Sonuç 6 saat bellekte tutulur; konum bilinmiyorsa boş liste |
 | `GET /api/products/deals` | Fırsatlar: son 30 günün en yüksek fiyatından ya da kampanya öncesi fiyattan en az %5 ucuz, grup başına en iyisi |
 | `GET/POST /api/alerts`, `DELETE /api/alerts/{id}` | Fiyat alarmı. `target_price` boşsa "kurulduğu fiyatın altına inince". Kullanıcının şube fiyatlarıyla, okunurken değerlendirilir |
 | `GET /api/alerts/unread`, `POST /api/alerts/seen` | 🔔 rozeti: fiyatı düşen ve görülmemiş alarm sayısı |
@@ -84,6 +85,8 @@ Kaynak JSON API sunduğu için tarayıcı otomasyonuna (Playwright) gerek yoktur
 - **Eşleştirme:** başlıktan marka atılır, miktar temel birime çevrilir ("Pınar Süt 1 L" → `sut 1000ml`). Aynı miktar/birimdeki gruplarla pg_trgm benzerliği ≥ 0.7 ise o gruba, değilse yeni gruba girer.
 - **Kullanıcı şubeleri:** şube seçen kullanıcıya arama, optimizasyon ve plan yalnızca o şubelerin son 7 gündeki fiyatlarıyla çalışır; plan kalemlere şubeyi de atar. Şube seçmeyen kullanıcı zincirin en düşük fiyatını görür. Ürün detayı seçili her şubenin fiyatını şube adıyla verir (`store_prices`).
 - **Tüm katalog:** seçili şubeler için sitenin 9 menü kategorisi (`/api/v2/searchByCategories`, `menuCategory: true`) sayfa sayfa taranır; böylece şubede satılan her ürün gelir (`sync-selected --keywords ...` verilirse yalnız o kelimeler aranır).
+- **Şube her zaman verilir:** `depots` boş gönderilirse site konumu yok sayıp varsayılan bölgenin (İstanbul Kadıköy) fiyatlarını döndürür (2026-10-29 canlı denendi). Bu yüzden şubesiz senkronizasyon ve barkod araması önce `/api/v2/nearest` ile çevredeki şubeleri alır. Her üründe bir zincirin yalnızca en ucuz şubesi gelir.
+- **Fiyat saati:** `store_prices.updated_at` kaynağın `indexTime` değeridir ("29.10.2026 09:15", Türkiye saati); 7 günlük tazelik sınırı fiyatın gerçek yaşına bakar. Ürün detayında şube fiyatlarıyla döner.
 - **Kategoriler:** `menu_category` / `main_category` uygulamanın kategorilerine eşlenir ("Temel Gıda" → Temel Gıda, ama "Ekmek ve Unlu Mamüller" → Fırın, "Bebek Mamaları" → Bebek). "Pet Shop" gibi karşılığı olmayanlar kategorisiz kalır.
 
 ```bash

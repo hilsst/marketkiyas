@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.deps import DbSession, OptionalUser
 from app.schemas.products import BarcodeResult, DealOut, GroupDetail, GroupSummary
-from app.services import barcode, catalog
+from app.services import barcode, catalog, similar
 from app.services.marketfiyati.client import MarketFiyatiClient, MarketFiyatiError
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -70,6 +70,27 @@ async def find_by_barcode(
     if group_id is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Bu barkodla ürün bulunamadı")
     return BarcodeResult(barcode=cleaned, group_id=group_id)
+
+
+@router.get("/{group_id}/similar", response_model=list[GroupSummary])
+async def similar_products(
+    group_id: int,
+    db: DbSession,
+    user: OptionalUser,
+    client: Annotated[MarketFiyatiClient, Depends(get_barcode_client)],
+    lat: Annotated[float | None, Query(ge=35, le=43)] = None,
+    lon: Annotated[float | None, Query(ge=25, le=45)] = None,
+) -> list[GroupSummary]:
+    """Benzer ürünler (muadiller), kullanıcının şubelerindeki fiyatlarla. Kaynağa ulaşılamazsa boş liste."""
+    try:
+        result = await similar.similar_groups(
+            db, client, group_id, user_id=user.id if user else None, latitude=lat, longitude=lon
+        )
+    except MarketFiyatiError:
+        return []
+    if result is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ürün grubu bulunamadı")
+    return result
 
 
 @router.get("/{group_id}", response_model=GroupDetail)

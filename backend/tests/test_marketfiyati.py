@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from decimal import Decimal as D
 
 import httpx
@@ -266,3 +267,47 @@ async def test_campaign_price_is_recorded_for_deals(db):
         )
     ).scalars().all()
     assert rows == [True, False]
+
+
+def test_index_time_is_parsed_as_turkish_time():
+    raw = {
+        "id": "x",
+        "title": "Süt",
+        "productDepotInfoList": [
+            {"depotId": "bim-1", "marketAdi": "bim", "price": 10, "indexTime": "29.10.2026 09:15"},
+            {"depotId": "a101-1", "marketAdi": "a101", "price": 11, "indexTime": "bozuk"},
+            {"depotId": "sok-1", "marketAdi": "sok", "price": 12, "indexTime": "01.01.2999 10:00"},
+        ],
+    }
+    first, broken, future = SearchProduct.from_raw(raw).prices
+    assert first.updated_at == datetime(2026, 10, 29, 6, 15, tzinfo=timezone.utc)
+    assert broken.updated_at is None
+    assert future.updated_at <= datetime.now(timezone.utc)  # gelecekteki saat şimdiye çekilir
+
+
+async def test_store_price_keeps_source_update_time(db):
+    fake = FakeMarketFiyati()
+    fake.search["content"][0]["productDepotInfoList"][0]["indexTime"] = "28.10.2026 09:15"
+    async with fake.client() as client:
+        await sync_area(db, client, keywords=["süt"], **AREA)
+    moda = await db.scalar(select(Store.id).where(Store.external_id == "bim-4501"))
+    updated = await db.scalars(select(StorePrice.updated_at).where(StorePrice.store_id == moda))
+    assert datetime(2026, 10, 28, 6, 15, tzinfo=timezone.utc) in list(updated)
+
+
+async def test_sync_area_without_depots_searches_nearby_depots(db):
+    # Şubesiz arama konumu yok sayıp İstanbul fiyatı getirir: önce çevredeki şubeler alınır
+    fake = FakeMarketFiyati()
+    async with fake.client() as client:
+        await sync_area(db, client, keywords=["süt"], **AREA)
+    assert fake.requests[0].url.path == "/api/v2/nearest"
+    searches = [json.loads(r.content) for r in fake.requests if r.url.path == "/api/v2/search"]
+    assert searches and all(b["depots"] == ["bim-4501", "a101-7788", "far-1"] for b in searches)
+
+
+async def test_sync_area_with_no_nearby_depots_does_nothing(db):
+    fake = FakeMarketFiyati(nearest=[])
+    async with fake.client() as client:
+        stats = await sync_area(db, client, keywords=["süt"], **AREA)
+    assert stats.products_seen == 0
+    assert [r.url.path for r in fake.requests] == ["/api/v2/nearest"]

@@ -21,6 +21,7 @@ class FakeMarketFiyati:
         self.requests: list[httpx.Request] = []
         self.fail_with: int | None = None
         self.identity: dict = {"numberOfFound": 0, "content": []}  # /searchByIdentity yanıtı
+        self.similar: dict = {"numberOfFound": 0, "content": []}  # /searchSmilarProduct yanıtı
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
@@ -34,6 +35,8 @@ class FakeMarketFiyati:
             return httpx.Response(200, json=self.search if body["pages"] == 0 else {"numberOfFound": 0, "content": []})
         if request.url.path == "/api/v2/searchByIdentity":
             return httpx.Response(200, json=self.identity)
+        if request.url.path == "/api/v2/searchSmilarProduct":
+            return httpx.Response(200, json=self.similar)
         return httpx.Response(404)
 
     def client(self, **kwargs) -> MarketFiyatiClient:

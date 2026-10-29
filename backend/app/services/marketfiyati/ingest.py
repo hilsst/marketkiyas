@@ -337,13 +337,22 @@ class Ingestor:
 
             for dp in depot_prices:
                 store_id = await self.store_id(dp.depot)
+                # Kaynağın güncelleme saati varsa o yazılır: 7 günlük tazelik sınırı gerçek fiyat yaşına bakar
                 sp = insert(StorePrice).values(
-                    product_id=product_id, store_id=store_id, price=dp.price, unit_price=dp.unit_price, updated_at=self._now
+                    product_id=product_id,
+                    store_id=store_id,
+                    price=dp.price,
+                    unit_price=dp.unit_price,
+                    updated_at=dp.updated_at or self._now,
                 )
                 await self.db.execute(
                     sp.on_conflict_do_update(
                         index_elements=[StorePrice.product_id, StorePrice.store_id],
-                        set_={"price": sp.excluded.price, "unit_price": sp.excluded.unit_price, "updated_at": self._now},
+                        set_={
+                            "price": sp.excluded.price,
+                            "unit_price": sp.excluded.unit_price,
+                            "updated_at": sp.excluded.updated_at,
+                        },
                     )
                 )
                 self.stats.store_prices += 1
@@ -423,7 +432,13 @@ async def sync_area(
     tamamı (şubedeki tüm ürünler), sonra anahtar kelimeler.
 
     Her kategori/kelimeden sonra commit edilir; yarıda kesilen senkronizasyon o ana kadarki veriyi korur.
+    Şube verilmezse konumun çevresindeki şubeler kullanılır (şubesiz arama konumu yok sayar).
     """
+    if not depot_ids:
+        depot_ids = await client.nearest_depot_ids(latitude, longitude, distance_km)
+        if not depot_ids:
+            log.warning("%.4f,%.4f çevresinde %d km içinde şube yok", latitude, longitude, distance_km)
+            return SyncStats()
     ingestor = Ingestor(db)
     queries = [(c, {"menu_category": c, "max_pages": max_category_pages}) for c in categories]
     queries += [(k, {"keywords": k, "max_pages": max_pages}) for k in keywords]

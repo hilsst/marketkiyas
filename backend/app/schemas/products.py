@@ -38,6 +38,7 @@ class ProductStorePrice(BaseModel):
     store_id: int
     store_name: str
     price: Decimal
+    updated_at: datetime | None = None  # fiyatın kaynakta güncellendiği an
 
 
 class GroupProduct(BaseModel):

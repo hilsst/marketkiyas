@@ -54,6 +54,9 @@ async def find_group_id(
             latitude = sum(float(s.latitude) for s in stores) / len(stores)
             longitude = sum(float(s.longitude) for s in stores) / len(stores)
             depot_ids = [s.external_id for s in stores]
+    if not depot_ids and latitude is not None and longitude is not None:
+        # Şubesiz arama konumu yok sayar (İstanbul fiyatı gelir): önce konumun çevresindeki şubeler
+        depot_ids = await client.nearest_depot_ids(latitude, longitude, settings.default_search_distance_km)
 
     page = await client.search_by_barcode(
         barcode,
