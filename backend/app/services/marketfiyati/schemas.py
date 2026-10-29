@@ -5,8 +5,12 @@ tek bir bozuk kayıt tüm senkronizasyonu düşürmez.
 """
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any
+from zoneinfo import ZoneInfo
+
+ISTANBUL = ZoneInfo("Europe/Istanbul")
 
 
 def _decimal(value: Any) -> Decimal | None:
@@ -21,6 +25,20 @@ def _decimal(value: Any) -> Decimal | None:
 def _price(value: Any) -> Decimal | None:
     d = _decimal(value)
     return d.quantize(Decimal("0.01")) if d is not None and d > 0 else None
+
+
+def _index_time(value: Any) -> datetime | None:
+    """Fiyatın kaynakta güncellendiği an: "29.10.2026 09:15" (Türkiye saati). Gelecekteki saat şimdiye çekilir."""
+    text = _str(value)
+    if not text:
+        return None
+    for fmt in ("%d.%m.%Y %H:%M", "%d.%m.%Y %H:%M:%S"):
+        try:
+            parsed = datetime.strptime(text, fmt).replace(tzinfo=ISTANBUL)
+        except ValueError:
+            continue
+        return min(parsed, datetime.now(timezone.utc))
+    return None
 
 
 def _str(value: Any) -> str | None:
@@ -63,6 +81,7 @@ class DepotPrice:
     price: Decimal
     unit_price: str | None
     regular_price: Decimal | None = None  # kampanyadaysa indirim öncesi fiyat ("discountlessPrice")
+    updated_at: datetime | None = None  # kaynağın fiyatı güncellediği an ("indexTime")
 
 
 @dataclass(frozen=True)
@@ -99,7 +118,13 @@ class SearchProduct:
             )
             regular = _price(entry.get("discountlessPrice")) if entry.get("discount") else None
             prices.append(
-                DepotPrice(depot, price, _str(entry.get("unitPrice")), regular if regular and regular > price else None)
+                DepotPrice(
+                    depot,
+                    price,
+                    _str(entry.get("unitPrice")),
+                    regular if regular and regular > price else None,
+                    _index_time(entry.get("indexTime")),
+                )
             )
         return cls(
             id=product_id,
