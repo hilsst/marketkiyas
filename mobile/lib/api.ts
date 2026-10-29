@@ -89,6 +89,15 @@ export interface Store {
 export interface SavingsRecord { id: number; list_name: string; saved_amount: Money; created_at: string; }
 export interface SavingsVault { total_saved: Money; record_count: number; records: SavingsRecord[]; }
 
+// Aktüel: marketlerin haftalık broşür ürünleri. automatic=false olan marketler için yalnızca site bağlantısı var
+export interface AktuelSource { slug: string; name: string; url: string; automatic: boolean; item_count: number; updated_at: string | null; }
+export interface AktuelItem {
+  id: number; market_slug: string; period_key: string; period_label: string; starts_on: string | null; ends_on: string | null;
+  upcoming: boolean; title: string; brand: string | null; quantity_text: string | null; details: string | null;
+  price: Money; old_price: Money | null; image_url: string | null; source_url: string | null;
+}
+export interface AktuelResponse { sources: AktuelSource[]; items: AktuelItem[]; }
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
 }
@@ -189,6 +198,7 @@ export const api = {
   removeMember: (listId: number, userId: number) => request<void>('DELETE', `/lists/${listId}/members/${userId}`),
   productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
   deals: () => request<Deal[]>('GET', '/products/deals'),
+  aktuel: (market?: string | null) => request<AktuelResponse>('GET', '/aktuel' + qs({ market })),
   myStores: () => request<Store[]>('GET', '/me/stores'),
   alerts: () => request<PriceAlert[]>('GET', '/alerts'),
   createAlert: (groupId: number, targetPrice?: number | null, productId?: number | null) =>

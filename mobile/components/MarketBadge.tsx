@@ -11,8 +11,12 @@ const LABELS: Record<string, string> = {
   bim: 'BİM', a101: 'A101', sok: 'ŞOK', file: 'File', migros: 'M', carrefour: 'CSA', tarim_kredi: 'TK', hakmar: 'H',
 };
 
-export default function MarketBadge({ id, size = 28 }: { id: number | null | undefined; size?: number }) {
-  const m = useCatalog().marketById(id);
+/** Market rozeti; `id` (katalogdaki market) ya da `slug` ("bim") ile verilir */
+export default function MarketBadge({ id, slug, name, size = 28 }: {
+  id?: number | null; slug?: string; name?: string; size?: number;
+}) {
+  const found = useCatalog().marketById(id ?? null);
+  const m = found || (slug ? { slug, name: name || slug, color: null } : null);
   const label = m ? LABELS[m.slug] || m.name[0] : '?';
   return (
     <View accessibilityLabel={m?.name} style={{

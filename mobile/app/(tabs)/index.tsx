@@ -8,7 +8,7 @@ import ProductImage from '@/components/ProductImage';
 import { cheapestOf } from '@/components/ProductRow';
 import FamilyInviteCard from '@/components/FamilyInviteCard';
 import { Card, Muted, Screen, Title, useTheme } from '@/components/ui';
-import { api, MyFamily, num, SavingsVault, Store } from '@/lib/api';
+import { AktuelItem, api, MyFamily, num, SavingsVault, Store } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
 
@@ -24,7 +24,7 @@ const QUICK = [
 
 /**
  * Ana sayfa, Kemal'in sırasıyla: arama, bu ayki tasarruf, hızlı erişim, kategoriler, fırsat ürünleri (yatay),
- * yakındaki marketler. Reklam yerleri: üst barın altı ve kategorilerin bitimi.
+ * aktüel ürünler (yatay), yakındaki marketler. Reklam yerleri: üst barın altı ve kategorilerin bitimi.
  */
 export default function HomeScreen() {
   const t = useTheme();
@@ -35,6 +35,7 @@ export default function HomeScreen() {
   const [showcase, setShowcase] = useState<{ title: string; items: ShowcaseItem[] } | null>(null);
 
   const [family, setFamily] = useState<MyFamily | null>(null);
+  const [aktuel, setAktuel] = useState<AktuelItem[]>([]);
 
   // Sekmeye her dönüşte: ailedeki biri alışverişi bitirmiş ya da davet gelmiş olabilir
   const refresh = useCallback(() => {
@@ -48,6 +49,20 @@ export default function HomeScreen() {
     if (!user) return;
     api.myStores().then(setStores).catch(() => setStores([]));
   }, [user]);
+
+  // Satışta olan aktüellerden marketler sırayla (BİM, Şok, BİM...) en fazla 15; "Yakında"lar aktüel ekranında
+  useEffect(() => {
+    api.aktuel().then(d => {
+      const byMarket = new Map<string, AktuelItem[]>();
+      for (const i of d.items) if (!i.upcoming) byMarket.set(i.market_slug, [...(byMarket.get(i.market_slug) || []), i]);
+      const queues = Array.from(byMarket.values());
+      const mixed: AktuelItem[] = [];
+      for (let k = 0; mixed.length < 15 && queues.some(q => k < q.length); k++) {
+        for (const q of queues) if (k < q.length && mixed.length < 15) mixed.push(q[k]);
+      }
+      setAktuel(mixed);
+    }).catch(() => setAktuel([]));
+  }, []);
 
   // Fırsat varsa fırsatlar, yoksa en çok markette/markada bulunan temel ürünler
   useEffect(() => {
@@ -180,7 +195,32 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* 6) Yakındaki marketler */}
+      {/* 6) Marketlerin aktüelleri (yatay) */}
+      {aktuel.length > 0 && (
+        <View style={{ gap: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>📰 Aktüel Ürünler</Text>
+            <Text onPress={() => router.push('/aktuel')} style={{ color: t.tint, fontWeight: '600' }}>Tümü ›</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
+            {aktuel.map(it => (
+              <Pressable key={it.id} onPress={() => router.push({ pathname: '/aktuel', params: { market: it.market_slug } })}>
+                <Card style={{ width: 140, gap: 6, padding: 12 }}>
+                  <View style={{ alignItems: 'center' }}><ProductImage uri={it.image_url} icon="📰" size={70} /></View>
+                  <Text style={{ color: t.text, fontSize: 12, fontWeight: '600', minHeight: 32 }} numberOfLines={2}>{it.title}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MarketBadge slug={it.market_slug} size={18} />
+                    <Text style={{ color: t.tint, fontWeight: '800' }}>{num(it.price).toFixed(2)} ₺</Text>
+                  </View>
+                  <Text style={{ color: t.textMuted, fontSize: 10 }} numberOfLines={1}>{it.period_label}</Text>
+                </Card>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* 7) Yakındaki marketler */}
       <View style={{ gap: 10 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>📍 Yakınındaki Marketler</Text>

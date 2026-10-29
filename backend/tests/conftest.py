@@ -36,7 +36,7 @@ async def clean_tables():
             text(
                 "TRUNCATE users, shopping_lists, shopping_list_items, savings_records, "
                 "products, price_history, product_groups, group_members, "
-                "stores, store_prices, user_stores RESTART IDENTITY CASCADE"
+                "stores, store_prices, user_stores, aktuel_items RESTART IDENTITY CASCADE"
             )
         )
         # Senkronizasyonun eklediği zincirleri sil, seed'deki 4 market kalsın
