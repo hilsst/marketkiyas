@@ -27,7 +27,26 @@ class UserOut(BaseModel):
     email: EmailStr
     full_name: str | None
     created_at: datetime
+    has_password: bool = True  # Google/Apple ile girenin şifresi yok (hesap silmede şifre sorulmaz)
 
 
 class AuthResponse(TokenResponse):
     user: UserOut
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    email: EmailStr
+    code: str = Field(pattern=r"^\d{6}$")
+    new_password: str = Field(min_length=8, max_length=72)
+
+
+class SocialLoginRequest(BaseModel):
+    id_token: str = Field(min_length=10, max_length=8192)
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str | None = None  # şifreli hesaplarda zorunlu

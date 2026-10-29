@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import (
+    FamilyMember,
     GroupMember,
     ListMember,
     ListStatus,
@@ -55,17 +56,20 @@ def _list_options():
 
 
 def _visible_to(user: User):
-    """Kullanıcının kendi listeleri ve üye olduğu ortak listeler."""
+    """Kullanıcının kendi listeleri, kodla katıldığı ortak listeler ve ailesindeki herkesin listeleri."""
+    my_family = select(FamilyMember.family_id).where(FamilyMember.user_id == user.id)
     return or_(
         ShoppingList.user_id == user.id,
         ShoppingList.id.in_(select(ListMember.list_id).where(ListMember.user_id == user.id)),
+        ShoppingList.user_id.in_(select(FamilyMember.user_id).where(FamilyMember.family_id.in_(my_family))),
     )
 
 
 async def get_owned_list(
-    db: AsyncSession, user: User, list_id: int, *, owner_only: bool = False
+    db: AsyncSession, user: User, list_id: int, *, owner_only: bool = False, editable: bool = False
 ) -> ShoppingList:
-    """Liste sahibine ve ortak liste üyelerine açıktır; silmek gibi işlemler yalnızca sahibine."""
+    """Liste sahibine ve ortak liste üyelerine açıktır; silmek gibi işlemler yalnızca sahibine.
+    editable: alışverişi tamamlanmış liste kilitlidir; önce "Tekrar kullan" (reopen_list) gerekir."""
     shopping_list = await db.scalar(
         select(ShoppingList)
         .where(ShoppingList.id == list_id, _visible_to(user))
@@ -76,6 +80,10 @@ async def get_owned_list(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Liste bulunamadı")
     if owner_only and shopping_list.user_id != user.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Bu işlemi yalnızca listenin sahibi yapabilir")
+    if editable and shopping_list.status is ListStatus.COMPLETED:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Bu listenin alışverişi tamamlandı. Yeniden kullanmak için \"Listeyi tekrar kullan\" de."
+        )
     return shopping_list
 
 
@@ -514,7 +522,8 @@ SAVINGS_COOLDOWN = timedelta(days=6)
 async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingList) -> CompleteResponse:
     """"Alışverişi Bitir": Fırsatçı tasarrufunu kalıcı kasaya ekler ve Alışveriş Modu'ndan çıkar.
 
-    Liste silinmez; gelecek hafta yeniden optimize edilip kullanılabilir. Plan sıfırlandığı için
+    Liste silinmez ama kilitlenir (COMPLETED): alınanlar görünür kalır, ürün eklenemez.
+    Gelecek hafta "Tekrar kullan" (reopen_list) ile yeniden açılabilir. Plan sıfırlandığı için
     aynı alışveriş ikinci kez kasaya yazılamaz (çift tıklama 409 döner). Planı yeniden uygulayıp
     bitirerek kasayı şişirmemek için bir liste SAVINGS_COOLDOWN içinde yalnızca bir kez kasaya yazılır;
     o sürede bitirilen alışveriş tamamlanır ama tasarruf eklenmez."""
@@ -525,7 +534,8 @@ async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingLis
     note = None
     last_saved_at = await db.scalar(
         select(func.max(SavingsRecord.created_at)).where(
-            SavingsRecord.user_id == user.id, SavingsRecord.list_id == shopping_list.id
+            # Liste kimde bitirilirse bitirilsin (aile, ortak liste) haftada bir kez kasaya yazılır
+            SavingsRecord.list_id == shopping_list.id
         )
     )
     if last_saved_at and last_saved_at > datetime.now(timezone.utc) - SAVINGS_COOLDOWN and saved > 0:
@@ -550,9 +560,7 @@ async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingLis
     shopping = await shopping_savings(db, shopping_list)
     shopping_list.completed_at = datetime.now(timezone.utc)
     reset_plan(shopping_list)
-    # Alışveriş bitti: liste gelecek hafta için "alınacaklar" hâline döner (İptal Et'ten farklı olarak)
-    for item in shopping_list.items:
-        item.is_checked = False
+    shopping_list.status = ListStatus.COMPLETED
     await db.commit()
     return CompleteResponse(
         list_id=shopping_list.id,
@@ -561,6 +569,17 @@ async def complete_list(db: AsyncSession, user: User, shopping_list: ShoppingLis
         vault_total=await vault_total(db, user),
         note=note,
     )
+
+
+async def reopen_list(db: AsyncSession, shopping_list: ShoppingList) -> None:
+    """"Listeyi tekrar kullan": tamamlanmış liste aynı ürünlerle yeniden "alınacaklar" hâline döner."""
+    if shopping_list.status is not ListStatus.COMPLETED:
+        return
+    shopping_list.status = ListStatus.ACTIVE
+    for item in shopping_list.items:
+        item.is_checked = False
+        item.checked_at = None
+    await db.commit()
 
 
 async def shopping_savings(db: AsyncSession, shopping_list: ShoppingList) -> Decimal:

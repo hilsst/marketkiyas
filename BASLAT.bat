@@ -1,6 +1,8 @@
 @echo off
 chcp 65001 >nul
 setlocal
+rem Dışarıdan gelen ayar (ör. test veritabanı) uygulamayı yanlış veritabanına bağlamasın
+set "DATABASE_URL="
 cd /d "%~dp0"
 set "MK=%LOCALAPPDATA%\MarketKiyas"
 set "PG=%MK%\pgsql\bin"
@@ -19,6 +21,8 @@ cd /d "%~dp0backend"
 start "MK-API" /min cmd /c ".venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > "%MK%\api.log" 2>&1"
 rem marketfiyati.org.tr'den seçili şubelerin fiyatlarını 6 saatte bir günceller
 start "MK-WORKER" /min cmd /c ".venv\Scripts\python.exe -m app.cli sync-selected --every-hours 6 > "%MK%\worker.log" 2>&1"
+rem BİM ve Şok aktüel (broşür) ürünlerini 12 saatte bir toplar
+start "MK-AKTUEL" /min cmd /c ".venv\Scripts\python.exe -m app.cli aktuel --every-hours 12 > "%MK%\aktuel.log" 2>&1"
 
 cd /d "%~dp0frontend"
 rem Tarayıcı API'ye arayüz üzerinden ulaşır (next.config.js); telefon da aynı adresi kullanabilir

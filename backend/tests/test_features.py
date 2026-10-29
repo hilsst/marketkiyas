@@ -125,6 +125,26 @@ async def test_price_alert_triggers_on_drop(client, auth_headers, db, milk):
     assert (await client.post("/api/alerts", json={"group_id": 99999}, headers=h)).status_code == 404
 
 
+async def test_price_alert_follows_chosen_product(client, auth_headers, db, milk):
+    # Kemal: daha pahalı ama tam istenen marka (A101 Pınar 42.00) takip edilebilmeli
+    group_id, ids = milk
+    h = auth_headers
+    r = await client.post("/api/alerts", json={"group_id": group_id, "product_id": ids["a101"]}, headers=h)
+    alert = r.json()[0]
+    assert alert["product_id"] == ids["a101"] and alert["brand"] == "Pınar"
+    assert D(alert["baseline_price"]) == D("42.00") and D(alert["current_price"]) == D("42.00")
+
+    await _set_price(db, ids["bim"], "30.00")  # başka markanın düşüşü tetiklemez
+    alert = (await client.get("/api/alerts", headers=h)).json()[0]
+    assert not alert["triggered"] and D(alert["current_price"]) == D("42.00")
+    await _set_price(db, ids["a101"], "41.00")
+    alert = (await client.get("/api/alerts", headers=h)).json()[0]
+    assert alert["triggered"] and D(alert["current_price"]) == D("41.00")
+
+    r = await client.post("/api/alerts", json={"group_id": group_id, "product_id": 99999}, headers=h)
+    assert r.status_code == 422
+
+
 # --- Fırsatlar ------------------------------------------------------------------------------
 
 

@@ -83,7 +83,7 @@ export default function ProductDetailPage() {
       if (typeof Notification !== "undefined" && Notification.permission === "default") {
         Notification.requestPermission().catch(() => {});
       }
-      const all = await api.createAlert(groupId, withTarget ? value : null);
+      const all = await api.createAlert(groupId, withTarget ? value : null, selectedId);
       setAlert(all.find(a => a.group_id === groupId) || null);
       setAlertSheet(false);
       setToast(withTarget ? "Fiyat " + value.toFixed(2) + " ₺ altına inince haber vereceğiz" : "Fiyat düşünce haber vereceğiz");
@@ -195,7 +195,9 @@ export default function ProductDetailPage() {
           <div className="bg-white w-full max-w-md mx-auto rounded-t-2xl p-4" onClick={e => e.stopPropagation()}>
             <div className="text-lg font-bold">Fiyat alarmı</div>
             <div className="text-xs text-gray-500 mb-4">
-              {group.name} şu an en ucuz {offers[0] ? offers[0].price.toFixed(2) + " ₺" : "-"}. Fiyat düşünce 🔔 sekmesinde haber veririz.
+              {selectedId != null && selected
+                ? <>Seçtiğin ürün takip edilecek: <b>{selected.brand || selected.name}</b> ({marketById(selected.market_id)?.name}). Fiyatı düşünce 🔔 sekmesinde haber veririz.</>
+                : <>{group.name} şu an en ucuz {offers[0] ? offers[0].price.toFixed(2) + " ₺" : "-"}. Belli bir markayı takip etmek için önce o satırı seç.</>}
             </div>
             <button onClick={() => saveAlert(false)}
               className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-emerald-400 mb-2">
@@ -221,7 +223,7 @@ export default function ProductDetailPage() {
           <div className="bg-white w-full max-w-md mx-auto rounded-t-2xl p-4" onClick={e => e.stopPropagation()}>
             <div className="text-lg font-bold mb-3">Hangi listeye?</div>
             <div className="space-y-2">
-              {lists.map(l => (
+              {lists.filter(l => l.status !== "completed").map(l => (
                 <button key={l.id} onClick={() => handleAddToList(l.id)}
                   className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                   <div className="font-medium">{l.name}</div>

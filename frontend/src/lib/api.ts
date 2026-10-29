@@ -166,6 +166,8 @@ export const api = {
   applyPlan: (listId: number, plan_type: PlanType) => request<ListDetail>("POST", `/lists/${listId}/apply`, { plan_type }),
   cancelPlan: (listId: number) => request<ListDetail>("DELETE", `/lists/${listId}/plan`),
   complete: (listId: number) => request<CompleteResponse>("POST", `/lists/${listId}/complete`),
+  // Tamamlanan liste kilitlidir; aynı ürünlerle yeniden açar
+  reopenList: (listId: number) => request<ListDetail>("POST", `/lists/${listId}/reopen`),
 
   shareList: (listId: number) => request<{ share_code: string }>("POST", `/lists/${listId}/share`),
   joinList: (code: string) => request<ListDetail>("POST", "/lists/join", { code }),
@@ -175,8 +177,9 @@ export const api = {
 
   alerts: () => request<PriceAlert[]>("GET", "/alerts"),
   unreadAlerts: () => request<{ unread: number }>("GET", "/alerts/unread"),
-  createAlert: (groupId: number, targetPrice?: number | null) =>
-    request<PriceAlert[]>("POST", "/alerts", { group_id: groupId, target_price: targetPrice ?? null }),
+  // productId: seçili ürün (marka/market) takip edilir; boşsa grubun en ucuzu
+  createAlert: (groupId: number, targetPrice?: number | null, productId?: number | null) =>
+    request<PriceAlert[]>("POST", "/alerts", { group_id: groupId, target_price: targetPrice ?? null, product_id: productId ?? null }),
   deleteAlert: (id: number) => request<void>("DELETE", "/alerts/" + id),
   markAlertsSeen: () => request<void>("POST", "/alerts/seen"),
 

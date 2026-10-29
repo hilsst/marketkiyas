@@ -252,9 +252,17 @@ async def test_completed_list_is_reusable_next_week(client, auth_headers, catalo
         assert D(done["saved_amount"]) == D("0.50")  # 33.00 (Şok Pınar) - 32.50 (BİM Sütaş)
         assert done["note"] is None
         detail = await _detail_of(client, h, lid)
-        assert detail["status"] == "active" and detail["applied_plan"] is None
+        assert detail["status"] == "completed" and detail["applied_plan"] is None
         assert detail["completed_at"] is not None
-        assert not any(i["is_checked"] for i in detail["items"])  # gelecek hafta için alınacaklar sıfırlandı
+        assert detail["items"][0]["is_checked"]  # alınanlar görünür kalır
+        # Tamamlanan liste kilitli: ürün eklenemez, plan uygulanamaz
+        r = await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["bread"]}, headers=h)
+        assert r.status_code == 409 and "tamamlandı" in r.json()["detail"]
+        assert (await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)).status_code == 409
+        # "Listeyi tekrar kullan": gelecek hafta için alınacaklar sıfırlanır
+        detail = (await client.post(f"/api/lists/{lid}/reopen", headers=h)).json()
+        assert detail["status"] == "active" and len(detail["items"]) == 1
+        assert not any(i["is_checked"] for i in detail["items"])
         # Bir hafta geçmiş gibi: önceki kayıt 7 gün öncesine
         await db.execute(update(SavingsRecord).values(created_at=SavingsRecord.created_at - timedelta(days=7)))
         await db.commit()
@@ -286,6 +294,7 @@ async def test_same_list_adds_savings_once_per_week(client, auth_headers, catalo
 
     saved = []
     for _ in range(3):
+        await client.post(f"/api/lists/{lid}/reopen", headers=h)
         await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "opportunist"}, headers=h)
         done = (await client.post(f"/api/lists/{lid}/complete", headers=h)).json()
         saved.append(D(done["saved_amount"]))

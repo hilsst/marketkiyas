@@ -77,7 +77,7 @@ export default function ListsPage() {
                   </span>
                 )}
               </div>
-              <div className="text-xs text-gray-400">{l.item_count} ürün</div>
+              <div className="text-xs text-gray-400">{l.item_count} ürün{l.status === "completed" ? " · ✅ Tamamlandı" : ""}</div>
             </div>
             <div className="text-sm text-gray-500 mt-1">
               Tahmini: <b className="text-gray-900">{num(l.estimated_total).toFixed(2)} ₺</b>

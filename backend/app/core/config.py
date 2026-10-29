@@ -31,6 +31,16 @@ class Settings(BaseSettings):
     # Next.js frontend adresleri, virgülle ayrılmış
     cors_origins: str = "http://localhost:3000"
 
+    # E-posta (şifre sıfırlama kodu). smtp_host boşsa e-posta gönderilmez, kod sunucu günlüğüne yazılır (geliştirme)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    mail_from: str = "Ucuzu <no-reply@ucuzu.app>"
+
+    # Google ile giriş: kabul edilen OAuth istemci kimlikleri (Android, iOS, web), virgülle ayrılmış
+    google_client_ids: str = ""
+
     @model_validator(mode="after")
     def _require_real_secret_in_prod(self) -> "Settings":
         if self.environment == "production" and self.jwt_secret_key.startswith("dev-only"):
@@ -40,6 +50,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def google_client_id_list(self) -> list[str]:
+        return [c.strip() for c in self.google_client_ids.split(",") if c.strip()]
 
 
 @lru_cache

@@ -48,6 +48,20 @@ services:
     entrypoint: []
     command: ["python", "-m", "app.cli", "sync-selected", "--every-hours", "6"]
 
+  # BİM ve Şok aktüel (broşür) ürünlerini 12 saatte bir toplar
+  aktuel:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://marketkiyas:marketkiyas@db:5432/marketkiyas
+    entrypoint: []
+    command: ["python", "-m", "app.cli", "aktuel", "--every-hours", "12"]
+
   # Şok sitesinden 12 saatte bir fiyat toplar (A101 varsayılan kapalı). marketfiyati'ya erişilemediğinde kullanılır.
   scraper:
     build:

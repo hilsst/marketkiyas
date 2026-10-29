@@ -8,6 +8,8 @@ from app.models.enums import Unit
 
 class AlertCreate(BaseModel):
     group_id: int
+    # Seçili ürün: daha pahalı olsa da tam istenen marka takip edilir; boşsa en ucuzu
+    product_id: int | None = None
     # Boşsa "şu anki fiyatın altına inince" bildirilir
     target_price: Decimal | None = Field(default=None, gt=0, le=100000)
 
@@ -20,6 +22,9 @@ class AlertOut(BaseModel):
     image_url: str | None
     quantity: Decimal | None
     unit: Unit | None
+    product_id: int | None  # takip edilen ürün; None = grubun en ucuzu
+    product_name: str | None
+    brand: str | None
     target_price: Decimal | None
     baseline_price: Decimal | None
     current_price: Decimal | None  # kullanıcının şubelerindeki en ucuz fiyat
