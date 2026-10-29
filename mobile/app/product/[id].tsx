@@ -9,7 +9,7 @@ import ListPicker from '@/components/ListPicker';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Button, Card, Muted, Screen, useTheme } from '@/components/ui';
-import { api, formatSize, GroupDetail, num, PriceAlert } from '@/lib/api';
+import { api, formatSize, GroupDetail, GroupSummary, num, PriceAlert, updatedLabel } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
 
@@ -36,6 +36,11 @@ export default function ProductScreen() {
   useEffect(() => {
     api.productGroup(Number(id)).then(setGroup).catch(() => setGroup(null));
   }, [id]);
+  const [similar, setSimilar] = useState<GroupSummary[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    api.similarGroups(Number(id)).then(setSimilar).catch(() => setSimilar([]));
+  }, [id, user]);
   useEffect(() => {
     if (!user) return;
     api.alerts().then(all => setAlert(all.find(a => a.group_id === Number(id)) || null)).catch(() => {});
@@ -48,8 +53,8 @@ export default function ProductScreen() {
   const offers = useMemo(() => (group?.products ?? [])
     .filter(p => p.price != null)
     .flatMap(p => p.store_prices.length
-      ? p.store_prices.map(sp => ({ key: `${p.id}-${sp.store_id}`, product: p, store: sp.store_name as string | null, price: num(sp.price) }))
-      : [{ key: String(p.id), product: p, store: p.store_name, price: num(p.price) }])
+      ? p.store_prices.map(sp => ({ key: `${p.id}-${sp.store_id}`, product: p, store: sp.store_name as string | null, price: num(sp.price), updated: updatedLabel(sp.updated_at) }))
+      : [{ key: String(p.id), product: p, store: p.store_name, price: num(p.price), updated: null as string | null }])
     .sort((a, b) => a.price - b.price), [group]);
 
   const addTo = async (target: number) => {
@@ -102,6 +107,7 @@ export default function ProductScreen() {
                 {marketById(o.product.market_id)?.name}{o.store ? ` · ${o.store}` : ''}
               </Text>
               <Muted>{o.product.brand ? `${o.product.brand} · ` : ''}{o.product.name}</Muted>
+              {o.updated && <Text style={{ color: t.textMuted, fontSize: 10 }}>Fiyat {o.updated} güncellendi</Text>}
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ color: i === 0 ? t.tint : t.text, fontWeight: '800', fontSize: 16 }}>{o.price.toFixed(2)} ₺</Text>
@@ -112,6 +118,21 @@ export default function ProductScreen() {
         </ScrollView>
       </Card>
 
+      {similar.length > 0 && (
+        <View style={{ gap: 6 }}>
+          <Text style={{ color: t.text, fontWeight: '700' }}>Benzer ürünler</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+            {similar.map(g => (
+              <Pressable key={g.id} onPress={() => router.push({ pathname: '/product/[id]', params: { id: String(g.id), ...(listId ? { listId } : {}) } })}
+                style={{ width: 104, gap: 2 }}>
+                <ProductImage uri={g.image_url} icon={categoryIcon(g.category_id)} size={52} />
+                <Text style={{ color: t.text, fontSize: 11 }} numberOfLines={2}>{g.name}</Text>
+                {g.min_price && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '800' }}>{num(g.min_price).toFixed(2)} ₺</Text>}
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
       <Muted>{selectedProduct ? `Seçili marka: ${selectedProduct.brand || selectedProduct.name} (tekrar dokunarak kaldırabilirsin)` : 'Marka seçmezsen listeye "Farketmez" eklenir, her zaman en ucuzu alınır.'}</Muted>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}><Button title={listId ? 'Bu listeye ekle' : 'Listeye ekle'} onPress={onAdd} busy={adding} /></View>

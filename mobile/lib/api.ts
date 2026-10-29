@@ -25,7 +25,7 @@ export interface PricePoint { price: Money; recorded_at: string; }
 export interface GroupProduct {
   id: number; name: string; brand: string | null; market_id: number; price: Money | null; regular_price: Money | null;
   store_id: number | null; store_name: string | null; is_available: boolean; image_url: string | null;
-  price_history: PricePoint[]; store_prices: { store_id: number; store_name: string; price: Money }[];
+  price_history: PricePoint[]; store_prices: { store_id: number; store_name: string; price: Money; updated_at: string | null }[];
 }
 export interface GroupDetail extends GroupSummary { products: GroupProduct[]; }
 export type PlanType = 'single_market' | 'combination' | 'opportunist';
@@ -161,6 +161,19 @@ export function formatSize(quantity: Money | null, unit: Unit | null): string {
   return `${fmt(q)} adet`;
 }
 
+/** Fiyatın kaynakta güncellenme zamanı: "bugün 09:15", "dün 18:40", "3 gün önce". */
+export function updatedLabel(iso: string | null | undefined, now = new Date()): string | null {
+  if (!iso) return null;
+  const at = new Date(iso);
+  if (isNaN(at.getTime())) return null;
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((day(now) - day(at)) / 86400000);
+  const time = at.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  if (days <= 0) return 'bugün ' + time;
+  if (days === 1) return 'dün ' + time;
+  return days + ' gün önce';
+}
+
 export const api = {
   register: (email: string, password: string, full_name?: string) =>
     request<AuthResponse>('POST', '/auth/register', { email, password, full_name: full_name || null }),
@@ -197,6 +210,8 @@ export const api = {
   joinList: (code: string) => request<ListDetail>('POST', '/lists/join', { code }),
   removeMember: (listId: number, userId: number) => request<void>('DELETE', `/lists/${listId}/members/${userId}`),
   productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
+  // Muadiller, seçili şubelere göre (şube seçilmemişse boş)
+  similarGroups: (id: number) => request<GroupSummary[]>('GET', '/products/' + id + '/similar'),
   deals: () => request<Deal[]>('GET', '/products/deals'),
   aktuel: (market?: string | null) => request<AktuelResponse>('GET', '/aktuel' + qs({ market })),
   myStores: () => request<Store[]>('GET', '/me/stores'),
