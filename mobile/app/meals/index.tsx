@@ -4,10 +4,12 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card, LoginPrompt, Muted, useTheme } from '@/components/ui';
-import { api, Cuisine, MEAL_SLOT_LABELS, MealPlanSummary, MealSlot, PlanPeriod, RecipeSummary } from '@/lib/api';
+import { api, COURSE_LABELS, CourseType, Cuisine, MEAL_SLOT_LABELS, MealPlanSummary, MealSlot, PlanPeriod, RecipeSummary } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
-const SLOTS: MealSlot[] = ['kahvalti', 'ogle', 'aksam'];
+const SLOTS: MealSlot[] = ['kahvalti', 'ogle', 'ara', 'aksam'];
+const COURSES: CourseType[] = ['corba', 'ana', 'salata', 'tatli', 'icecek'];
+const COURSE_ICONS: Record<CourseType, string> = { corba: '🥣', ana: '🍛', salata: '🥗', tatli: '🍮', icecek: '🥤', ara: '🍎' };
 
 /** Yemek planlayıcı: günlük / haftalık plan oluştur, planlarım ve tarifler */
 export default function MealsScreen() {
@@ -20,6 +22,7 @@ export default function MealsScreen() {
   const [cuisine, setCuisine] = useState<string | null>(null);
   const [servings, setServings] = useState(2);
   const [slots, setSlots] = useState<MealSlot[]>(['aksam']);
+  const [courses, setCourses] = useState<CourseType[]>(COURSES);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,11 +40,14 @@ export default function MealsScreen() {
   const toggleSlot = (slot: MealSlot) =>
     setSlots(cur => cur.includes(slot) ? (cur.length > 1 ? cur.filter(s => s !== slot) : cur) : [...cur, slot]);
 
+  const toggleCourse = (course: CourseType) =>
+    setCourses(cur => cur.includes(course) ? (cur.length > 1 ? cur.filter(c => c !== course) : cur) : [...cur, course]);
+
   const create = async () => {
     setBusy(true);
     setError(null);
     try {
-      const plan = await api.createMealPlan({ period, cuisine, servings, meal_slots: slots });
+      const plan = await api.createMealPlan({ period, cuisine, servings, meal_slots: slots, courses });
       router.push({ pathname: '/meals/[id]', params: { id: String(plan.id) } });
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
@@ -79,9 +85,17 @@ export default function MealsScreen() {
 
               <View style={{ gap: 6 }}>
                 <Muted>Öğünler</Muted>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {SLOTS.map(s => chip(s, slots.includes(s), MEAL_SLOT_LABELS[s], () => toggleSlot(s)))}
                 </View>
+              </View>
+
+              <View style={{ gap: 6 }}>
+                <Muted>Menüde neler olsun? İstemediğinize dokunup çıkarın.</Muted>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {COURSES.map(c => chip(c, courses.includes(c), `${COURSE_ICONS[c]} ${COURSE_LABELS[c]}`, () => toggleCourse(c)))}
+                </View>
+                {courses.includes('icecek') && <Muted style={{ fontSize: 12 }}>İçecek, ana yemekle uyumlu hazır içeceklerden seçilir (ör. kuru fasulyeye ayran).</Muted>}
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -121,17 +135,27 @@ export default function MealsScreen() {
           {recipes.length > 0 && (
             <View style={{ gap: 10 }}>
               {sectionTitle('Tarifler')}
-              {recipes.map(r => (
-                <Pressable key={r.id} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(r.id) } })}>
-                  <Card style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 34 }}>{r.icon ?? '🍽️'}</Text>
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <Text style={{ color: t.text, fontWeight: '700' }}>{r.name}</Text>
-                      <Muted>{r.course} · {r.prep_minutes + r.cook_minutes} dk · {r.meal_slots.map(s => MEAL_SLOT_LABELS[s]).join(', ')}</Muted>
-                    </View>
-                  </Card>
-                </Pressable>
-              ))}
+              {(['corba', 'ana', 'salata', 'tatli', 'icecek', 'ara'] as CourseType[]).map(course => {
+                const group = recipes.filter(r => r.course_type === course);
+                if (!group.length) return null;
+                return (
+                  <View key={course} style={{ gap: 6 }}>
+                    <Muted style={{ fontWeight: '700' }}>{COURSE_ICONS[course]} {COURSE_LABELS[course]}</Muted>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }}
+                      contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+                      {group.map(r => (
+                        <Pressable key={r.id} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(r.id) } })}>
+                          <Card style={{ width: 132, gap: 4, padding: 12 }}>
+                            <Text style={{ fontSize: 30 }}>{r.icon ?? '🍽️'}</Text>
+                            <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{r.name}</Text>
+                            <Muted style={{ fontSize: 12 }}>{r.prep_minutes + r.cook_minutes > 0 ? `${r.prep_minutes + r.cook_minutes} dk` : 'Hazır'}</Muted>
+                          </Card>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                );
+              })}
             </View>
           )}
         </View>

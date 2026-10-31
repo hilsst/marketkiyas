@@ -3,9 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter, Query, Response, status
 
 from app.api.deps import CurrentUser, DbSession, OptionalUser
-from app.models import MealSlot
+from app.models import CourseType, MealSlot
 from app.schemas.meals import (
     CuisineOut,
+    EntryCreate,
     EntryUpdate,
     ExportOut,
     ExportRequest,
@@ -29,8 +30,10 @@ async def list_cuisines(db: DbSession) -> list[CuisineOut]:
 
 
 @router.get("/recipes", response_model=list[RecipeSummary])
-async def list_recipes(db: DbSession, cuisine: str | None = None, slot: MealSlot | None = None) -> list[RecipeSummary]:
-    return await svc.list_recipes(db, cuisine, slot)
+async def list_recipes(
+    db: DbSession, cuisine: str | None = None, slot: MealSlot | None = None, course: CourseType | None = None
+) -> list[RecipeSummary]:
+    return await svc.list_recipes(db, cuisine, slot, course)
 
 
 @router.get("/recipes/{recipe_id}", response_model=RecipeDetail)
@@ -52,7 +55,7 @@ async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) ->
     """Günlük (1 gün) ya da haftalık (7 gün) plan: seçilen öğünlere mutfaktan çeşitli yemekler dağıtılır."""
     plan = await svc.create_plan(
         db, user, period=body.period, cuisine_slug=body.cuisine, servings=body.servings,
-        slots=body.meal_slots, start=body.start_date, name=body.name,
+        slots=body.meal_slots, courses=body.courses, start=body.start_date, name=body.name,
     )
     return await svc.to_detail(db, plan, user.id)
 
@@ -80,6 +83,22 @@ async def change_entry(
     """Öğünün yemeğini değiştir; recipe_id boşsa "Başka öner"."""
     plan = await svc.get_plan(db, user, plan_id)
     await svc.change_entry(db, user, plan, entry_id, body.recipe_id)
+    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id)
+
+
+@router.post("/meal-plans/{plan_id}/entries", response_model=MealPlanDetail, status_code=status.HTTP_201_CREATED)
+async def add_entry(plan_id: int, body: EntryCreate, user: CurrentUser, db: DbSession) -> MealPlanDetail:
+    """Öğüne yemek ekle (ör. kaldırılan çorbayı geri getir); tarif verilmezse uygun olan önerilir."""
+    plan = await svc.get_plan(db, user, plan_id)
+    await svc.add_entry(db, plan, body.day_index, body.slot, body.course, body.recipe_id)
+    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id)
+
+
+@router.delete("/meal-plans/{plan_id}/entries/{entry_id}", response_model=MealPlanDetail)
+async def remove_entry(plan_id: int, entry_id: int, user: CurrentUser, db: DbSession) -> MealPlanDetail:
+    """O öğünde istenmeyen yemeği (ör. çorba) kaldır; maliyetten de çıkar."""
+    plan = await svc.get_plan(db, user, plan_id)
+    await svc.remove_entry(db, plan, entry_id)
     return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id)
 
 

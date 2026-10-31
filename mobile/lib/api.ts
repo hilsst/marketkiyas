@@ -99,12 +99,22 @@ export interface AktuelItem {
 export interface AktuelResponse { sources: AktuelSource[]; items: AktuelItem[]; }
 
 // Yemek planlayıcı: mutfak (şimdilik Anadolu), tarifler, günlük/haftalık plan ve malzeme maliyeti
-export type MealSlot = 'kahvalti' | 'ogle' | 'aksam';
+export type MealSlot = 'kahvalti' | 'ogle' | 'ara' | 'aksam';
+export type CourseType = 'corba' | 'ana' | 'salata' | 'tatli' | 'icecek' | 'ara';
 export type PlanPeriod = 'daily' | 'weekly';
-export const MEAL_SLOT_LABELS: Record<MealSlot, string> = { kahvalti: 'Kahvaltı', ogle: 'Öğle', aksam: 'Akşam' };
+export const MEAL_SLOT_LABELS: Record<MealSlot, string> = { kahvalti: 'Kahvaltı', ogle: 'Öğle', ara: 'Ara öğün', aksam: 'Akşam' };
+export const COURSE_LABELS: Record<CourseType, string> = {
+  corba: 'Çorba', ana: 'Ana yemek', salata: 'Salata', tatli: 'Tatlı', icecek: 'İçecek', ara: 'Ara öğün',
+};
+// Her öğünde önerilen yemek türleri (sunucudaki SLOT_COURSES ile aynı)
+export const SLOT_COURSES: Record<MealSlot, CourseType[]> = {
+  kahvalti: ['ana', 'icecek'], ogle: ['corba', 'ana', 'salata', 'tatli', 'icecek'], ara: ['ara'],
+  aksam: ['corba', 'ana', 'salata', 'tatli', 'icecek'],
+};
 export interface Cuisine { slug: string; name: string; icon: string | null; is_default: boolean; recipe_count: number; }
 export interface RecipeSummary {
-  id: number; slug: string; name: string; cuisine: string; course: string; meal_slots: MealSlot[]; servings: number;
+  id: number; slug: string; name: string; cuisine: string; course: string; course_type: CourseType; pairs_with: string[];
+  meal_slots: MealSlot[]; servings: number;
   prep_minutes: number; cook_minutes: number; description: string; icon: string | null; image_url: string | null;
 }
 export interface MealCostLine {
@@ -121,12 +131,12 @@ export interface RecipeDetail extends RecipeSummary {
 }
 export interface MealPlanSummary {
   id: number; name: string; period: PlanPeriod; cuisine: string; start_date: string; days: number; servings: number;
-  meal_slots: MealSlot[]; entry_count: number; exported_list_id: number | null; created_at: string;
+  meal_slots: MealSlot[]; courses: CourseType[]; entry_count: number; exported_list_id: number | null; created_at: string;
 }
-export interface MealPlanEntry { id: number; day_index: number; date: string; slot: MealSlot; recipe: RecipeSummary; }
+export interface MealPlanEntry { id: number; day_index: number; date: string; slot: MealSlot; course: CourseType; recipe: RecipeSummary; }
 export interface MealPlanDetail extends MealPlanSummary { entries: MealPlanEntry[]; cost: MealCost; }
 export interface MealPlanCreate {
-  period: PlanPeriod; cuisine?: string | null; servings: number; meal_slots: MealSlot[]; start_date?: string | null; name?: string | null;
+  period: PlanPeriod; cuisine?: string | null; servings: number; meal_slots: MealSlot[]; courses: CourseType[]; start_date?: string | null; name?: string | null;
 }
 export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; }
 
@@ -271,6 +281,10 @@ export const api = {
   // recipeId boş: "Başka öner"
   changeMealEntry: (planId: number, entryId: number, recipeId?: number | null) =>
     request<MealPlanDetail>('PATCH', `/meal-plans/${planId}/entries/${entryId}`, { recipe_id: recipeId ?? null }),
+  // Öğünde istenmeyen yemeği kaldır / kaldırılanı geri ekle (tarif boşsa önerilir)
+  removeMealEntry: (planId: number, entryId: number) => request<MealPlanDetail>('DELETE', `/meal-plans/${planId}/entries/${entryId}`),
+  addMealEntry: (planId: number, day_index: number, slot: MealSlot, course: CourseType) =>
+    request<MealPlanDetail>('POST', `/meal-plans/${planId}/entries`, { day_index, slot, course }),
   deleteMealPlan: (id: number) => request<void>('DELETE', '/meal-plans/' + id),
   exportMealPlan: (id: number, body: { list_id?: number | null; list_name?: string | null; include_pantry?: boolean }) =>
     request<MealPlanExport>('POST', `/meal-plans/${id}/to-list`, body),
