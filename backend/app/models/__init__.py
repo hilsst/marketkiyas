@@ -5,6 +5,7 @@ from app.models.alerts import PriceAlert
 from app.models.catalog import Category, Market, PriceHistory, Product
 from app.models.enums import ListStatus, PlanType, Unit
 from app.models.family import Family, FamilyInvite, FamilyMember
+from app.models.meals import Cuisine, MealPlan, MealPlanEntry, MealSlot, PlanPeriod, Recipe, RecipeIngredient
 from app.models.matching import GroupMember, ProductGroup
 from app.models.savings import SavingsRecord
 from app.models.stores import Store, StorePrice, UserStore
@@ -15,6 +16,13 @@ __all__ = [
     "AktuelItem",
     "Base",
     "Category",
+    "Cuisine",
+    "MealPlan",
+    "MealPlanEntry",
+    "MealSlot",
+    "PlanPeriod",
+    "Recipe",
+    "RecipeIngredient",
     "Family",
     "FamilyInvite",
     "FamilyMember",

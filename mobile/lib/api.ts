@@ -98,6 +98,38 @@ export interface AktuelItem {
 }
 export interface AktuelResponse { sources: AktuelSource[]; items: AktuelItem[]; }
 
+// Yemek planlayıcı: mutfak (şimdilik Anadolu), tarifler, günlük/haftalık plan ve malzeme maliyeti
+export type MealSlot = 'kahvalti' | 'ogle' | 'aksam';
+export type PlanPeriod = 'daily' | 'weekly';
+export const MEAL_SLOT_LABELS: Record<MealSlot, string> = { kahvalti: 'Kahvaltı', ogle: 'Öğle', aksam: 'Akşam' };
+export interface Cuisine { slug: string; name: string; icon: string | null; is_default: boolean; recipe_count: number; }
+export interface RecipeSummary {
+  id: number; slug: string; name: string; cuisine: string; course: string; meal_slots: MealSlot[]; servings: number;
+  prep_minutes: number; cook_minutes: number; description: string; icon: string | null; image_url: string | null;
+}
+export interface MealCostLine {
+  name: string; needed_quantity: Money; unit: Unit; is_pantry: boolean; recipes: string[];
+  match: { group_id: number; name: string; quantity: Money | null; unit: Unit | null; image_url: string | null; price: Money; market_id: number | null } | null;
+  packages: number; purchase_cost: Money | null; used_cost: Money | null; approximate: boolean;
+}
+export interface MealCost {
+  purchase_total: Money; used_total: Money; per_serving: Money | null; portions: number; missing_count: number;
+  include_pantry: boolean; lines: MealCostLine[]; pantry: string[];
+}
+export interface RecipeDetail extends RecipeSummary {
+  steps: string[]; ingredients: { name: string; amount_text: string; quantity: Money; unit: Unit; is_pantry: boolean }[]; cost: MealCost;
+}
+export interface MealPlanSummary {
+  id: number; name: string; period: PlanPeriod; cuisine: string; start_date: string; days: number; servings: number;
+  meal_slots: MealSlot[]; entry_count: number; exported_list_id: number | null; created_at: string;
+}
+export interface MealPlanEntry { id: number; day_index: number; date: string; slot: MealSlot; recipe: RecipeSummary; }
+export interface MealPlanDetail extends MealPlanSummary { entries: MealPlanEntry[]; cost: MealCost; }
+export interface MealPlanCreate {
+  period: PlanPeriod; cuisine?: string | null; servings: number; meal_slots: MealSlot[]; start_date?: string | null; name?: string | null;
+}
+export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; }
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
 }
@@ -227,4 +259,19 @@ export const api = {
   acceptFamilyInvite: (id: number) => request<MyFamily>('POST', '/family/invites/' + id + '/accept'),
   declineFamilyInvite: (id: number) => request<void>('DELETE', '/family/invites/' + id),
   removeFamilyMember: (userId: number) => request<void>('DELETE', '/family/members/' + userId),
+  // Yemek planlayıcı
+  cuisines: () => request<Cuisine[]>('GET', '/cuisines'),
+  recipes: (cuisine?: string | null, slot?: MealSlot | null) => request<RecipeSummary[]>('GET', '/recipes' + qs({ cuisine, slot })),
+  recipe: (id: number, servings?: number) => request<RecipeDetail>('GET', '/recipes/' + id + qs({ servings })),
+  mealPlans: () => request<MealPlanSummary[]>('GET', '/meal-plans'),
+  mealPlan: (id: number, includePantry = false) =>
+    request<MealPlanDetail>('GET', '/meal-plans/' + id + qs({ include_pantry: includePantry ? 'true' : null })),
+  createMealPlan: (body: MealPlanCreate) => request<MealPlanDetail>('POST', '/meal-plans', body),
+  updateMealPlan: (id: number, patch: { name?: string; servings?: number }) => request<MealPlanDetail>('PATCH', '/meal-plans/' + id, patch),
+  // recipeId boş: "Başka öner"
+  changeMealEntry: (planId: number, entryId: number, recipeId?: number | null) =>
+    request<MealPlanDetail>('PATCH', `/meal-plans/${planId}/entries/${entryId}`, { recipe_id: recipeId ?? null }),
+  deleteMealPlan: (id: number) => request<void>('DELETE', '/meal-plans/' + id),
+  exportMealPlan: (id: number, body: { list_id?: number | null; list_name?: string | null; include_pantry?: boolean }) =>
+    request<MealPlanExport>('POST', `/meal-plans/${id}/to-list`, body),
 };
