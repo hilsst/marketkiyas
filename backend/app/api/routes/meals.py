@@ -9,6 +9,7 @@ from app.schemas.meals import (
     EntryCreate,
     EntryUpdate,
     ExportOut,
+    IngredientChoice,
     ExportRequest,
     MealPlanCreate,
     MealPlanDetail,
@@ -35,9 +36,17 @@ async def list_recipes(
     db: DbSession, user: OptionalUser, cuisine: str | None = None, slot: MealSlot | None = None,
     course: CourseType | None = None, diet: Annotated[list[Diet] | None, Query()] = None,
     avoid: Annotated[list[Allergen] | None, Query()] = None,
+    have: Annotated[list[str] | None, Query(max_length=60)] = None,
 ) -> list[RecipeSummary]:
-    """En sevilen tarifler önce. diet=vegan&avoid=gluten: yalnız uyanlar."""
-    return await svc.list_recipes(db, cuisine, slot, course, diet, avoid, user.id if user else None)
+    """En sevilen tarifler önce. diet=vegan&avoid=gluten: yalnız uyanlar. have=Nohut&have=Pirinç
+    ("Dolabımda ne var"): bu malzemeleri kullananlar, en az eksiği olan önce (eksikler `missing`'de)."""
+    return await svc.list_recipes(db, cuisine, slot, course, diet, avoid, user.id if user else None, have)
+
+
+@router.get("/ingredients", response_model=list[IngredientChoice])
+async def list_ingredients(db: DbSession) -> list[IngredientChoice]:
+    """"Dolabımda ne var" seçicisi: tariflerde geçen malzemeler (tuz, baharat hariç)."""
+    return await svc.ingredient_choices(db)
 
 
 @router.put("/recipes/{recipe_id}/like", status_code=status.HTTP_204_NO_CONTENT)
@@ -68,15 +77,19 @@ async def list_plans(user: CurrentUser, db: DbSession) -> list[MealPlanSummary]:
 
 @router.post("/meal-plans", response_model=MealPlanDetail, status_code=status.HTTP_201_CREATED)
 async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) -> MealPlanDetail:
-    """Günlük (1 gün) ya da haftalık (7 gün) plan: seçilen mutfaklardan çeşitli yemekler öğünlere dağıtılır;
-    her öğün tek mutfaktan gelir."""
-    plan = await svc.create_plan(
+    """1-14 günlük plan (günlük, haftalık ya da ör. maaş gününe kadar 10 gün): seçilen mutfaklardan
+    çeşitli yemekler öğünlere dağıtılır; her öğün tek mutfaktan gelir.
+
+    weekdays: yalnız bu günlerde yemek (hafta içi). budget: alışveriş tutarı hedefi. leftovers: bir pişir
+    iki ye. low_waste: malzemesi ortak tarifler. have: dolapta olanlar (maliyete girmez, öne çıkar)."""
+    plan, swaps = await svc.create_plan(
         db, user, period=body.period, cuisine_slugs=body.cuisines or ([body.cuisine] if body.cuisine else []),
         servings=body.servings,
         slots=body.meal_slots, courses=body.courses, start=body.start_date, name=body.name,
-        diets=body.diets, avoid=body.avoid_allergens,
+        diets=body.diets, avoid=body.avoid_allergens, days=body.days, weekdays=body.weekdays,
+        budget=body.budget, leftovers=body.leftovers, low_waste=body.low_waste, have=body.have,
     )
-    return await svc.to_detail(db, plan, user.id)
+    return await svc.to_detail(db, plan, user.id, swaps=swaps)
 
 
 @router.get("/meal-plans/{plan_id}", response_model=MealPlanDetail)

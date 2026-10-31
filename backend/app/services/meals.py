@@ -46,9 +46,11 @@ from app.models import (
     User,
 )
 from app.schemas.meals import (
+    BudgetOut,
     CostLine,
     CostOut,
     CuisineOut,
+    IngredientChoice,
     IngredientOut,
     MatchedGroup,
     MealPlanDetail,
@@ -79,7 +81,7 @@ SLOT_COURSES = {
     MealSlot.SNACK: [CourseType.SNACK],
     MealSlot.DINNER: MENU,
 }
-PERIOD_DAYS = {PlanPeriod.DAILY: 1, PlanPeriod.WEEKLY: 7}
+PERIOD_DAYS = {PlanPeriod.DAILY: 1, PlanPeriod.WEEKLY: 7}  # days verilmezse
 # Bir malzeme için değerlendirilecek arama sonucu sayısı
 MATCH_CANDIDATES = 50
 CENT = Decimal("0.01")
@@ -187,8 +189,12 @@ async def liked_ids(db: AsyncSession, user_id: int | None) -> set[int]:
 async def list_recipes(
     db: AsyncSession, cuisine: str | None, slot: MealSlot | None, course: CourseType | None = None,
     diets: list[Diet] | None = None, avoid: list[Allergen] | None = None, user_id: int | None = None,
+    have: list[str] | None = None,
 ) -> list[RecipeSummary]:
-    """En sevilenler önce (başlangıç puanı + kullanıcı beğenileri)."""
+    """En sevilenler önce (başlangıç puanı + kullanıcı beğenileri).
+
+    have ("Dolabımda ne var"): yalnız bu malzemelerden en az birini kullanan tarifler; en az eksiği
+    olan önce, her tarifte alınması gereken (evde var sayılmayan) eksik malzemeler `missing`'de."""
     stmt = (
         select(Recipe).join(Cuisine).where(Recipe.is_active, Cuisine.is_active, _available())
         .options(*_recipe_options())
@@ -202,7 +208,41 @@ async def list_recipes(
     ]
     recipes.sort(key=lambda r: (-r.score, r.id))
     liked = await liked_ids(db, user_id)
-    return [recipe_summary(r, liked) for r in recipes]
+    home = have_set(have or [])
+    if not home:
+        return [recipe_summary(r, liked) for r in recipes]
+    out = []
+    for r in recipes:
+        needed = [i for i in r.ingredients if not i.is_pantry]
+        used = [i for i in needed if normalize_text(i.name) in home]
+        if not used:
+            continue
+        summary = recipe_summary(r, liked)
+        summary.missing = list(dict.fromkeys(i.name for i in needed if normalize_text(i.name) not in home))
+        out.append((len(summary.missing), -len(used), summary))
+    out.sort(key=lambda x: (x[0], x[1]))  # sıralama kararlı: eşitlerde sevilen önce kalır
+    return [x[2] for x in out]
+
+
+async def ingredient_choices(db: AsyncSession) -> list[IngredientChoice]:
+    """"Dolabımda ne var" seçicisi için tariflerde geçen malzemeler (tuz, baharat gibi evde var
+    sayılanlar hariç); en çok tarifte geçen önce."""
+    recipes = (await db.scalars(
+        select(Recipe).join(Cuisine).where(Recipe.is_active, Cuisine.is_active, _available())
+        .options(selectinload(Recipe.ingredients))
+    )).all()
+    names: dict[str, str] = {}
+    counts: Counter = Counter()
+    for r in recipes:
+        for key in {normalize_text(i.name): i for i in r.ingredients if not i.is_pantry}:
+            counts[key] += 1
+        for i in r.ingredients:
+            if not i.is_pantry:
+                names.setdefault(normalize_text(i.name), i.name)
+    return [
+        IngredientChoice(name=names[k], recipe_count=n)
+        for k, n in sorted(counts.items(), key=lambda kv: (-kv[1], names[kv[0]]))
+    ]
 
 
 async def set_like(db: AsyncSession, user: User, recipe: Recipe, like: bool) -> None:
@@ -252,6 +292,7 @@ class _Need:
     is_pantry: bool
     quantity: Decimal = Decimal(0)
     recipes: list[str] = field(default_factory=list)
+    names: set[str] = field(default_factory=set)  # tariflerdeki adları (normalize), "dolabımda var" için
 
 
 @dataclass(frozen=True)
@@ -308,7 +349,26 @@ def _category_ok(group: GroupSummary, need: _Need, categories: dict[str, int]) -
     return group.category_id in {categories[s] for s in need.categories if s in categories}
 
 
-async def _match(db: AsyncSession, need: _Need, user_id: int | None, categories: dict[str, int]) -> _Pick | None:
+async def _groups_for(
+    db: AsyncSession, term: str, need: _Need, user_id: int | None, categories: dict[str, int], cache: dict | None
+) -> list[GroupSummary]:
+    """Arama ifadesine uyan, malzeme olabilecek ürün grupları. cache: aynı istekte (ör. bütçeye uydururken
+    planın maliyeti defalarca hesaplanır) aynı arama tekrar yapılmasın."""
+    key = (term, need.excludes, need.categories, user_id)
+    if cache is not None and key in cache:
+        return cache[key]
+    groups = [
+        g for g in await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id)
+        if _category_ok(g, need, categories) and name_matches(term, g.name, need.excludes)
+    ]
+    if cache is not None:
+        cache[key] = groups
+    return groups
+
+
+async def _match(
+    db: AsyncSession, need: _Need, user_id: int | None, categories: dict[str, int], cache: dict | None = None
+) -> _Pick | None:
     """Gereken miktarı en ucuza karşılayan grup. Ürün adı arama ifadesinin malzemesi olmalıdır
     (bkz. ingredient_match: "limon" için "Limonlu Popkek", "pul biber" için "Sivri Biber" sayılmaz);
     bulunamazsa malzeme eksik görünür. Arama ifadesi "|" ile alternatif içerebilir: "tavuk gogus|pilic gogus"."""
@@ -316,10 +376,8 @@ async def _match(db: AsyncSession, need: _Need, user_id: int | None, categories:
     for term in (t.strip() for t in need.search_term.split("|")):
         if not term:
             continue
-        for group in await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id):
-            if group.id in picks or not _category_ok(group, need, categories):
-                continue
-            if not name_matches(term, group.name, need.excludes):
+        for group in await _groups_for(db, term, need, user_id, categories, cache):
+            if group.id in picks:
                 continue
             pick = _price_for(group, need)
             if pick is not None:
@@ -343,6 +401,7 @@ def _collect_needs(uses: list[tuple[Recipe, Decimal]]) -> list[_Need]:
                 need = needs[key] = _need_of(ing)
                 need.quantity = Decimal(0)
             need.quantity += Decimal(ing.quantity) * factor
+            need.names.add(normalize_text(ing.name))
             if recipe.name not in need.recipes:
                 need.recipes.append(recipe.name)
     return list(needs.values())
@@ -354,16 +413,25 @@ async def compute_cost(
     portions: int,
     user_id: int | None,
     include_pantry: bool = False,
+    have: set[str] | None = None,
+    cache: dict | None = None,
+    categories: dict[str, int] | None = None,
 ) -> CostOut:
-    """uses: (tarif, çarpan) — çarpan = plan kişi sayısı / tarifin kişi sayısı, her öğün için ayrı."""
+    """uses: (tarif, çarpan) — çarpan = plan kişi sayısı / tarifin kişi sayısı, her öğün için ayrı.
+    have: kullanıcının evde olduğunu söylediği malzemeler (normalize adlar); maliyete katılmaz."""
     lines: list[CostLine] = []
     pantry: list[str] = []
-    categories = await _category_ids(db)
+    at_home: list[str] = []
+    if categories is None:
+        categories = await _category_ids(db)
     for need in _collect_needs(uses):
         if need.is_pantry and not include_pantry:
             pantry.append(need.name)
             continue
-        pick = await _match(db, need, user_id, categories)
+        if have and need.names & have:
+            at_home.append(need.name)
+            continue
+        pick = await _match(db, need, user_id, categories, cache)
         lines.append(
             CostLine(
                 name=need.name,
@@ -397,6 +465,8 @@ async def compute_cost(
         include_pantry=include_pantry,
         lines=lines,
         pantry=pantry,
+        have=at_home,
+        leftover_value=_money(max(purchase - used, Decimal(0))),
     )
 
 
@@ -458,16 +528,6 @@ def _plan_options():
     )
 
 
-def _choose(
-    candidates: list[Recipe], usage: Counter, today: set[int], yesterday: set[int], rng: random.Random,
-    exclude: int | None = None,
-) -> Recipe:
-    """Çeşitlilik: aynı gün tekrar etmesin, mümkünse dünkü yemekler gelmesin, en az kullanılan önce;
-    eşitlerde sevilen tarif (puanı yüksek) daha büyük olasılıkla seçilir."""
-    pool = [r for r in candidates if r.id != exclude] or candidates
-    return min(pool, key=lambda r: (r.id in today, r.id in yesterday, usage[r.id], -rng.random() * (r.score + 10)))
-
-
 def slot_courses(slot: MealSlot, courses: list[CourseType]) -> list[CourseType]:
     """Öğünde olacak yemek türleri; plan oluştururken seçilen türlerle süzülür (ara öğün hariç)."""
     if slot is MealSlot.SNACK:
@@ -482,6 +542,7 @@ async def _cuisine_recipes(
     rows = (await db.scalars(
         select(Recipe)
         .where(Recipe.cuisine_id.in_([c.id for c in cuisines]), Recipe.is_active, _available())
+        .options(*_recipe_options())
         .order_by(Recipe.id)
     )).all()
     return [r for r in rows if r.suits(diets or [], avoid or [])]
@@ -523,9 +584,13 @@ def _order(slot: MealSlot, course: CourseType) -> int:
     return SLOT_ORDER[slot] * 10 + COURSE_ORDER[course]
 
 
-def default_name(period: PlanPeriod, start: date) -> str:
-    label = "Günlük" if period is PlanPeriod.DAILY else "Haftalık"
+def default_name(days: int, start: date) -> str:
+    label = {1: "Günlük", 7: "Haftalık"}.get(days, f"{days} günlük")
     return f"{label} yemek planı · {start.day} {MONTHS[start.month - 1]}"
+
+
+def period_of(days: int) -> PlanPeriod:
+    return {1: PlanPeriod.DAILY, 7: PlanPeriod.WEEKLY}.get(days, PlanPeriod.CUSTOM)
 
 
 def _meal_cuisines(recipes: list[Recipe], cuisines: list[Cuisine], slot: MealSlot, courses: list[CourseType]) -> list[int]:
@@ -537,17 +602,127 @@ def _meal_cuisines(recipes: list[Recipe], cuisines: list[Cuisine], slot: MealSlo
     return with_first or [c.id for c in cuisines if any(_pool([r for r in recipes if r.cuisine_id == c.id], slot, k) for k in wanted)]
 
 
+# --- Kalan yemek ("bir pişir iki ye") ---------------------------------------------------------
+
+# Ertesi güne kalan yemek türleri; salata, tatlı ve içecek her öğünde taze
+LEFTOVER_COURSES = (CourseType.SOUP, CourseType.MAIN, CourseType.SIDE)
+
+
+def _source(entry: MealPlanEntry) -> MealPlanEntry | None:
+    """Yeni (henüz kaydedilmemiş) kayıtlarda ilişki bellekte; yüklenmiş kayıtlarda yalnız id var."""
+    return entry.__dict__.get("leftover_of")
+
+
+def is_leftover(entry: MealPlanEntry) -> bool:
+    return entry.leftover_of_id is not None or _source(entry) is not None
+
+
+def _children(plan: MealPlan, entry: MealPlanEntry) -> list[MealPlanEntry]:
+    """Bu yemekten kalan (ertesi güne aktarılan) kayıtlar."""
+    return [
+        e for e in plan.entries
+        if e is not entry and (_source(e) is entry or (entry.id is not None and e.leftover_of_id == entry.id))
+    ]
+
+
+def _detach(entry: MealPlanEntry) -> None:
+    """Kalan yemek artık ayrıca pişirilecek (kaynağı değişti, silindi ya da kullanıcı değiştirdi)."""
+    entry.leftover_of_id = None
+    if "leftover_of" in entry.__dict__:
+        entry.leftover_of = None
+
+
+# --- Tercihler: az israf, dolabımda olanlar, bütçe ------------------------------------------
+
+
+def _terms(recipe: Recipe) -> set[str]:
+    """Tarifin alınması gereken (evde var sayılmayan) malzemeleri, arama ifadesiyle."""
+    return {normalize_text(i.search_term) for i in recipe.ingredients if not i.is_pantry}
+
+
+def have_set(names: list[str]) -> set[str]:
+    return {normalize_text(n) for n in names if n.strip()}
+
+
+class _Prefs:
+    """Aynı sayıda kullanılmış tarifler arasında seçimi yönlendirir (çeşitlilik her zaman önce gelir):
+
+    - low_waste: plandaki yemeklerle ortak malzemesi olan tarif öne çıkar (yarım kalan maydanoz,
+      yoğurt, peynir başka yemekte kullanılsın);
+    - have: kullanıcının evde olduğunu söylediği malzemeleri kullanan tarif öne çıkar;
+    - prices: bütçe varsa ucuz tarif öne çıkar."""
+
+    def __init__(self, recipes: list[Recipe], low_waste: bool, have: set[str], prices: dict[int, Decimal] | None):
+        self.terms = {r.id: _terms(r) for r in recipes}
+        self.have_terms = {
+            normalize_text(i.search_term) for r in recipes for i in r.ingredients
+            if not i.is_pantry and normalize_text(i.name) in have
+        }
+        self.low_waste = low_waste
+        self.prices = prices
+        self.bought: Counter = Counter()
+
+    @property
+    def active(self) -> bool:
+        return self.low_waste or bool(self.have_terms) or self.prices is not None
+
+    def add(self, recipe: Recipe) -> None:
+        self.bought.update(self.terms.get(recipe.id, set()))
+
+    def bonus(self, recipe: Recipe, pool: list[Recipe]) -> float:
+        terms = self.terms.get(recipe.id, set())
+        b = 0.0
+        if self.low_waste:
+            b += 0.3 * sum(1 for t in terms if self.bought[t])
+        if self.have_terms:
+            b += 0.45 * len(terms & self.have_terms)
+        if self.prices:
+            costs = [self.prices.get(r.id, Decimal(0)) for r in pool]
+            low, high = min(costs), max(costs)
+            if high > low:
+                b -= 0.6 * float((self.prices.get(recipe.id, low) - low) / (high - low))
+        # Bir yemek fazla kullanılmış olmayı hiçbir zaman telafi etmesin
+        return max(min(b, 0.9), -0.9)
+
+
+def _choose(
+    candidates: list[Recipe], usage: Counter, today: set[int], yesterday: set[int], rng: random.Random,
+    exclude: int | None = None, prefs: _Prefs | None = None,
+) -> Recipe:
+    """Çeşitlilik: aynı gün tekrar etmesin, mümkünse dünkü yemekler gelmesin, en az kullanılan önce;
+    eşitlerde tercihler (az israf, dolaptakiler, bütçe), sonra sevilen tarif (puanı yüksek) daha büyük
+    olasılıkla seçilir."""
+    pool = [r for r in candidates if r.id != exclude] or candidates
+
+    def key(r: Recipe):
+        bonus = prefs.bonus(r, pool) if prefs is not None and prefs.active else 0.0
+        return (r.id in today, r.id in yesterday, usage[r.id] - bonus, -rng.random() * (r.score + 10))
+
+    return min(pool, key=key)
+
+
+# --- Plan oluşturma -------------------------------------------------------------------------
+
+
 async def create_plan(
     db: AsyncSession, user: User, *, period: PlanPeriod, cuisine_slugs: list[str], servings: int,
     slots: list[MealSlot], courses: list[CourseType], start: date | None, name: str | None,
     diets: list[Diet] | None = None, avoid: list[Allergen] | None = None, rng: random.Random | None = None,
-) -> MealPlan:
+    days: int | None = None, weekdays: list[int] | None = None, budget: Decimal | None = None,
+    leftovers: bool = False, low_waste: bool = False, have: list[str] | None = None,
+) -> tuple[MealPlan, int]:
+    """Planı oluşturur; (plan, bütçe için değiştirilen yemek sayısı) döner."""
     rng = rng or random.Random()
+    days = days or PERIOD_DAYS.get(period, 7)
     cuisines = await get_cuisines(db, cuisine_slugs)
     slots = sorted(set(slots), key=SLOT_ORDER.__getitem__)
     courses = sorted(set(courses), key=COURSE_ORDER.__getitem__)
     diets = sorted(set(diets or []), key=list(Diet).index)
     avoid = sorted(set(avoid or []), key=list(Allergen).index)
+    weekdays = sorted(set(weekdays or []))
+    if len(weekdays) == 7:
+        weekdays = []
+    have = list(dict.fromkeys(h.strip() for h in (have or []) if h.strip()))
     recipes = await _cuisine_recipes(db, cuisines, diets, avoid)
     menu = {slot: [c for c in slot_courses(slot, courses) if _pool(recipes, slot, c)] for slot in slots}
     if not any(menu.values()):
@@ -557,13 +732,30 @@ async def create_plan(
             detail += " (diyet ve alerji seçimlerinize uyan)"
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail)
     start = start or date.today()
+    active_days = [d for d in range(days) if not weekdays or (start + timedelta(days=d)).weekday() in weekdays]
+    if not active_days:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Seçilen günler plan süresine denk gelmiyor")
     # Hangi öğünü hangi mutfaklar çıkarabilir (ör. kahvaltılığı olmayan mutfak kahvaltıya gelmez)
     able = {slot: _meal_cuisines(recipes, cuisines, slot, courses) for slot in slots}
+    have_names = have_set(have)
+    cache: dict = {}
+    categories = await _category_ids(db)
+    prices = None
+    if budget is not None:
+        prices = {r.id: await _estimate(db, r, servings, user.id, have_names, cache, categories) for r in recipes}
+    prefs = _Prefs(recipes, low_waste, have_names, prices)
+    by_id = {r.id: r for r in recipes}
 
     plan = MealPlan(
         user_id=user.id,
-        name=name or default_name(period, start),
-        period=period,
+        name=name or default_name(days, start),
+        period=period_of(days),
+        days=days,
+        weekdays=",".join(str(d) for d in weekdays),
+        budget=budget,
+        leftovers=leftovers,
+        low_waste=low_waste,
+        have_items="|".join(have),
         cuisine_id=cuisines[0].id,
         cuisines=",".join(c.slug for c in cuisines),
         start_date=start,
@@ -576,33 +768,131 @@ async def create_plan(
     usage: Counter = Counter()
     cuisine_usage: Counter = Counter()  # mutfaklar öğünlere dengeli dağılsın
     yesterday: set[int] = set()
-    for day in range(PERIOD_DAYS[period]):
+    # (gün, öğün) -> o öğüne kalan yemekler (önceki akşamın çorba / ana / yan yemeği)
+    carry: dict[tuple[int, MealSlot], list[MealPlanEntry]] = {}
+    leftover_slot = MealSlot.LUNCH if MealSlot.LUNCH in slots else MealSlot.DINNER
+    for day in active_days:
         today: set[int] = set()
         today_cuisines: set[int] = set()
         for slot in slots:
             main = None
             cuisine_id = None
-            if able[slot]:
+            carried = carry.pop((day, slot), [])
+            for src in carried:
+                recipe = by_id[src.recipe_id]
+                plan.entries.append(MealPlanEntry(
+                    day_index=day, slot=slot, course=src.course, slot_order=_order(slot, src.course),
+                    recipe_id=recipe.id, leftover_of=src,
+                ))
+                today.add(recipe.id)
+                cuisine_id = recipe.cuisine_id
+                if src.course is CourseType.MAIN:
+                    main = recipe
+            if not carried and able[slot]:
                 # En az kullanılan mutfak; eşitse bugün henüz gelmemiş olan, sonra rastgele
                 cuisine_id = min(able[slot], key=lambda c: (cuisine_usage[c], c in today_cuisines, rng.random()))
                 cuisine_usage[cuisine_id] += 1
                 today_cuisines.add(cuisine_id)
+            made: list[MealPlanEntry] = []
             for course in menu[slot]:
+                if any(e.course is course for e in carried):
+                    continue
                 candidates = _candidates(recipes, slot, course, main, cuisine_id)
                 if not candidates:  # ör. mantının yanına pilav önerilmez
                     continue
-                recipe = _choose(candidates, usage, today, yesterday, rng)
+                recipe = _choose(candidates, usage, today, yesterday, rng, prefs=prefs)
                 if course is CourseType.MAIN:
                     main = recipe
                 usage[recipe.id] += 1
                 today.add(recipe.id)
-                plan.entries.append(
-                    MealPlanEntry(day_index=day, slot=slot, course=course, slot_order=_order(slot, course), recipe_id=recipe.id)
-                )
+                prefs.add(recipe)
+                entry = MealPlanEntry(day_index=day, slot=slot, course=course, slot_order=_order(slot, course), recipe_id=recipe.id)
+                plan.entries.append(entry)
+                made.append(entry)
+            # Bir pişir iki ye: akşam yemeği (kendisi kalan değilse) ertesi gün öğlene kalır; planda
+            # öğle yoksa ertesi akşama (iki günde bir pişirilir). Ertesi gün planda değilse kalmaz.
+            if leftovers and slot is MealSlot.DINNER and not carried and day + 1 in active_days:
+                keep = [e for e in made if e.course in LEFTOVER_COURSES]
+                if any(e.course is CourseType.MAIN for e in keep):
+                    carry[(day + 1, leftover_slot)] = keep
         yesterday = today
+
+    swaps = 0
+    if budget is not None:
+        swaps = await _fit_budget(db, plan, recipes, budget, prices, user.id, have_names, cache, categories, rng)
     db.add(plan)
     await db.commit()
-    return await get_plan(db, user, plan.id)
+    return await get_plan(db, user, plan.id), swaps
+
+
+async def _estimate(
+    db: AsyncSession, recipe: Recipe, servings: int, user_id: int, have: set[str], cache: dict,
+    categories: dict[str, int],
+) -> Decimal:
+    """Tarifin plan kişi sayısı için kullanılan malzeme değeri (bütçe karşılaştırması için). Fiyatı
+    bulunamayan malzeme bedava sayılmasın: bulunanların ortalaması kadar eklenir."""
+    cost = await compute_cost(
+        db, [(recipe, Decimal(servings) / recipe.servings)], 1, user_id, have=have, cache=cache, categories=categories
+    )
+    priced = [line.used_cost for line in cost.lines if line.used_cost is not None]
+    average = sum(priced, Decimal(0)) / len(priced) if priced else MISSING_PRICE
+    return cost.used_total + average * cost.missing_count
+
+
+# Hiçbir malzemesinin fiyatı bulunamayan tarifte eksik malzeme başına varsayılan değer (TL)
+MISSING_PRICE = Decimal(40)
+
+
+# Bütçeye uydurmak için en fazla bu kadar adım (her adımda bir yemek değişir ya da çıkar)
+MAX_BUDGET_STEPS = 40
+# Bütçe yetmiyorsa çıkarılabilecek "olmasa da olur" yemekler, önce bunlar
+OPTIONAL_COURSES = (CourseType.DRINK, CourseType.DESSERT, CourseType.SALAD, CourseType.SOUP)
+
+
+async def _fit_budget(
+    db: AsyncSession, plan: MealPlan, recipes: list[Recipe], budget: Decimal, prices: dict[int, Decimal],
+    user_id: int, have: set[str], cache: dict, categories: dict[str, int], rng: random.Random,
+) -> int:
+    """Alışveriş tutarı bütçeyi aşıyorsa en pahalı yemekler aynı öğüne uygun daha ucuz bir tarifle
+    değiştirilir (kalanları da onu izler). Ucuzu kalmadıysa içecek, tatlı, salata, çorba çıkarılır.
+    Ana yemek hiç çıkarılmaz; bütçe yine de yetmezse plan olduğu gibi kalır (ekranda aşım görünür)."""
+    by_id = {r.id: r for r in recipes}
+
+    async def total() -> Decimal:
+        uses = [(by_id[e.recipe_id], Decimal(plan.servings) / by_id[e.recipe_id].servings) for e in plan.entries]
+        cost = await compute_cost(db, uses, 1, user_id, have=have, cache=cache, categories=categories)
+        return cost.purchase_total
+
+    steps = 0
+    tried: set[int] = set()
+    current = await total()
+    while current > budget and steps < MAX_BUDGET_STEPS:
+        open_entries = [e for e in plan.entries if not is_leftover(e) and id(e) not in tried]
+        if not open_entries:
+            break
+        entry = max(open_entries, key=lambda e: prices.get(e.recipe_id, Decimal(0)) * (1 + len(_children(plan, e))))
+        price = prices.get(entry.recipe_id, Decimal(0))
+        main = None if entry.course is CourseType.MAIN else _main_of(plan, entry.day_index, entry.slot, by_id)
+        pool = _candidates(recipes, entry.slot, entry.course, main, by_id[entry.recipe_id].cuisine_id)
+        cheaper = [r for r in pool if r.id != entry.recipe_id and prices.get(r.id, Decimal(0)) < price]
+        if cheaper:
+            today = {e.recipe_id for e in plan.entries if e.day_index == entry.day_index}
+            usage = Counter(e.recipe_id for e in plan.entries)
+            new = min(cheaper, key=lambda r: (r.id in today, usage[r.id], prices.get(r.id, Decimal(0)), rng.random()))
+            for e in [entry, *_children(plan, entry)]:
+                e.recipe_id = new.id
+                if e.course is CourseType.MAIN:
+                    _repair_companions(plan, recipes, e, new, rng)
+        elif entry.course in OPTIONAL_COURSES:
+            for e in _children(plan, entry):
+                plan.entries.remove(e)
+            plan.entries.remove(entry)
+        else:
+            tried.add(id(entry))  # bundan ucuzu yok ve çıkarılamaz (ana / yan yemek)
+            continue
+        steps += 1
+        current = await total()
+    return steps
 
 
 async def get_plan(db: AsyncSession, user: User, plan_id: int) -> MealPlan:
@@ -663,7 +953,13 @@ def _suggest(
     usage = Counter(e.recipe_id for e in others)
     today = {e.recipe_id for e in others if e.day_index == day}
     around = {e.recipe_id for e in others if abs(e.day_index - day) == 1}
-    return _choose(pool, usage, today, around, rng, exclude=skip_entry.recipe_id if skip_entry else None)
+    prefs = None
+    if plan.low_waste or plan.have_list:
+        prefs = _Prefs(recipes, plan.low_waste, have_set(plan.have_list), None)
+        for e in others:
+            if e.recipe_id in by_id:
+                prefs.add(by_id[e.recipe_id])
+    return _choose(pool, usage, today, around, rng, exclude=skip_entry.recipe_id if skip_entry else None, prefs=prefs)
 
 
 async def change_entry(
@@ -680,9 +976,14 @@ async def change_entry(
         recipe = _suggest(plan, recipes, entry.day_index, entry.slot, entry.course, rng, skip_entry=entry)
         if recipe is None:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Bu öğün için başka tarif yok")
-    entry.recipe_id = recipe.id
-    if entry.course is CourseType.MAIN:
-        _repair_companions(plan, recipes, entry, recipe, rng)
+    # Kalan yemeği değiştiren kullanıcı o öğünde ayrıca pişirecek; pişen yemek değişince kalanı da değişir
+    targets = [entry] if is_leftover(entry) else [entry, *_children(plan, entry)]
+    if is_leftover(entry):
+        _detach(entry)
+    for e in targets:
+        e.recipe_id = recipe.id
+        if e.course is CourseType.MAIN:
+            _repair_companions(plan, recipes, e, recipe, rng)
     await db.commit()
 
 
@@ -725,8 +1026,12 @@ def _get_entry(plan: MealPlan, entry_id: int) -> MealPlanEntry:
 
 
 async def remove_entry(db: AsyncSession, plan: MealPlan, entry_id: int) -> None:
-    """Kullanıcı o öğünde bu yemeği istemiyor (ör. çorba): plandan ve maliyetten çıkar."""
-    plan.entries.remove(_get_entry(plan, entry_id))
+    """Kullanıcı o öğünde bu yemeği istemiyor (ör. çorba): plandan ve maliyetten çıkar. Kalanı
+    planlanmış bir yemek kaldırılırsa kalanlar o gün ayrıca pişirilir."""
+    entry = _get_entry(plan, entry_id)
+    for child in _children(plan, entry):
+        _detach(child)
+    plan.entries.remove(entry)
     await db.commit()
 
 
@@ -735,7 +1040,7 @@ async def add_entry(
     rng: random.Random | None = None,
 ) -> None:
     """Kaldırılan bir yemek türünü (ya da yeni bir öğünü) geri ekle; tarif verilmezse önerilir."""
-    if day >= PERIOD_DAYS[plan.period]:
+    if day >= plan.days:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Plan bu günü kapsamıyor")
     if course not in slot_courses(slot, list(CourseType)):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Bu öğüne bu yemek türü eklenemez")
@@ -757,6 +1062,7 @@ async def add_entry(
 
 
 def _uses(plan: MealPlan) -> list[tuple[Recipe, Decimal]]:
+    """Kalan yemekler de sayılır: kaynağı iki kat pişirildiği için malzeme miktarı aynıdır."""
     return [(e.recipe, Decimal(plan.servings) / e.recipe.servings) for e in plan.entries]
 
 
@@ -766,7 +1072,9 @@ def meal_count(plan: MealPlan) -> int:
 
 
 async def plan_cost(db: AsyncSession, plan: MealPlan, user_id: int, include_pantry: bool = False) -> CostOut:
-    return await compute_cost(db, _uses(plan), meal_count(plan) * plan.servings, user_id, include_pantry)
+    return await compute_cost(
+        db, _uses(plan), meal_count(plan) * plan.servings, user_id, include_pantry, have=have_set(plan.have_list)
+    )
 
 
 def to_summary(plan: MealPlan) -> MealPlanSummary:
@@ -777,24 +1085,30 @@ def to_summary(plan: MealPlan) -> MealPlanSummary:
         cuisine=plan.cuisine.slug,
         cuisines=plan.cuisine_slugs,
         start_date=plan.start_date,
-        days=PERIOD_DAYS[plan.period],
+        days=plan.days,
         servings=plan.servings,
         meal_slots=plan.slots,
         courses=plan.course_list,
         diets=plan.diet_list,
         avoid_allergens=plan.avoid_list,
         entry_count=meal_count(plan),
+        weekdays=plan.weekday_list,
+        budget=plan.budget,
+        leftovers=plan.leftovers,
+        low_waste=plan.low_waste,
+        have=plan.have_list,
         exported_list_id=plan.exported_list_id,
         created_at=plan.created_at,
     )
 
 
 def daily_nutrition(plan: MealPlan) -> Nutrition | None:
-    """Kişi başı günlük ortalama (plandaki bütün yemekler; besin değeri olmayanlar hariç)."""
+    """Kişi başı günlük ortalama (plandaki bütün yemekler; besin değeri olmayanlar hariç). Yemek
+    yapılmayan günler (ör. hafta sonu seçilmediyse) ortalamaya girmez."""
     known = [e.recipe for e in plan.entries if e.recipe.kcal is not None]
     if not known:
         return None
-    days = PERIOD_DAYS[plan.period]
+    days = len({e.day_index for e in plan.entries}) or 1
     return Nutrition(
         kcal=round(sum(r.kcal for r in known) / days),
         protein_g=round(sum(r.protein_g or 0 for r in known) / days),
@@ -803,8 +1117,16 @@ def daily_nutrition(plan: MealPlan) -> Nutrition | None:
     )
 
 
-async def to_detail(db: AsyncSession, plan: MealPlan, user_id: int, include_pantry: bool = False) -> MealPlanDetail:
+async def to_detail(
+    db: AsyncSession, plan: MealPlan, user_id: int, include_pantry: bool = False, swaps: int = 0
+) -> MealPlanDetail:
     liked = await liked_ids(db, user_id)
+    cost = await plan_cost(db, plan, user_id, include_pantry)
+    budget = None
+    if plan.budget is not None:
+        budget = BudgetOut(
+            budget=plan.budget, total=cost.purchase_total, within=cost.purchase_total <= plan.budget, swaps=swaps
+        )
     return MealPlanDetail(
         **to_summary(plan).model_dump(),
         entries=[
@@ -815,11 +1137,14 @@ async def to_detail(db: AsyncSession, plan: MealPlan, user_id: int, include_pant
                 slot=e.slot,
                 course=e.course,
                 recipe=recipe_summary(e.recipe, liked),
+                leftover_of=e.leftover_of_id,
+                leftover_for=[c.id for c in plan.entries if c.leftover_of_id == e.id],
             )
             for e in sorted(plan.entries, key=lambda e: (e.day_index, e.slot_order))
         ],
         daily_nutrition=daily_nutrition(plan),
-        cost=await plan_cost(db, plan, user_id, include_pantry),
+        cost=cost,
+        budget_status=budget,
     )
 
 

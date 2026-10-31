@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { Animated, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button, Muted, useTheme } from '@/components/ui';
-import { Cuisine, PlanPeriod } from '@/lib/api';
+import { Cuisine } from '@/lib/api';
 
 /**
  * "Plan oluştur"a basınca ortada açılan kart: bu hafta (ya da bugün) hangi mutfaklardan yemek
  * olsun? Birden çok mutfak seçilebilir; her öğün bunlardan birinden gelir. Açıkken render edilir.
  */
-export default function CuisinePicker({ cuisines, initial, period, busy, error, onCancel, onConfirm }: {
-  cuisines: Cuisine[]; initial: string[]; period: PlanPeriod; busy: boolean; error: string | null;
+export default function CuisinePicker({ cuisines, initial, days, busy, error, onCancel, onConfirm }: {
+  cuisines: Cuisine[]; initial: string[]; days: number; busy: boolean; error: string | null;
   onCancel: () => void; onConfirm: (slugs: string[]) => void;
 }) {
   const t = useTheme();
@@ -22,7 +22,7 @@ export default function CuisinePicker({ cuisines, initial, period, busy, error, 
 
   const toggle = (slug: string) =>
     setSelected(cur => cur.includes(slug) ? cur.filter(s => s !== slug) : [...cur, slug]);
-  const when = period === 'weekly' ? 'Bu hafta' : 'Bugün';
+  const when = days === 1 ? 'Bugün' : days === 7 ? 'Bu hafta' : `${days} gün boyunca`;
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onCancel}>

@@ -71,6 +71,7 @@ function RootLayoutNav() {
         <Stack.Screen name="meals/index" options={{ title: 'Yemek Planı' }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Yemek Planı' }} />
         <Stack.Screen name="recipe/[id]" options={{ title: 'Tarif' }} />
+        <Stack.Screen name="cook/[id]" options={{ title: 'Pişirme modu' }} />
       </Stack>
     </ThemeProvider>
   );

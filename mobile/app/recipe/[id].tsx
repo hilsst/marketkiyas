@@ -1,11 +1,11 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
-import { Card, Muted, useTheme } from '@/components/ui';
+import { Button, Card, Muted, useTheme } from '@/components/ui';
 import { ALLERGEN_LABELS, api, DIET_LABELS, MEAL_SLOT_LABELS, RecipeDetail } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -80,6 +80,11 @@ export default function RecipeScreen() {
               {recipe.allergens.map(a => badge(a, `İçerir: ${ALLERGEN_LABELS[a]}`, t.danger))}
             </View>
           </View>
+
+          {recipe.steps.length > 0 && (
+            <Button title="👩‍🍳 Pişirme modunu başlat"
+              onPress={() => router.push({ pathname: '/cook/[id]', params: { id: String(recipe.id), servings: String(people) } })} />
+          )}
 
           {recipe.nutrition && <NutritionCard nutrition={recipe.nutrition} title="Besin değeri (1 porsiyon)" />}
 

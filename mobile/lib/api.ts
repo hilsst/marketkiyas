@@ -101,12 +101,14 @@ export interface AktuelItem {
 }
 export interface AktuelResponse { sources: AktuelSource[]; items: AktuelItem[]; }
 
-// Yemek planlayıcı: mutfak (şimdilik Anadolu), tarifler, günlük/haftalık plan ve malzeme maliyeti
+// Yemek planlayıcı: mutfaklar, tarifler, 1-14 günlük plan ve malzeme maliyeti
 export type MealSlot = 'kahvalti' | 'ogle' | 'ara' | 'aksam';
 export type CourseType = 'corba' | 'ana' | 'yan' | 'salata' | 'tatli' | 'icecek' | 'ara';
 export type Diet = 'vejetaryen' | 'vegan' | 'glutensiz';
 export type Allergen = 'gluten' | 'sut' | 'yumurta' | 'kuruyemis' | 'susam' | 'soya' | 'balik' | 'kereviz' | 'hardal';
-export type PlanPeriod = 'daily' | 'weekly';
+export type PlanPeriod = 'daily' | 'weekly' | 'custom';
+/** 0 = Pazartesi ... 6 = Pazar */
+export const WEEKDAY_SHORT = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 export const MEAL_SLOT_LABELS: Record<MealSlot, string> = { kahvalti: 'Kahvaltı', ogle: 'Öğle', ara: 'Ara öğün', aksam: 'Akşam' };
 export const COURSE_LABELS: Record<CourseType, string> = {
   corba: 'Çorba', ana: 'Ana yemek', yan: 'Yanında', salata: 'Salata', tatli: 'Tatlı', icecek: 'İçecek', ara: 'Ara öğün',
@@ -128,7 +130,11 @@ export interface RecipeSummary {
   meal_slots: MealSlot[]; servings: number;
   prep_minutes: number; cook_minutes: number; description: string; icon: string | null; image_url: string | null;
   allergens: Allergen[]; diets: Diet[]; nutrition: Nutrition | null; like_count: number; liked: boolean;
+  /** "Dolabımda ne var" aramasında alınması gereken malzemeler */
+  missing?: string[] | null;
 }
+/** "Dolabımda ne var" seçicisi */
+export interface IngredientChoice { name: string; recipe_count: number; }
 /** Kişi başı yaklaşık değerler */
 export interface Nutrition { kcal: number; protein_g: number; carbs_g: number; fat_g: number; }
 export interface MealCostLine {
@@ -139,6 +145,8 @@ export interface MealCostLine {
 export interface MealCost {
   purchase_total: Money; used_total: Money; per_serving: Money | null; portions: number; missing_count: number;
   include_pantry: boolean; lines: MealCostLine[]; pantry: string[];
+  /** dolabımda var denen, maliyete girmeyenler */ have?: string[];
+  /** alınan paketlerden artan kısmın değeri */ leftover_value?: Money;
 }
 export interface RecipeDetail extends RecipeSummary {
   steps: string[]; ingredients: { name: string; amount_text: string; quantity: Money; unit: Unit; is_pantry: boolean }[]; cost: MealCost;
@@ -146,13 +154,21 @@ export interface RecipeDetail extends RecipeSummary {
 export interface MealPlanSummary {
   id: number; name: string; period: PlanPeriod; cuisine: string; cuisines: string[]; start_date: string; days: number; servings: number;
   meal_slots: MealSlot[]; courses: CourseType[]; diets: Diet[]; avoid_allergens: Allergen[]; entry_count: number;
+  weekdays: number[]; budget: Money | null; leftovers: boolean; low_waste: boolean; have: string[];
   exported_list_id: number | null; created_at: string;
 }
-export interface MealPlanEntry { id: number; day_index: number; date: string; slot: MealSlot; course: CourseType; recipe: RecipeSummary; }
-export interface MealPlanDetail extends MealPlanSummary { entries: MealPlanEntry[]; cost: MealCost; daily_nutrition: Nutrition | null; }
+export interface MealPlanEntry {
+  id: number; day_index: number; date: string; slot: MealSlot; course: CourseType; recipe: RecipeSummary;
+  /** bu yemek o kaydın kalanı */ leftover_of: number | null; /** bu yemekten kalanlar (iki kat pişir) */ leftover_for: number[];
+}
+export interface BudgetStatus { budget: Money; total: Money; within: boolean; swaps: number; }
+export interface MealPlanDetail extends MealPlanSummary {
+  entries: MealPlanEntry[]; cost: MealCost; daily_nutrition: Nutrition | null; budget_status: BudgetStatus | null;
+}
 export interface MealPlanCreate {
   period: PlanPeriod; cuisines?: string[]; servings: number; meal_slots: MealSlot[]; courses: CourseType[]; start_date?: string | null; name?: string | null;
   diets?: Diet[]; avoid_allergens?: Allergen[];
+  days?: number; weekdays?: number[]; budget?: number | null; leftovers?: boolean; low_waste?: boolean; have?: string[];
 }
 export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; }
 
@@ -288,6 +304,9 @@ export const api = {
   // Yemek planlayıcı
   cuisines: () => request<Cuisine[]>('GET', '/cuisines'),
   // En sevilenler önce; diyete uymayan / alerjen içeren tarifler gelmez
+  ingredients: () => request<IngredientChoice[]>('GET', '/ingredients'),
+  pantryRecipes: (have: string[]) =>
+    request<RecipeSummary[]>('GET', '/recipes?' + have.map(h => 'have=' + encodeURIComponent(h)).join('&')),
   recipes: (cuisine?: string | null, diets: Diet[] = [], avoid: Allergen[] = []) => {
     const filters = [...diets.map(d => 'diet=' + d), ...avoid.map(a => 'avoid=' + a)].join('&');
     const base = qs({ cuisine });
