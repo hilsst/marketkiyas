@@ -35,7 +35,7 @@ export default function WelcomeScreen() {
           <Text style={{ color: t.text, fontSize: 20, fontWeight: '700' }}>{name ? `Hoş geldin ${name}!` : 'Hoş geldin!'}</Text>
           <Muted style={{ fontSize: 15 }}>Bugün ne yapmak istersin?</Muted>
         </View>
-        {option('🍲', 'Yemek Planı', 'Günlük ya da haftalık menü: çorba, ana yemek, salata, tatlı, içecek. Maliyetini gör, alışveriş listene aktar.', meals, true)}
+        {option('🍲', 'Yemek Planı', '1-14 günlük menü: bütçene, dolabındakilere göre; artan yemeği yarına sakla. Maliyetini gör, alışveriş listene aktar.', meals, true)}
         {option('🛍️', 'Alışveriş', 'Ürün ara, fiyatları karşılaştır, listeni en ucuz marketlere göre planla.', shopping, false)}
       </View>
     </SafeAreaView>

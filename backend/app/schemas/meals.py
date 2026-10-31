@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -46,6 +47,8 @@ class RecipeSummary(BaseModel):
     nutrition: Nutrition | None  # kişi başı bir porsiyon, yaklaşık
     like_count: int
     liked: bool  # giriş yapan kullanıcı beğendi mi
+    # "Dolabımda ne var" aramasında: evde olmayan (alınması gereken) malzemeler; aramada değilse None
+    missing: list[str] | None = None
 
 
 class IngredientOut(BaseModel):
@@ -90,6 +93,16 @@ class CostOut(BaseModel):
     include_pantry: bool
     lines: list[CostLine]
     pantry: list[str]  # evde var sayılan (maliyete katılmayan) malzemeler
+    have: list[str] = []  # kullanıcının "dolabımda var" dediği, maliyete katılmayan malzemeler
+    # Alınan paketlerden yemeklere girmeyip artan kısmın değeri (alışveriş - kullanılan)
+    leftover_value: Decimal = Decimal(0)
+
+
+class IngredientChoice(BaseModel):
+    """"Dolabımda ne var" seçicisi: tariflerde geçen (evde var sayılmayan) malzemeler."""
+
+    name: str
+    recipe_count: int  # bu malzemeyi kullanan tarif sayısı
 
 
 class RecipeDetail(RecipeSummary):
@@ -98,8 +111,20 @@ class RecipeDetail(RecipeSummary):
     cost: CostOut  # istenen kişi sayısı için
 
 
+MAX_DAYS = 14
+
+
 class MealPlanCreate(BaseModel):
     period: PlanPeriod = PlanPeriod.WEEKLY
+    # Plan kaç gün (1-14); boşsa period'dan (günlük 1, haftalık 7)
+    days: int | None = Field(default=None, ge=1, le=MAX_DAYS)
+    # Yemek yapılacak günler (0 = Pazartesi ... 6 = Pazar); boş = her gün. Ör. hafta içi: [0,1,2,3,4]
+    weekdays: list[Annotated[int, Field(ge=0, le=6)]] = Field(default_factory=list, max_length=7)
+    # Alışveriş tutarı hedefi (TL); aşılırsa pahalı yemekler ucuzlarıyla değiştirilir
+    budget: Decimal | None = Field(default=None, gt=0, le=1_000_000)
+    leftovers: bool = False  # bir pişir iki ye
+    low_waste: bool = False  # malzemesi ortak tarifler
+    have: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(default_factory=list, max_length=60)  # dolabımda olanlar (malzeme adları)
     cuisine: str | None = Field(default=None, max_length=32)  # eski istemciler: tek mutfak
     # Bu plan için seçilen mutfaklar (Türk, İtalyan, Uzak Doğu...); her öğün birinden gelir.
     # İkisi de boşsa varsayılan mutfak (Türk).
@@ -131,7 +156,7 @@ class EntryUpdate(BaseModel):
 class EntryCreate(BaseModel):
     """Kaldırılan bir yemeği geri ekle; recipe_id boşsa önerilir."""
 
-    day_index: int = Field(ge=0, le=6)
+    day_index: int = Field(ge=0, lt=MAX_DAYS)
     slot: MealSlot
     course: CourseType
     recipe_id: int | None = None
@@ -144,6 +169,15 @@ class MealPlanEntryOut(BaseModel):
     slot: MealSlot
     course: CourseType
     recipe: RecipeSummary
+    leftover_of: int | None  # bu yemek o kaydın kalanı (dünden kalan; ayrıca pişirilmez)
+    leftover_for: list[int]  # bu yemekten kalan kayıtlar (iki kat pişirilir)
+
+
+class BudgetOut(BaseModel):
+    budget: Decimal  # hedef
+    total: Decimal  # planın alışveriş tutarı
+    within: bool
+    swaps: int  # plan oluşturulurken bütçe için değiştirilen yemek sayısı (yalnız oluştururken)
 
 
 class MealPlanSummary(BaseModel):
@@ -160,6 +194,11 @@ class MealPlanSummary(BaseModel):
     diets: list[Diet]
     avoid_allergens: list[Allergen]
     entry_count: int  # öğün sayısı (gün x öğün)
+    weekdays: list[int]
+    budget: Decimal | None
+    leftovers: bool
+    low_waste: bool
+    have: list[str]
     exported_list_id: int | None
     created_at: datetime
 
@@ -168,6 +207,7 @@ class MealPlanDetail(MealPlanSummary):
     entries: list[MealPlanEntryOut]
     daily_nutrition: Nutrition | None  # kişi başı günlük ortalama, yaklaşık
     cost: CostOut
+    budget_status: BudgetOut | None
 
 
 class ExportRequest(BaseModel):

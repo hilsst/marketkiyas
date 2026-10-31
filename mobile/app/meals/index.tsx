@@ -1,13 +1,14 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CuisinePicker from '@/components/CuisinePicker';
-import { Button, Card, LoginPrompt, Muted, useTheme } from '@/components/ui';
+import PantryPicker from '@/components/PantryPicker';
+import { Button, Card, Input, LoginPrompt, Muted, useTheme } from '@/components/ui';
 import {
   Allergen, ALLERGEN_LABELS, api, COURSE_LABELS, CourseType, Cuisine, Diet, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanSummary, MealSlot,
-  PlanPeriod, RecipeSummary,
+  RecipeSummary, WEEKDAY_SHORT,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -17,15 +18,24 @@ const COURSE_ICONS: Record<CourseType, string> = { corba: '🥣', ana: '🍛', y
 // Glutensiz ayrı bir seçenek değil: alerji listesindeki "Gluten" aynı işi görür
 const DIETS: Diet[] = ['vejetaryen', 'vegan'];
 const ALLERGENS: Allergen[] = ['gluten', 'sut', 'yumurta', 'kuruyemis', 'susam', 'balik'];
+// Plan süresi (gün); 14'e kadar, ör. maaş gününe kadar 10 gün
+const LENGTHS = [1, 2, 3, 5, 7, 10, 14];
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
-/** Yemek planlayıcı: günlük / haftalık plan oluştur, planlarım ve tarifler */
+/** Yemek planlayıcı: 1-14 günlük plan oluştur (bütçe, kalan yemek, dolaptakiler), planlarım ve tarifler */
 export default function MealsScreen() {
   const t = useTheme();
   const { user } = useAuth();
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [plans, setPlans] = useState<MealPlanSummary[]>([]);
-  const [period, setPeriod] = useState<PlanPeriod>('weekly');
+  const [days, setDays] = useState(7);
+  const [weekdays, setWeekdays] = useState<number[]>(ALL_DAYS);
+  const [budget, setBudget] = useState('');
+  const [leftovers, setLeftovers] = useState(false);
+  const [lowWaste, setLowWaste] = useState(false);
+  const [have, setHave] = useState<string[]>([]);
+  const [pantryOpen, setPantryOpen] = useState(false);
   // Son seçilen mutfaklar; mutfak seçim kartı bunlarla açılır
   const [chosen, setChosen] = useState<string[]>([]);
   const [picking, setPicking] = useState(false);
@@ -66,12 +76,30 @@ export default function MealsScreen() {
     setError(null);
     setChosen(selected);
     try {
-      const plan = await api.createMealPlan({ period, cuisines: selected, servings, meal_slots: slots, courses, diets, avoid_allergens: avoid });
+      const amount = Number(budget.replace(',', '.'));
+      const plan = await api.createMealPlan({
+        period: days === 1 ? 'daily' : days === 7 ? 'weekly' : 'custom', days, cuisines: selected, servings, meal_slots: slots, courses,
+        diets, avoid_allergens: avoid, weekdays: days > 1 && weekdays.length < 7 ? weekdays : [],
+        budget: amount > 0 ? amount : null, leftovers, low_waste: lowWaste, have,
+      });
       setPicking(false);
       router.push({ pathname: '/meals/[id]', params: { id: String(plan.id) } });
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
-  const openPicker = () => { setError(null); setPicking(true); };
+  const openPicker = () => {
+    if (days > 1 && !weekdays.length) { setError('En az bir gün seçin.'); return; }
+    setError(null); setPicking(true);
+  };
+  const toggleDay = (d: number) => setWeekdays(cur => cur.includes(d) ? cur.filter(x => x !== d) : [...cur, d].sort());
+  const option = (key: string, value: boolean, onChange: (v: boolean) => void, title: string, note: string) => (
+    <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: t.text, fontWeight: '700' }}>{title}</Text>
+        <Muted style={{ fontSize: 12 }}>{note}</Muted>
+      </View>
+      <Switch value={value} onValueChange={onChange} trackColor={{ true: t.tint }} />
+    </View>
+  );
 
   const chip = (key: string, active: boolean, label: string, onPress: () => void) => (
     <Pressable key={key} onPress={onPress} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1,
@@ -85,15 +113,31 @@ export default function MealsScreen() {
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
       <ScrollView>
         <View style={{ padding: 16, gap: 16 }}>
-          <Muted>Günlük ya da haftalık yemek planı yap; malzemelerin marketlerindeki en uygun fiyatla maliyetini gör, istersen alışveriş listene aktar.</Muted>
+          <Muted>1 ile 14 gün arası yemek planı yap; bütçeni, evdeki malzemeleri ve artan yemeği hesaba kat. Maliyet marketlerindeki en uygun fiyatla hesaplanır, istersen alışveriş listene aktar.</Muted>
 
           {user ? (
             <Card style={{ gap: 14 }}>
               {sectionTitle('🍲 Yeni plan')}
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {chip('weekly', period === 'weekly', 'Haftalık (7 gün)', () => setPeriod('weekly'))}
-                {chip('daily', period === 'daily', 'Günlük', () => setPeriod('daily'))}
+              <View style={{ gap: 6 }}>
+                <Muted>Kaç günlük?</Muted>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {LENGTHS.map(n => chip('d' + n, days === n, n === 1 ? 'Bugün' : n === 7 ? '1 hafta' : n === 14 ? '2 hafta' : `${n} gün`, () => setDays(n)))}
+                </View>
               </View>
+
+              {days > 1 && (
+                <View style={{ gap: 6 }}>
+                  <Muted>Hangi günler yemek yapılacak?</Muted>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {ALL_DAYS.map(d => chip('w' + d, weekdays.includes(d), WEEKDAY_SHORT[d], () => toggleDay(d)))}
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 14 }}>
+                    <Text style={{ color: t.tint, fontWeight: '600', fontSize: 13 }} onPress={() => setWeekdays([0, 1, 2, 3, 4])}>Hafta içi</Text>
+                    <Text style={{ color: t.tint, fontWeight: '600', fontSize: 13 }} onPress={() => setWeekdays([5, 6])}>Hafta sonu</Text>
+                    <Text style={{ color: t.tint, fontWeight: '600', fontSize: 13 }} onPress={() => setWeekdays(ALL_DAYS)}>Her gün</Text>
+                  </View>
+                </View>
+              )}
 
               <View style={{ gap: 6 }}>
                 <Muted>Öğünler</Muted>
@@ -141,6 +185,33 @@ export default function MealsScreen() {
                 </Pressable>
               </View>
 
+              <View style={{ gap: 6 }}>
+                <Muted>Bütçe (isteğe bağlı)</Muted>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Input style={{ flex: 1 }} placeholder="ör. 1500" keyboardType="numeric" value={budget}
+                    onChangeText={v => setBudget(v.replace(/[^0-9.,]/g, ''))} />
+                  <Text style={{ color: t.text, fontWeight: '800', fontSize: 18 }}>₺</Text>
+                </View>
+                <Muted style={{ fontSize: 12 }}>Alışveriş tutarı bütçeyi aşarsa pahalı yemekler ucuzlarıyla değiştirilir; yetmezse içecek ve tatlı çıkarılır.</Muted>
+              </View>
+
+              {option('leftovers', leftovers, setLeftovers, '♻️ Bir pişir, iki ye',
+                slots.includes('ogle') ? 'Akşam yemeği iki kat pişer, ertesi gün öğlene kalır.' : 'Akşam yemeği iki kat pişer, ertesi akşama kalır.')}
+              {option('lowWaste', lowWaste, setLowWaste, '🧩 Az israf',
+                'Malzemesi ortak yemekler seçilir; aldığın maydanoz, yoğurt, peynir yarım kalmasın.')}
+
+              <Pressable onPress={() => setPantryOpen(true)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: have.length ? t.tint : t.border }}>
+                <Text style={{ fontSize: 24 }}>🧺</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: t.text, fontWeight: '700' }}>Dolabımda ne var?</Text>
+                  <Muted style={{ fontSize: 12 }} >
+                    {have.length ? have.join(', ') : 'Evdeki malzemeleri seç; onları kullanan yemekler öne çıkar, listeye eklenmez.'}
+                  </Muted>
+                </View>
+                <Text style={{ color: t.tint, fontWeight: '700' }}>{have.length ? 'Düzenle' : 'Seç'} ›</Text>
+              </Pressable>
+
               {error && !picking && <Text style={{ color: t.danger }}>{error}</Text>}
               <Button title="Plan oluştur" onPress={openPicker} busy={busy} />
               <Muted style={{ fontSize: 12, textAlign: 'center', marginTop: -6 }}>Sonraki adımda mutfakları seçeceksiniz (Türk, İtalyan, Uzak Doğu...)</Muted>
@@ -156,7 +227,7 @@ export default function MealsScreen() {
                 <Pressable key={p.id} onPress={() => router.push({ pathname: '/meals/[id]', params: { id: String(p.id) } })}>
                   <Card style={{ gap: 2 }}>
                     <Text style={{ color: t.text, fontWeight: '700' }}>{p.name}</Text>
-                    <Muted>{p.days} gün · {p.entry_count} öğün · {p.servings} kişilik{p.exported_list_id ? ' · listeye aktarıldı' : ''}</Muted>
+                    <Muted>{p.days} gün · {p.entry_count} öğün · {p.servings} kişilik{p.budget ? ` · ${Number(p.budget).toFixed(0)} ₺ bütçe` : ''}{p.exported_list_id ? ' · listeye aktarıldı' : ''}</Muted>
                     {(p.cuisines?.length ?? 0) > 0 && (
                       <Muted style={{ fontSize: 12 }}>{p.cuisines.map(s => cuisineOf(s)?.icon ?? '').join(' ')} {p.cuisines.map(s => cuisineOf(s)?.name ?? s).join(', ')}</Muted>
                     )}
@@ -212,9 +283,10 @@ export default function MealsScreen() {
         </View>
       </ScrollView>
       {picking && (
-        <CuisinePicker cuisines={cuisines} initial={chosen} period={period} busy={busy} error={error}
+        <CuisinePicker cuisines={cuisines} initial={chosen} days={days} busy={busy} error={error}
           onCancel={() => setPicking(false)} onConfirm={create} />
       )}
+      {pantryOpen && <PantryPicker initial={have} onClose={h => { setHave(h); setPantryOpen(false); }} />}
     </SafeAreaView>
   );
 }

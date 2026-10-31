@@ -1,4 +1,4 @@
-"""Yemek planlayıcı: mutfaklar, tarifler, malzemeler ve kullanıcıların günlük/haftalık planları.
+"""Yemek planlayıcı: mutfaklar, tarifler, malzemeler ve kullanıcıların planları (1-14 gün).
 
 Mutfak (cuisine) ayrı bir tablodur: yeni bir mutfak (İtalyan, Uzak Doğu...) eklemek için cuisines'e
 bir satır ve o mutfağın tariflerini eklemek yeterlidir; plan oluşturma mutfağı slug ile seçer.
@@ -61,6 +61,7 @@ class Allergen(str, enum.Enum):
 class PlanPeriod(str, enum.Enum):
     DAILY = "daily"  # 1 gün
     WEEKLY = "weekly"  # 7 gün
+    CUSTOM = "custom"  # 2-14 gün (ör. maaş gününe kadar 10 gün)
 
 
 class Cuisine(Base):
@@ -211,6 +212,18 @@ class MealPlan(TimestampMixin, Base):
     # Plan oluştururken seçilen diyet ve kaçınılan alerjenler; "başka öner" de bunlara uyar
     diets: Mapped[str] = mapped_column(String(64), default="", server_default="")
     avoid_allergens: Mapped[str] = mapped_column(String(128), default="", server_default="")
+    # Plan kaç gün (1-14); period yalnızca etiket (günlük / haftalık / özel)
+    days: Mapped[int] = mapped_column(Integer, default=7, server_default="7")
+    # Yemek yapılacak haftanın günleri (0 = Pazartesi, virgülle: "0,1,2,3,4" = hafta içi); boş = her gün
+    weekdays: Mapped[str] = mapped_column(String(16), default="", server_default="")
+    # Alışveriş tutarı için TL hedefi; plan oluşturulurken pahalı yemekler ucuzlarıyla değiştirilir
+    budget: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    # "Bir pişir iki ye": akşam yemeği iki kat pişer, ertesi gün öğlene (öğle yoksa akşama) kalır
+    leftovers: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Az israf: malzemesi ortak tarifler öne çıkar ki alınan paketler boşa gitmesin
+    low_waste: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # "Dolabımda ne var": evde olan malzemeler ("|" ile, tarifteki adlarıyla). Maliyete ve listeye girmez.
+    have_items: Mapped[str] = mapped_column(Text, default="", server_default="")
     # En son aktarıldığı alışveriş listesi (bilgi amaçlı)
     exported_list_id: Mapped[int | None] = mapped_column(ForeignKey("shopping_lists.id", ondelete="SET NULL"))
 
@@ -239,6 +252,14 @@ class MealPlan(TimestampMixin, Base):
     def avoid_list(self) -> list[Allergen]:
         return [Allergen(a) for a in self.avoid_allergens.split(",") if a]
 
+    @property
+    def weekday_list(self) -> list[int]:
+        return [int(d) for d in self.weekdays.split(",") if d]
+
+    @property
+    def have_list(self) -> list[str]:
+        return [h for h in self.have_items.split("|") if h]
+
 
 class MealPlanEntry(Base):
     __tablename__ = "meal_plan_entries"
@@ -255,6 +276,11 @@ class MealPlanEntry(Base):
     # Sıralama: öğün (kahvaltı < öğle < ara < akşam) x 10 + yemek türü (çorba < ana < salata < tatlı < içecek)
     slot_order: Mapped[int] = mapped_column(Integer)
     recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="RESTRICT"))
+    # "Bir pişir iki ye": bu yemek o kaydın kalanı (aynı tarif, ayrıca pişirilmez)
+    leftover_of_id: Mapped[int | None] = mapped_column(
+        ForeignKey("meal_plan_entries.id", ondelete="SET NULL", name="fk_meal_plan_entries_leftover_of")
+    )
 
     plan: Mapped[MealPlan] = relationship(back_populates="entries")
     recipe: Mapped[Recipe] = relationship()
+    leftover_of: Mapped["MealPlanEntry | None"] = relationship(remote_side=[id], post_update=True)

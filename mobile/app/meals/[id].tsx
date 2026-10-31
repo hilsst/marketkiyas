@@ -37,8 +37,10 @@ export default function MealPlanScreen() {
       const slots = order.filter(s => plan.meal_slots.includes(s) || entries.some(e => e.slot === s));
       const date = new Date(plan.start_date + 'T12:00:00');
       date.setDate(date.getDate() + day);
-      return { day, date, meals: slots.map(slot => ({ slot, entries: entries.filter(e => e.slot === slot) })) };
-    });
+      // Yemek yapılmayan gün (ör. hafta sonu seçilmedi): içinde yemek yoksa gösterilmez
+      const off = plan.weekdays.length > 0 && !plan.weekdays.includes((date.getDay() + 6) % 7) && !entries.length;
+      return { day, date, off, meals: slots.map(slot => ({ slot, entries: entries.filter(e => e.slot === slot) })) };
+    }).filter(d => !d.off);
   }, [plan]);
 
   const run = async (key: string, fn: () => Promise<MealPlanDetail>) => {
@@ -88,6 +90,25 @@ export default function MealPlanScreen() {
               {[...plan.diets.map(d => DIET_LABELS[d]), ...plan.avoid_allergens.map(a => `${ALLERGEN_LABELS[a]} yok`)].join(' · ')}
             </Muted>
           )}
+          {(plan.leftovers || plan.low_waste || plan.have.length > 0) && (
+            <Muted>
+              {[plan.leftovers && '♻️ Bir pişir iki ye', plan.low_waste && '🧩 Az israf', plan.have.length > 0 && `🧺 Evde: ${plan.have.join(', ')}`]
+                .filter(Boolean).join(' · ')}
+            </Muted>
+          )}
+          {plan.budget_status && (
+            <Card style={{ gap: 4, borderColor: plan.budget_status.within ? t.tint : t.danger, borderWidth: 1 }}>
+              <Text style={{ color: plan.budget_status.within ? t.tint : t.danger, fontWeight: '800', fontSize: 16 }}>
+                {plan.budget_status.within ? '✓ Bütçeye uyuyor' : '⚠️ Bütçe aşılıyor'}
+              </Text>
+              <Muted>
+                Bütçe {Number(plan.budget_status.budget).toFixed(2)} ₺ · Alışveriş {Number(plan.budget_status.total).toFixed(2)} ₺
+                {plan.budget_status.within ? '' : ` (${(Number(plan.budget_status.total) - Number(plan.budget_status.budget)).toFixed(2)} ₺ fazla)`}
+              </Muted>
+              {plan.budget_status.swaps > 0 && <Muted style={{ fontSize: 12 }}>Bütçe için {plan.budget_status.swaps} yemek daha ucuzuyla değiştirildi ya da çıkarıldı.</Muted>}
+              {!plan.budget_status.within && <Muted style={{ fontSize: 12 }}>Kişi sayısını azaltmayı ya da tatlı ve içeceği çıkarmayı deneyin.</Muted>}
+            </Card>
+          )}
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
 
           {days.map(({ day, date, meals }) => (
@@ -108,6 +129,8 @@ export default function MealPlanScreen() {
                           <View style={{ flex: 1 }}>
                             <Muted style={{ fontSize: 12 }}>{COURSE_LABELS[e.course]}</Muted>
                             <Text style={{ color: t.text, fontWeight: '600' }}>{e.recipe.name}</Text>
+                            {e.leftover_of != null && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '600' }}>♻️ Dünden kalan, pişirmek yok</Text>}
+                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '600' }}>♻️ İki kat pişir, yarına kalsın</Text>}
                           </View>
                         </Pressable>
                         {changing === 'e' + e.id ? <ActivityIndicator color={t.tint} /> : (

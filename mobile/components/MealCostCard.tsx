@@ -26,6 +26,9 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
         Yemeklerde kullanılan kısmın değeri {tl(cost.used_total)} ({cost.portions} porsiyon). Alışveriş tutarı paket
         hâlinde alınacakların toplamıdır; artan malzeme evde kalır.
       </Muted>
+      {num(cost.leftover_value ?? 0) > 0 && (
+        <Muted>🧩 Paketlerden artacak malzemenin değeri yaklaşık {tl(cost.leftover_value ?? 0)}.</Muted>
+      )}
       {cost.missing_count > 0 && (
         <Text style={{ color: t.danger, fontSize: 13 }}>
           {cost.missing_count} malzemenin fiyatı marketlerinizde bulunamadı; toplama eklenmedi.
@@ -53,6 +56,9 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
         </View>
       ))}
 
+      {(cost.have?.length ?? 0) > 0 && (
+        <Muted>🧺 Dolabınızda olduğu için alınmayacak: {cost.have!.join(', ')}</Muted>
+      )}
       {cost.pantry.length > 0 && (
         <Muted>Evde olduğu varsayılanlar: {cost.pantry.join(', ')}</Muted>
       )}
