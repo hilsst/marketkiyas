@@ -46,6 +46,10 @@ async def kitchen(db):
         "tuz": await group("Sofra Tuzu 750 g", Unit.G, 750, [("bim", "12.00")]),
         # "pul biber" araması bununla eşleşmemeli; tavuk göğsü "Piliç Göğüs" adıyla da bulunur
         "pilic": await group("Piliç Göğüs Fileto 1 kg", Unit.G, 1000, [("a101", "220.00")]),
+        # Malzeme sanılmaması gereken, daha ucuz ürünler (Kemal'in gördüğü hata)
+        "sabun": await group("Zeytinyağlı Sıvı Sabun 1 L", Unit.ML, 1000, [("bim", "45.00")]),
+        "popkek": await group("Limonlu Popkek 45 g", Unit.G, 45, [("bim", "8.00")]),
+        "salca_domates": await group("Domates Salçalı Sos 500 g", Unit.G, 500, [("bim", "15.00")]),
     }
     await db.commit()
     return markets, ids
@@ -55,18 +59,45 @@ async def _recipes(client, **params):
     return {r["slug"]: r for r in (await client.get("/api/recipes", params=params)).json()}
 
 
+async def _set_recipe(client, headers, plan, index, slug):
+    recipe = (await _recipes(client))[slug]
+    entry = plan["entries"][index]
+    r = await client.patch(
+        f"/api/meal-plans/{plan['id']}/entries/{entry['id']}", headers=headers, json={"recipe_id": recipe["id"]}
+    )
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+async def _with_mains(client, headers, plan, slugs):
+    """Testin bildiği malzemelerle hesap yapabilmek için ilk öğünlerin ana yemeğini sabitle."""
+    mains = [i for i, e in enumerate(plan["entries"]) if e["course"] == "ana"]
+    for index, slug in zip(mains, slugs):
+        plan = await _set_recipe(client, headers, plan, index, slug)
+    return plan
+
+
 async def test_cuisines_and_seeded_recipes(client):
     cuisines = (await client.get("/api/cuisines")).json()
     assert cuisines == [
-        {"slug": "anadolu", "name": "Anadolu (Türk) Mutfağı", "icon": "🇹🇷", "is_default": True, "recipe_count": 17}
+        {"slug": "anadolu", "name": "Anadolu (Türk) Mutfağı", "icon": "🇹🇷", "is_default": True, "recipe_count": 42}
     ]
     recipes = await _recipes(client)
-    assert {"mercimek-corbasi", "kuru-fasulye", "karniyarik", "menemen", "tavuk-sote"} <= set(recipes)
-    assert set(await _recipes(client, slot="kahvalti")) == {"menemen", "portakal-suyu"}
-    assert set(await _recipes(client, course="corba")) == {"mercimek-corbasi", "ezogelin-corbasi", "yayla-corbasi"}
+    assert {"mercimek-corbasi", "kuru-fasulye", "karniyarik", "menemen", "tavuk-sote", "izmir-kofte", "manti"} <= set(recipes)
+    assert set(await _recipes(client, slot="kahvalti")) == {
+        "menemen", "portakal-suyu", "sucuklu-yumurta", "kahvalti-tabagi", "cay",
+    }
+    assert set(await _recipes(client, course="corba")) == {
+        "mercimek-corbasi", "ezogelin-corbasi", "yayla-corbasi", "domates-corbasi", "tarhana-corbasi", "tavuk-corbasi",
+    }
+    assert set(await _recipes(client, course="yan")) == {"pirinc-pilavi", "bulgur-pilavi", "patates-puresi", "tereyagli-makarna"}
     assert set(await _recipes(client, course="ara")) == {"meyve-tabagi", "cevizli-yogurt"}
-    assert len(await _recipes(client, course="salata")) == 2 and len(await _recipes(client, course="tatli")) == 2
-    assert recipes["salgam"]["pairs_with"] == ["kuru-fasulye", "karniyarik"]
+    assert len(await _recipes(client, course="salata")) == 4 and len(await _recipes(client, course="tatli")) == 5
+    assert len(await _recipes(client, course="ana")) == 16
+    assert recipes["salgam"]["pairs_with"] == ["kuru-fasulye", "karniyarik", "etli-nohut", "mercimek-koftesi", "izmir-kofte"]
+    # En sevilenler önce
+    scores = [r["like_count"] for r in recipes.values()]
+    assert list(recipes)[0] == "cay" and scores == [0] * len(scores)
     assert "karniyarik" not in await _recipes(client, slot="ogle")
     assert await _recipes(client, cuisine="italyan") == {}
 
@@ -111,15 +142,15 @@ async def test_weekly_plan_spreads_dishes(client, auth_headers, kitchen):
         assert [e["slot"] for e in today] == ["ogle", "aksam"]
         assert len({e["recipe"]["id"] for e in today}) == 2  # aynı gün aynı yemek yok
     assert all(e["recipe"]["slug"] != "karniyarik" for e in entries if e["slot"] == "ogle")
-    # Yalnız ana yemek istendi: 3 ana yemek 14 öğüne dengeli dağılır
-    counts = {}
-    for e in entries:
-        counts[e["recipe"]["slug"]] = counts.get(e["recipe"]["slug"], 0) + 1
-    assert set(counts) == {"kuru-fasulye", "karniyarik", "tavuk-sote"}
-    assert max(counts.values()) - min(counts.values()) <= 3
+    # Yalnız ana yemek istendi (yan yemek de yok); 14 öğünde aynı yemek en fazla 2 kez
+    assert {e["course"] for e in entries} == {"ana"}
+    counts = Counter(e["recipe"]["slug"] for e in entries)
+    assert max(counts.values()) <= 2 and len(counts) >= 7
 
     cost = plan["cost"]
     assert cost["portions"] == 28
+    plan = await _with_mains(client, auth_headers, plan, ["kuru-fasulye", "tavuk-sote", "karniyarik", "kuru-fasulye"])
+    cost = plan["cost"]
     lines = {line["name"]: line for line in cost["lines"]}
     # Kuru fasulye katalogda yok; tavuk göğsü "Piliç Göğüs" olarak bulunur
     assert lines["Kuru fasulye"]["match"] is None and lines["Kuru fasulye"]["purchase_cost"] is None
@@ -140,7 +171,8 @@ async def test_daily_breakfast_plan_and_pantry(client, auth_headers, kitchen):
         "/api/meal-plans", headers=auth_headers, json={"period": "daily", "servings": 4, "meal_slots": ["kahvalti"], "courses": ["ana"]}
     )).json()
     assert plan["days"] == 1 and plan["start_date"] == date.today().isoformat()
-    assert [e["recipe"]["slug"] for e in plan["entries"]] == ["menemen"]
+    assert [e["recipe"]["slug"] for e in plan["entries"]] in (["menemen"], ["sucuklu-yumurta"], ["kahvalti-tabagi"])
+    plan = await _set_recipe(client, auth_headers, plan, 0, "menemen")
     lines = {line["name"]: line for line in plan["cost"]["lines"]}
     # 4 kişilik menemen: 8 yumurta -> 15'li 1 koli; 900 g domates -> 1 kg
     assert D(lines["Yumurta"]["needed_quantity"]) == 8 and lines["Yumurta"]["packages"] == 1
@@ -196,6 +228,7 @@ async def test_export_to_new_and_existing_list(client, auth_headers, kitchen):
         "/api/meal-plans", headers=auth_headers,
         json={"period": "daily", "servings": 2, "meal_slots": ["kahvalti"], "courses": ["ana"], "name": "Pazar kahvaltısı"},
     )).json()
+    plan = await _set_recipe(client, auth_headers, plan, 0, "menemen")
 
     r = await client.post(f"/api/meal-plans/{plan['id']}/to-list", headers=auth_headers, json={})
     assert r.status_code == 200, r.text
@@ -203,6 +236,7 @@ async def test_export_to_new_and_existing_list(client, auth_headers, kitchen):
     lst = out["list"]
     assert lst["name"] == "Pazar kahvaltısı"
     by_group = {i["group_id"]: i for i in lst["items"]}
+    # Daha ucuz "Zeytinyağlı Sıvı Sabun" ve "Domates Salçalı Sos" değil, gerçek malzemeler
     assert set(by_group) == {ids["yumurta"], ids["domates"], ids["biber"], ids["zeytinyagi"]}
     assert out["added"] == 4 and out["skipped"] == []
     assert by_group[ids["yumurta"]]["note"] == "Yemek planı"
@@ -237,6 +271,7 @@ def test_generator_variety_unit():
     class R:
         def __init__(self, i):
             self.id = i
+            self.score = 50
 
     recipes = [R(1), R(2), R(3)]
     rng = random.Random(1)
@@ -253,7 +288,7 @@ async def test_full_menu_with_courses_and_drink_pairing(client, auth_headers, ki
         "/api/meal-plans", headers=auth_headers,
         json={"period": "weekly", "servings": 2, "meal_slots": ["kahvalti", "ogle", "ara", "aksam"]},
     )).json()
-    assert plan["courses"] == ["corba", "ana", "salata", "tatli", "icecek"]
+    assert plan["courses"] == ["corba", "ana", "yan", "salata", "tatli", "icecek"]
     assert plan["entry_count"] == 28  # 7 gün x 4 öğün
     for day in range(7):
         meals = {}
@@ -264,8 +299,15 @@ async def test_full_menu_with_courses_and_drink_pairing(client, auth_headers, ki
         assert [e["course"] for e in meals["kahvalti"]] == ["ana", "icecek"]
         assert [e["course"] for e in meals["ara"]] == ["ara"]
         for slot in ("ogle", "aksam"):
-            assert [e["course"] for e in meals[slot]] == ["corba", "ana", "salata", "tatli", "icecek"]
-            main, drink = meals[slot][1]["recipe"], meals[slot][4]["recipe"]
+            courses = [e["course"] for e in meals[slot]]
+            main = meals[slot][1]["recipe"]
+            sides = [r for r in recipes.values() if r["course_type"] == "yan" and main["slug"] in r["pairs_with"]]
+            # Pilav, püre gibi yan yemek yalnız uyan ana yemeğin yanında (İzmir köfte, mantı yanına yok)
+            expected = ["corba", "ana"] + (["yan"] if sides else []) + ["salata", "tatli", "icecek"]
+            assert courses == expected
+            if sides:
+                assert main["slug"] in meals[slot][2]["recipe"]["pairs_with"]
+            drink = meals[slot][-1]["recipe"]
             assert drink["course_type"] == "icecek"
             assert not drink["pairs_with"] or main["slug"] in drink["pairs_with"]
         # Öğle ve akşam aynı çorba/ana yemek gelmez
@@ -277,7 +319,8 @@ async def test_full_menu_with_courses_and_drink_pairing(client, auth_headers, ki
 
 async def test_remove_and_add_back_course(client, auth_headers, kitchen):
     plan = (await client.post(
-        "/api/meal-plans", headers=auth_headers, json={"period": "daily", "meal_slots": ["aksam"]}
+        "/api/meal-plans", headers=auth_headers,
+        json={"period": "daily", "meal_slots": ["aksam"], "courses": ["corba", "ana", "salata", "tatli", "icecek"]},
     )).json()
     soup = next(e for e in plan["entries"] if e["course"] == "corba")
     before = D(plan["cost"]["used_total"])
@@ -324,3 +367,120 @@ async def test_plan_without_soup_and_drink_follows_main(client, auth_headers, ki
     )).json()
     drink = changed["entries"][1]["recipe"]
     assert drink["slug"] != "salgam" and "tavuk-sote" in drink["pairs_with"]
+
+
+async def test_ingredients_do_not_match_soap_or_cake(client, kitchen):
+    """Kemal'in bulduğu hata: zeytinyağı için sıvı sabun, limon için limonlu popkek listeye giriyordu."""
+    _, ids = kitchen
+    recipes = await _recipes(client)
+    salad = (await client.get(f"/api/recipes/{recipes['coban-salatasi']['id']}")).json()["cost"]
+    lines = {line["name"]: line for line in salad["lines"]}
+    assert lines["Zeytinyağı"]["match"]["group_id"] == ids["zeytinyagi"]
+    assert lines["Limon"]["match"]["group_id"] == ids["limon"]
+    assert lines["Domates"]["match"]["group_id"] == ids["domates"]
+    matched = {line["match"]["group_id"] for line in salad["lines"] if line["match"]}
+    assert not matched & {ids["sabun"], ids["popkek"], ids["salca_domates"]}
+
+
+async def test_side_dish_follows_main(client, auth_headers, kitchen):
+    """Kuru fasulyenin yanına pilav önerilir; mantının yanına yan yemek olmaz; ana yemek değişince
+    yan yemek de uyar."""
+    recipes = await _recipes(client)
+    plan = (await client.post(
+        "/api/meal-plans", headers=auth_headers,
+        json={"period": "daily", "meal_slots": ["aksam"], "courses": ["ana", "yan"]},
+    )).json()
+    main = plan["entries"][0]
+    url = f"/api/meal-plans/{plan['id']}/entries/{main['id']}"
+
+    plan = (await client.patch(url, headers=auth_headers, json={"recipe_id": recipes["kuru-fasulye"]["id"]})).json()
+    assert [e["course"] for e in plan["entries"]] == ["ana", "yan"]
+    side = plan["entries"][1]["recipe"]
+    assert side["slug"] in {"pirinc-pilavi", "bulgur-pilavi"} and "kuru-fasulye" in side["pairs_with"]
+
+    plan = (await client.patch(url, headers=auth_headers, json={"recipe_id": recipes["manti"]["id"]})).json()
+    assert [e["course"] for e in plan["entries"]] == ["ana"]  # mantının yanına pilav yok
+    r = await client.post(
+        f"/api/meal-plans/{plan['id']}/entries", headers=auth_headers, json={"day_index": 0, "slot": "aksam", "course": "yan"}
+    )
+    assert r.status_code == 422 and "yan" in r.json()["detail"]
+
+    plan = (await client.patch(url, headers=auth_headers, json={"recipe_id": recipes["tavuk-sote"]["id"]})).json()
+    assert [e["course"] for e in plan["entries"]] == ["ana", "yan"]  # menüde yan yemek var: geri gelir
+    side_entry = plan["entries"][1]
+    assert "tavuk-sote" in side_entry["recipe"]["pairs_with"]
+    # "Başka öner" de yalnız tavuk soteye uyan yan yemeklerden seçer
+    other = (await client.patch(
+        f"/api/meal-plans/{plan['id']}/entries/{side_entry['id']}", headers=auth_headers, json={}
+    )).json()["entries"][1]["recipe"]
+    assert other["id"] != side_entry["recipe"]["id"] and "tavuk-sote" in other["pairs_with"]
+
+
+async def test_diet_and_allergen_filters(client, auth_headers, kitchen):
+    vegan = await _recipes(client, diet="vegan")
+    assert vegan and all("vegan" in r["diets"] for r in vegan.values())
+    assert {"imam-bayildi", "taze-fasulye", "mercimek-koftesi", "coban-salatasi"} <= set(vegan)
+    assert "ayran" not in vegan and "menemen" not in vegan
+    no_gluten_milk = await _recipes(client, avoid=["gluten", "sut"])
+    assert all(not {"gluten", "sut"} & set(r["allergens"]) for r in no_gluten_milk.values())
+    assert "mercimek-corbasi" not in no_gluten_milk and "karniyarik" in no_gluten_milk
+    assert "glutensiz" in (await _recipes(client))["muhallebi"]["diets"]
+    assert (await client.get("/api/recipes", params={"diet": "keto"})).status_code == 422
+
+    plan = (await client.post(
+        "/api/meal-plans", headers=auth_headers,
+        json={"period": "weekly", "meal_slots": ["ogle", "aksam"], "diets": ["vegan"], "avoid_allergens": ["gluten"]},
+    )).json()
+    assert plan["diets"] == ["vegan"] and plan["avoid_allergens"] == ["gluten"]
+    assert plan["entries"]
+    for e in plan["entries"]:
+        assert "vegan" in e["recipe"]["diets"] and "gluten" not in e["recipe"]["allergens"], e["recipe"]["slug"]
+    # "Başka öner" de diyete uyar
+    entry = plan["entries"][0]
+    changed = (await client.patch(
+        f"/api/meal-plans/{plan['id']}/entries/{entry['id']}", headers=auth_headers, json={}
+    )).json()
+    new = next(e for e in changed["entries"] if e["id"] == entry["id"])["recipe"]
+    assert "vegan" in new["diets"] and "gluten" not in new["allergens"]
+
+    # Vegan kahvaltılık yok: anlaşılır hata
+    r = await client.post(
+        "/api/meal-plans", headers=auth_headers, json={"meal_slots": ["kahvalti"], "courses": ["ana"], "diets": ["vegan"]}
+    )
+    assert r.status_code == 422 and "diyet" in r.json()["detail"]
+
+
+async def test_nutrition(client, auth_headers):
+    recipes = await _recipes(client)
+    assert recipes["mercimek-corbasi"]["nutrition"] == {"kcal": 290, "protein_g": 14, "carbs_g": 42, "fat_g": 7}
+    assert all(r["nutrition"] is not None for r in recipes.values())
+    plan = (await client.post(
+        "/api/meal-plans", headers=auth_headers, json={"period": "weekly", "meal_slots": ["aksam"], "courses": ["ana"]}
+    )).json()
+    total = sum(e["recipe"]["nutrition"]["kcal"] for e in plan["entries"])
+    assert plan["daily_nutrition"]["kcal"] == round(total / 7)
+
+
+async def test_likes_rank_recipes(client, auth_headers):
+    recipes = await _recipes(client)
+    kisir = recipes["kisir"]
+    url = f"/api/recipes/{kisir['id']}/like"
+    assert (await client.put(url)).status_code == 401
+    assert (await client.put(url, headers=auth_headers)).status_code == 204
+    assert (await client.put(url, headers=auth_headers)).status_code == 204  # ikinci kez sayılmaz
+    other = await client.post("/api/auth/register", json={"email": "ayse@example.com", "password": "gizli-sifre-123"})
+    other_headers = {"Authorization": f"Bearer {other.json()['access_token']}"}
+    await client.put(url, headers=other_headers)
+
+    mine = {r["slug"]: r for r in (await client.get("/api/recipes", headers=auth_headers)).json()}
+    assert mine["kisir"]["like_count"] == 2 and mine["kisir"]["liked"] is True
+    assert mine["piyaz"]["liked"] is False
+    order = list(mine)
+    assert order.index("kisir") < order.index("coban-salatasi")  # 87 + 2x3 > 88
+    detail = (await client.get(f"/api/recipes/{kisir['id']}", headers=auth_headers)).json()
+    assert detail["liked"] is True
+
+    assert (await client.delete(url, headers=auth_headers)).status_code == 204
+    assert (await client.delete(url, headers=auth_headers)).status_code == 204
+    after = (await _recipes(client))["kisir"]
+    assert after["like_count"] == 1 and after["liked"] is False
