@@ -71,8 +71,17 @@ class MatchedGroup(BaseModel):
     market_id: int | None
 
 
+class StockUse(BaseModel):
+    """Dolaptan (önceki alışverişlerden artan) kullanılan miktar."""
+
+    name: str
+    quantity: Decimal
+    unit: Unit
+
+
 class CostLine(BaseModel):
     name: str
+    key: str = ""  # malzemenin arama ifadesi (normalize); dolapta bu anahtarla tutulur
     needed_quantity: Decimal  # plan için gereken toplam (temel birim)
     unit: Unit
     is_pantry: bool
@@ -94,6 +103,8 @@ class CostOut(BaseModel):
     lines: list[CostLine]
     pantry: list[str]  # evde var sayılan (maliyete katılmayan) malzemeler
     have: list[str] = []  # kullanıcının "dolabımda var" dediği, maliyete katılmayan malzemeler
+    # Dolaptan (önceki planlardan artan paketlerden) karşılanan miktarlar; yalnız eksik kısım alınır
+    from_stock: list[StockUse] = []
     # Alınan paketlerden yemeklere girmeyip artan kısmın değeri (alışveriş - kullanılan)
     leftover_value: Decimal = Decimal(0)
 
@@ -222,3 +233,17 @@ class ExportOut(BaseModel):
     list: ListDetail
     added: int  # listeye eklenen / miktarı artan kalem
     skipped: list[str]  # bulunamadığı için eklenemeyen malzemeler
+    # Paketlerden artıp dolaba kaydedilen malzemeler (sonraki planlar önce bunları kullanır)
+    stored: list[StockUse] = []
+
+
+class PantryItemOut(BaseModel):
+    id: int
+    name: str
+    quantity: Decimal
+    unit: Unit
+    expires_on: date | None  # boş = bozulmaz
+
+
+class PantryItemUpdate(BaseModel):
+    quantity: Decimal = Field(ge=0, le=100_000)  # 0 = dolaptan çıkar

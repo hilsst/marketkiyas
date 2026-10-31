@@ -12,7 +12,7 @@ import enum
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -224,6 +224,9 @@ class MealPlan(TimestampMixin, Base):
     low_waste: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     # "Dolabımda ne var": evde olan malzemeler ("|" ile, tarifteki adlarıyla). Maliyete ve listeye girmez.
     have_items: Mapped[str] = mapped_column(Text, default="", server_default="")
+    # Listeye aktarılınca: plan dolaptan ne kullandı (JSON: [{"key","unit","quantity","name"}]).
+    # NULL = henüz aktarılmadı; maliyet o zamana kadar dolabın güncel hâliyle hesaplanır.
+    stock_used: Mapped[str | None] = mapped_column(Text)
     # En son aktarıldığı alışveriş listesi (bilgi amaçlı)
     exported_list_id: Mapped[int | None] = mapped_column(ForeignKey("shopping_lists.id", ondelete="SET NULL"))
 
@@ -284,3 +287,20 @@ class MealPlanEntry(Base):
     plan: Mapped[MealPlan] = relationship(back_populates="entries")
     recipe: Mapped[Recipe] = relationship()
     leftover_of: Mapped["MealPlanEntry | None"] = relationship(remote_side=[id], post_update=True)
+
+
+class PantryItem(TimestampMixin, Base):
+    """Kullanıcının dolabı: alınan paketlerden artan malzemeler (ör. 500 g'lık paketten artan 300 g
+    kırmızı mercimek). Plan alışveriş listesine aktarılınca yazılır; sonraki planlar önce bunları
+    kullanır, yalnız eksik kısım listeye girer. Bozulabilenlerin son kullanma günü vardır."""
+
+    __tablename__ = "pantry_items"
+    __table_args__ = (UniqueConstraint("user_id", "key", "unit", name="uq_pantry_user_key_unit"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    key: Mapped[str] = mapped_column(String(120))  # malzemenin arama ifadesi (normalize): "kirmizi mercimek"
+    name: Mapped[str] = mapped_column(String(120))  # gösterim: "Kırmızı mercimek"
+    quantity: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    unit: Mapped[Unit] = mapped_column(Enum(Unit, native_enum=False, length=8, values_callable=enum_values))
+    expires_on: Mapped[date | None] = mapped_column(Date)  # boş = bozulmaz (bakliyat, un, yağ)

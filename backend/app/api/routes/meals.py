@@ -10,6 +10,8 @@ from app.schemas.meals import (
     EntryUpdate,
     ExportOut,
     IngredientChoice,
+    PantryItemOut,
+    PantryItemUpdate,
     ExportRequest,
     MealPlanCreate,
     MealPlanDetail,
@@ -145,8 +147,28 @@ async def delete_plan(plan_id: int, user: CurrentUser, db: DbSession) -> Respons
 async def export_plan(plan_id: int, body: ExportRequest, user: CurrentUser, db: DbSession) -> ExportOut:
     """"Alışveriş listesine aktar": malzemeler mevcut bir listeye ya da yeni listeye eklenir."""
     plan = await svc.get_plan(db, user, plan_id)
-    shopping_list, added, skipped = await svc.export_to_list(
+    shopping_list, added, skipped, stored = await svc.export_to_list(
         db, user, plan, list_id=body.list_id, list_name=body.list_name, include_pantry=body.include_pantry
     )
     detail = list_svc.to_detail(await list_svc.get_owned_list(db, user, shopping_list.id))
-    return ExportOut(list=detail, added=added, skipped=skipped)
+    return ExportOut(list=detail, added=added, skipped=skipped, stored=stored)
+
+
+@router.get("/pantry", response_model=list[PantryItemOut])
+async def get_pantry(user: CurrentUser, db: DbSession) -> list[PantryItemOut]:
+    """Dolabım: alınan paketlerden artanlar (plan listeye aktarılınca yazılır). Sonraki planlar önce
+    bunları kullanır. Son kullanma günü geçenler kendiliğinden çıkar."""
+    return await svc.pantry(db, user)
+
+
+@router.patch("/pantry/{item_id}", response_model=list[PantryItemOut])
+async def update_pantry(item_id: int, body: PantryItemUpdate, user: CurrentUser, db: DbSession) -> list[PantryItemOut]:
+    """Miktarı düzelt (ör. 300 g kaldı sanıyordum, 100 g kalmış); 0 = dolaptan çıkar."""
+    await svc.update_pantry_item(db, user, item_id, body.quantity)
+    return await svc.pantry(db, user)
+
+
+@router.delete("/pantry/{item_id}", response_model=list[PantryItemOut])
+async def delete_pantry(item_id: int, user: CurrentUser, db: DbSession) -> list[PantryItemOut]:
+    await svc.update_pantry_item(db, user, item_id, None)
+    return await svc.pantry(db, user)

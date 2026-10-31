@@ -11,6 +11,7 @@ Bulunabilirlik: malzemelerinden biri uygulamadaki marketlerin hiçbirinde buluna
 yosunu, mascarpone) planlarda ve tarif listesinde yer almaz; bkz. refresh_availability.
 """
 
+import json
 import logging
 
 import math
@@ -35,6 +36,7 @@ from app.models import (
     MealPlan,
     MealPlanEntry,
     MealSlot,
+    PantryItem,
     PlanPeriod,
     Product,
     Recipe,
@@ -57,8 +59,10 @@ from app.schemas.meals import (
     MealPlanEntryOut,
     MealPlanSummary,
     Nutrition,
+    PantryItemOut,
     RecipeDetail,
     RecipeSummary,
+    StockUse,
 )
 from app.schemas.products import GroupSummary
 from app.services import lists as list_svc
@@ -86,6 +90,12 @@ PERIOD_DAYS = {PlanPeriod.DAILY: 1, PlanPeriod.WEEKLY: 7}  # days verilmezse
 MATCH_CANDIDATES = 50
 CENT = Decimal("0.01")
 MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+
+
+def _qty(value: Decimal) -> Decimal:
+    """Miktar: en fazla 2 ondalık, gereksiz sıfırlar atılır; 200 -> 200 (2E+2 değil)."""
+    value = value.quantize(CENT).normalize()
+    return value.quantize(Decimal(1)) if value == value.to_integral() else value
 
 
 def _money(value: Decimal) -> Decimal:
@@ -293,6 +303,7 @@ class _Need:
     quantity: Decimal = Decimal(0)
     recipes: list[str] = field(default_factory=list)
     names: set[str] = field(default_factory=set)  # tariflerdeki adları (normalize), "dolabımda var" için
+    key: str = ""  # normalize arama ifadesi; dolaptaki artanlar bu anahtar + birimle eşleşir
 
 
 @dataclass(frozen=True)
@@ -400,6 +411,7 @@ def _collect_needs(uses: list[tuple[Recipe, Decimal]]) -> list[_Need]:
             if need is None:
                 need = needs[key] = _need_of(ing)
                 need.quantity = Decimal(0)
+                need.key = key[0]
             need.quantity += Decimal(ing.quantity) * factor
             need.names.add(normalize_text(ing.name))
             if recipe.name not in need.recipes:
@@ -416,12 +428,17 @@ async def compute_cost(
     have: set[str] | None = None,
     cache: dict | None = None,
     categories: dict[str, int] | None = None,
+    stock: dict[tuple[str, Unit], Decimal] | None = None,
 ) -> CostOut:
     """uses: (tarif, çarpan) — çarpan = plan kişi sayısı / tarifin kişi sayısı, her öğün için ayrı.
-    have: kullanıcının evde olduğunu söylediği malzemeler (normalize adlar); maliyete katılmaz."""
+    have: kullanıcının evde olduğunu söylediği malzemeler (normalize adlar); maliyete katılmaz.
+    stock: dolaptaki artan miktarlar ((anahtar, birim) -> miktar); önce bunlar kullanılır, yalnız
+    eksik kısım için paket alınır."""
     lines: list[CostLine] = []
     pantry: list[str] = []
     at_home: list[str] = []
+    from_stock: list[StockUse] = []
+    stock = dict(stock or {})
     if categories is None:
         categories = await _category_ids(db)
     for need in _collect_needs(uses):
@@ -431,11 +448,19 @@ async def compute_cost(
         if have and need.names & have:
             at_home.append(need.name)
             continue
+        take = min(stock.get((need.key, need.unit), Decimal(0)), need.quantity)
+        if take > 0:
+            stock[(need.key, need.unit)] -= take
+            need.quantity -= take
+            from_stock.append(StockUse(name=need.name, quantity=_qty(take), unit=need.unit))
+            if need.quantity <= 0:
+                continue
         pick = await _match(db, need, user_id, categories, cache)
         lines.append(
             CostLine(
                 name=need.name,
-                needed_quantity=need.quantity.quantize(CENT).normalize(),
+                key=need.key,
+                needed_quantity=_qty(need.quantity),
                 unit=need.unit,
                 is_pantry=need.is_pantry,
                 recipes=need.recipes,
@@ -466,6 +491,7 @@ async def compute_cost(
         lines=lines,
         pantry=pantry,
         have=at_home,
+        from_stock=from_stock,
         leftover_value=_money(max(purchase - used, Decimal(0))),
     )
 
@@ -652,12 +678,16 @@ class _Prefs:
     - have: kullanıcının evde olduğunu söylediği malzemeleri kullanan tarif öne çıkar;
     - prices: bütçe varsa ucuz tarif öne çıkar."""
 
-    def __init__(self, recipes: list[Recipe], low_waste: bool, have: set[str], prices: dict[int, Decimal] | None):
+    def __init__(
+        self, recipes: list[Recipe], low_waste: bool, have: set[str], prices: dict[int, Decimal] | None,
+        stock_terms: set[str] | None = None,
+    ):
         self.terms = {r.id: _terms(r) for r in recipes}
+        # Dolapta olanlar: kullanıcının seçtikleri + önceki alışverişlerden artanlar
         self.have_terms = {
             normalize_text(i.search_term) for r in recipes for i in r.ingredients
             if not i.is_pantry and normalize_text(i.name) in have
-        }
+        } | (stock_terms or set())
         self.low_waste = low_waste
         self.prices = prices
         self.bought: Counter = Counter()
@@ -743,7 +773,8 @@ async def create_plan(
     prices = None
     if budget is not None:
         prices = {r.id: await _estimate(db, r, servings, user.id, have_names, cache, categories) for r in recipes}
-    prefs = _Prefs(recipes, low_waste, have_names, prices)
+    stock = await load_stock(db, user.id)
+    prefs = _Prefs(recipes, low_waste, have_names, prices, {key for key, _ in stock})
     by_id = {r.id: r for r in recipes}
 
     plan = MealPlan(
@@ -1072,9 +1103,121 @@ def meal_count(plan: MealPlan) -> int:
 
 
 async def plan_cost(db: AsyncSession, plan: MealPlan, user_id: int, include_pantry: bool = False) -> CostOut:
+    """Listeye aktarılmamış plan dolabın güncel hâlini kullanır; aktarılmış plan, aktarıldığı anda
+    dolaptan ne kullandıysa onu (yoksa kendi artanlarını kendi maliyetinden düşerdi)."""
+    if plan.stock_used is not None:
+        stock = {(u["key"], Unit(u["unit"])): Decimal(u["quantity"]) for u in json.loads(plan.stock_used)}
+    else:
+        stock = await load_stock(db, user_id)
     return await compute_cost(
-        db, _uses(plan), meal_count(plan) * plan.servings, user_id, include_pantry, have=have_set(plan.have_list)
+        db, _uses(plan), meal_count(plan) * plan.servings, user_id, include_pantry, have=have_set(plan.have_list),
+        stock=stock,
     )
+
+
+# --- Dolap: alınan paketlerden artanlar -----------------------------------------------------
+
+# Ana kategoriye göre açılmış paketin buzdolabında dayanacağı gün; listede olmayanlar (bakliyat, un,
+# yağ, baharat, konserve) bozulmaz sayılır
+SHELF_DAYS = {"et-tavuk-balik": 2, "firin": 3, "meyve-sebze": 7, "sut-kahvaltilik": 7}
+
+
+def shelf_life(categories: tuple[str, ...]) -> int | None:
+    days = [SHELF_DAYS[c] for c in categories if c in SHELF_DAYS]
+    return min(days) if days else None
+
+
+async def _pantry_rows(db: AsyncSession, user_id: int) -> list[PantryItem]:
+    """Kullanıcının dolabı; son kullanma günü geçenler silinir."""
+    rows = (await db.scalars(
+        select(PantryItem).where(PantryItem.user_id == user_id).order_by(PantryItem.name)
+    )).all()
+    today = date.today()
+    fresh = []
+    for row in rows:
+        if row.expires_on is not None and row.expires_on < today or row.quantity <= 0:
+            await db.delete(row)
+        else:
+            fresh.append(row)
+    if len(fresh) != len(rows):
+        await db.commit()
+    return fresh
+
+
+async def load_stock(db: AsyncSession, user_id: int | None) -> dict[tuple[str, Unit], Decimal]:
+    if user_id is None:
+        return {}
+    return {(r.key, r.unit): Decimal(r.quantity) for r in await _pantry_rows(db, user_id)}
+
+
+async def pantry(db: AsyncSession, user: User) -> list[PantryItemOut]:
+    return [
+        PantryItemOut(id=r.id, name=r.name, quantity=r.quantity, unit=r.unit, expires_on=r.expires_on)
+        for r in await _pantry_rows(db, user.id)
+    ]
+
+
+async def update_pantry_item(db: AsyncSession, user: User, item_id: int, quantity: Decimal | None) -> None:
+    """Miktarı düzelt; 0 ya da None = dolaptan çıkar."""
+    row = await db.scalar(select(PantryItem).where(PantryItem.id == item_id, PantryItem.user_id == user.id))
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Dolapta böyle bir malzeme yok")
+    if not quantity:
+        await db.delete(row)
+    else:
+        row.quantity = quantity
+    await db.commit()
+
+
+async def _record_stock(db: AsyncSession, user: User, plan: MealPlan, cost: CostOut) -> list[StockUse]:
+    """Plan ilk kez listeye aktarılırken: dolaptan kullanılanlar düşülür, alınacak paketlerden artanlar
+    (ör. 500 g'lık paketten 200 g kullanılırsa 300 g) son kullanma günüyle dolaba eklenir. Planın dolaptan
+    kullandıkları planda saklanır ki maliyeti sonra değişmesin. Tekrar aktarmada dolap değişmez."""
+    needs = {(n.key, n.unit): n for n in _collect_needs(_uses(plan))}
+    rows = {(r.key, r.unit): r for r in await _pantry_rows(db, user.id)}
+    used = []
+    for use in cost.from_stock:
+        need = next((n for n in needs.values() if n.name == use.name and n.unit is use.unit), None)
+        if need is None:
+            continue
+        used.append({"key": need.key, "unit": need.unit.value, "quantity": str(use.quantity), "name": use.name})
+        row = rows.get((need.key, need.unit))
+        if row is not None:
+            row.quantity = max(Decimal(0), Decimal(row.quantity) - use.quantity)
+            if row.quantity <= 0:
+                await db.delete(row)
+                del rows[(need.key, need.unit)]
+    plan.stock_used = json.dumps(used, ensure_ascii=False)
+
+    stored: list[StockUse] = []
+    today = date.today()
+    for line in cost.lines:
+        m = line.match
+        if m is None or line.approximate or m.unit != line.unit or not m.quantity:
+            continue
+        extra = Decimal(m.quantity) * line.packages - Decimal(line.needed_quantity)
+        if extra <= 0:
+            continue
+        need = needs.get((line.key, line.unit))
+        days = shelf_life(need.categories) if need else None
+        expires = today + timedelta(days=days + plan_span(plan)) if days is not None else None
+        row = rows.get((line.key, line.unit))
+        if row is None:
+            row = rows[(line.key, line.unit)] = PantryItem(
+                user_id=user.id, key=line.key, name=line.name, quantity=Decimal(0), unit=line.unit, expires_on=expires,
+            )
+            db.add(row)
+        elif expires is not None and (row.expires_on is None or expires < row.expires_on):
+            row.expires_on = expires
+        row.quantity = Decimal(row.quantity) + extra
+        stored.append(StockUse(name=line.name, quantity=_qty(extra), unit=line.unit))
+    return stored
+
+
+def plan_span(plan: MealPlan) -> int:
+    """Planın bugünden sonra kaç gün süreceği (artan malzeme plan bitene kadar da kullanılabilir)."""
+    end = plan.start_date + timedelta(days=plan.days - 1)
+    return max(0, (end - date.today()).days)
 
 
 def to_summary(plan: MealPlan) -> MealPlanSummary:
@@ -1153,10 +1296,13 @@ async def to_detail(
 
 async def export_to_list(
     db: AsyncSession, user: User, plan: MealPlan, *, list_id: int | None, list_name: str | None, include_pantry: bool
-) -> tuple[ShoppingList, int, list[str]]:
+) -> tuple[ShoppingList, int, list[str], list[StockUse]]:
     """Malzemeler (bulunan ürün grupları, paket adediyle) listeye eklenir. Grup listede zaten
     varsa yeni kalem açılmaz, miktarı artar (elle ürün eklemekle aynı kural)."""
     cost = await plan_cost(db, plan, user.id, include_pantry)
+    stored: list[StockUse] = []
+    if plan.stock_used is None:
+        stored = await _record_stock(db, user, plan, cost)
     if list_id is not None:
         shopping_list = await list_svc.get_owned_list(db, user, list_id, editable=True)
     else:
@@ -1190,4 +1336,4 @@ async def export_to_list(
     plan.exported_list_id = shopping_list.id
     await db.commit()
     skipped = [line.name for line in cost.lines if line.match is None]
-    return shopping_list, len(packages), skipped
+    return shopping_list, len(packages), skipped, stored

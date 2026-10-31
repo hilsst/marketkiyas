@@ -146,6 +146,7 @@ export interface MealCost {
   purchase_total: Money; used_total: Money; per_serving: Money | null; portions: number; missing_count: number;
   include_pantry: boolean; lines: MealCostLine[]; pantry: string[];
   /** dolabımda var denen, maliyete girmeyenler */ have?: string[];
+  /** önceki alışverişlerden artan, dolaptan kullanılanlar */ from_stock?: StockUse[];
   /** alınan paketlerden artan kısmın değeri */ leftover_value?: Money;
 }
 export interface RecipeDetail extends RecipeSummary {
@@ -170,7 +171,10 @@ export interface MealPlanCreate {
   diets?: Diet[]; avoid_allergens?: Allergen[];
   days?: number; weekdays?: number[]; budget?: number | null; leftovers?: boolean; low_waste?: boolean; have?: string[];
 }
-export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; }
+export interface StockUse { name: string; quantity: Money; unit: Unit; }
+/** Dolabım: alınan paketlerden artanlar; expires_on boş = bozulmaz */
+export interface PantryItem { id: number; name: string; quantity: Money; unit: Unit; expires_on: string | null; }
+export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; stored?: StockUse[]; }
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
@@ -305,6 +309,9 @@ export const api = {
   cuisines: () => request<Cuisine[]>('GET', '/cuisines'),
   // En sevilenler önce; diyete uymayan / alerjen içeren tarifler gelmez
   ingredients: () => request<IngredientChoice[]>('GET', '/ingredients'),
+  pantry: () => request<PantryItem[]>('GET', '/pantry'),
+  updatePantry: (id: number, quantity: number) => request<PantryItem[]>('PATCH', `/pantry/${id}`, { quantity }),
+  deletePantry: (id: number) => request<PantryItem[]>('DELETE', `/pantry/${id}`),
   pantryRecipes: (have: string[]) =>
     request<RecipeSummary[]>('GET', '/recipes?' + have.map(h => 'have=' + encodeURIComponent(h)).join('&')),
   recipes: (cuisine?: string | null, diets: Diet[] = [], avoid: Allergen[] = []) => {

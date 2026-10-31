@@ -7,7 +7,7 @@ import ListPicker from '@/components/ListPicker';
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
 import { Button, Card, Muted, useTheme } from '@/components/ui';
-import { ALLERGEN_LABELS, api, COURSE_LABELS, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealSlot, SLOT_COURSES } from '@/lib/api';
+import { ALLERGEN_LABELS, api, COURSE_LABELS, formatSize, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealSlot, SLOT_COURSES } from '@/lib/api';
 
 const dayLabel = (d: Date) => d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -58,9 +58,13 @@ export default function MealPlanScreen() {
       const out = await api.exportMealPlan(planId, { list_id: listId, include_pantry: includePantry });
       setPicker(false);
       const open = () => router.push({ pathname: '/list/[id]', params: { id: String(out.list.id) } });
-      if (out.skipped.length) {
-        Alert.alert('Listeye aktarıldı', `${out.added} ürün eklendi. Marketlerinizde bulunamadığı için eklenmedi: ${out.skipped.join(', ')}`,
-          [{ text: 'Listeyi aç', onPress: open }]);
+      const notes = [`${out.added} ürün eklendi.`];
+      if (out.skipped.length) notes.push(`Marketlerinizde bulunamadığı için eklenmedi: ${out.skipped.join(', ')}.`);
+      if (out.stored?.length) {
+        notes.push(`Paketlerden artacaklar dolabına kaydedildi, sonraki planlar önce bunları kullanır: ${out.stored.map(s => `${s.name} ${formatSize(s.quantity, s.unit)}`).join(', ')}.`);
+      }
+      if (out.skipped.length || out.stored?.length) {
+        Alert.alert('Listeye aktarıldı', notes.join('\n\n'), [{ text: 'Listeyi aç', onPress: open }]);
       } else open();
       load();
     } finally { setExporting(false); }
