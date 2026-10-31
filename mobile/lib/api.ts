@@ -121,7 +121,8 @@ export const SLOT_COURSES: Record<MealSlot, CourseType[]> = {
   kahvalti: ['ana', 'icecek'], ogle: ['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek'], ara: ['ara'],
   aksam: ['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek'],
 };
-export interface Cuisine { slug: string; name: string; icon: string | null; is_default: boolean; recipe_count: number; }
+/** recipe_count ve examples yalnız malzemesi marketlerde bulunan tariflerden */
+export interface Cuisine { slug: string; name: string; icon: string | null; is_default: boolean; recipe_count: number; examples: string[]; }
 export interface RecipeSummary {
   id: number; slug: string; name: string; cuisine: string; course: string; course_type: CourseType; pairs_with: string[];
   meal_slots: MealSlot[]; servings: number;
@@ -143,14 +144,14 @@ export interface RecipeDetail extends RecipeSummary {
   steps: string[]; ingredients: { name: string; amount_text: string; quantity: Money; unit: Unit; is_pantry: boolean }[]; cost: MealCost;
 }
 export interface MealPlanSummary {
-  id: number; name: string; period: PlanPeriod; cuisine: string; start_date: string; days: number; servings: number;
+  id: number; name: string; period: PlanPeriod; cuisine: string; cuisines: string[]; start_date: string; days: number; servings: number;
   meal_slots: MealSlot[]; courses: CourseType[]; diets: Diet[]; avoid_allergens: Allergen[]; entry_count: number;
   exported_list_id: number | null; created_at: string;
 }
 export interface MealPlanEntry { id: number; day_index: number; date: string; slot: MealSlot; course: CourseType; recipe: RecipeSummary; }
 export interface MealPlanDetail extends MealPlanSummary { entries: MealPlanEntry[]; cost: MealCost; daily_nutrition: Nutrition | null; }
 export interface MealPlanCreate {
-  period: PlanPeriod; cuisine?: string | null; servings: number; meal_slots: MealSlot[]; courses: CourseType[]; start_date?: string | null; name?: string | null;
+  period: PlanPeriod; cuisines?: string[]; servings: number; meal_slots: MealSlot[]; courses: CourseType[]; start_date?: string | null; name?: string | null;
   diets?: Diet[]; avoid_allergens?: Allergen[];
 }
 export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; }

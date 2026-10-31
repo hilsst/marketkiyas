@@ -32,8 +32,8 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
         </Text>
       )}
 
-      {cost.lines.map(line => (
-        <View key={line.name} style={{ flexDirection: 'row', gap: 10, alignItems: 'center', borderTopWidth: 1, borderTopColor: t.border, paddingTop: 10 }}>
+      {cost.lines.map((line, i) => (
+        <View key={`${line.name}-${line.unit}-${i}`} style={{ flexDirection: 'row', gap: 10, alignItems: 'center', borderTopWidth: 1, borderTopColor: t.border, paddingTop: 10 }}>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: t.text, fontWeight: '600' }}>
               {line.name} <Text style={{ color: t.textMuted, fontWeight: '400' }}>· {formatSize(line.needed_quantity, line.unit)}</Text>

@@ -13,7 +13,8 @@ class CuisineOut(BaseModel):
     name: str
     icon: str | None
     is_default: bool
-    recipe_count: int
+    recipe_count: int  # uygulamadaki marketlerde malzemesi bulunan tarif sayısı
+    examples: list[str]  # en sevilen birkaç ana yemek (mutfak seçim kartında gösterilir)
 
 
 class Nutrition(BaseModel):
@@ -99,7 +100,10 @@ class RecipeDetail(RecipeSummary):
 
 class MealPlanCreate(BaseModel):
     period: PlanPeriod = PlanPeriod.WEEKLY
-    cuisine: str | None = Field(default=None, max_length=32)  # boş = varsayılan mutfak (Anadolu)
+    cuisine: str | None = Field(default=None, max_length=32)  # eski istemciler: tek mutfak
+    # Bu plan için seçilen mutfaklar (Türk, İtalyan, Uzak Doğu...); her öğün birinden gelir.
+    # İkisi de boşsa varsayılan mutfak (Türk).
+    cuisines: list[str] = Field(default_factory=list, max_length=8)
     servings: int = Field(default=2, ge=1, le=12)
     meal_slots: list[MealSlot] = Field(default_factory=lambda: [MealSlot.DINNER], min_length=1)
     # Öğle/akşam menüsünde olacak türler; çıkarılan tür (ör. çorba) hiç önerilmez
@@ -146,7 +150,8 @@ class MealPlanSummary(BaseModel):
     id: int
     name: str
     period: PlanPeriod
-    cuisine: str
+    cuisine: str  # ilk seçilen mutfak
+    cuisines: list[str]
     start_date: date
     days: int
     servings: int
