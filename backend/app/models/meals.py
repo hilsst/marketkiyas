@@ -174,6 +174,9 @@ class RecipeIngredient(Base):
     # Katalogda aranacak ifade ve karışmasın diye elenecek kelimeler ("salca" -> domates salçası değil)
     search_term: Mapped[str] = mapped_column(String(120))
     exclude_terms: Mapped[str | None] = mapped_column(String(255))  # virgülle: "salca,sos,ketcap"
+    # Ürünün olabileceği kategoriler (slug, virgülle): "meyve-sebze". Kategorisi bilinen ve burada
+    # olmayan ürün malzeme sayılmaz ("Ice Tea Limon" İçecek'te). Boş = kategori sınırı yok.
+    categories: Mapped[str | None] = mapped_column(String(128))
     # Tuz, karabiber gibi evde bulunduğu varsayılanlar; istenirse maliyete/listeye eklenir
     is_pantry: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
