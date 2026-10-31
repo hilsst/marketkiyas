@@ -58,11 +58,15 @@ async def _recipes(client, **params):
 async def test_cuisines_and_seeded_recipes(client):
     cuisines = (await client.get("/api/cuisines")).json()
     assert cuisines == [
-        {"slug": "anadolu", "name": "Anadolu (Türk) Mutfağı", "icon": "🇹🇷", "is_default": True, "recipe_count": 5}
+        {"slug": "anadolu", "name": "Anadolu (Türk) Mutfağı", "icon": "🇹🇷", "is_default": True, "recipe_count": 17}
     ]
     recipes = await _recipes(client)
-    assert set(recipes) == {"mercimek-corbasi", "kuru-fasulye", "karniyarik", "menemen", "tavuk-sote"}
-    assert set(await _recipes(client, slot="kahvalti")) == {"menemen"}
+    assert {"mercimek-corbasi", "kuru-fasulye", "karniyarik", "menemen", "tavuk-sote"} <= set(recipes)
+    assert set(await _recipes(client, slot="kahvalti")) == {"menemen", "portakal-suyu"}
+    assert set(await _recipes(client, course="corba")) == {"mercimek-corbasi", "ezogelin-corbasi", "yayla-corbasi"}
+    assert set(await _recipes(client, course="ara")) == {"meyve-tabagi", "cevizli-yogurt"}
+    assert len(await _recipes(client, course="salata")) == 2 and len(await _recipes(client, course="tatli")) == 2
+    assert recipes["salgam"]["pairs_with"] == ["kuru-fasulye", "karniyarik"]
     assert "karniyarik" not in await _recipes(client, slot="ogle")
     assert await _recipes(client, cuisine="italyan") == {}
 
@@ -92,7 +96,7 @@ async def test_recipe_detail_cost_scales_with_servings(client, kitchen):
 async def test_weekly_plan_spreads_dishes(client, auth_headers, kitchen):
     r = await client.post(
         "/api/meal-plans", headers=auth_headers,
-        json={"period": "weekly", "servings": 2, "meal_slots": ["aksam", "ogle"], "start_date": "2026-11-02"},
+        json={"period": "weekly", "servings": 2, "meal_slots": ["aksam", "ogle"], "courses": ["ana"], "start_date": "2026-11-02"},
     )
     assert r.status_code == 201, r.text
     plan = r.json()
@@ -107,12 +111,12 @@ async def test_weekly_plan_spreads_dishes(client, auth_headers, kitchen):
         assert [e["slot"] for e in today] == ["ogle", "aksam"]
         assert len({e["recipe"]["id"] for e in today}) == 2  # aynı gün aynı yemek yok
     assert all(e["recipe"]["slug"] != "karniyarik" for e in entries if e["slot"] == "ogle")
-    # 4 uygun yemek 14 öğüne dengeli dağılır
+    # Yalnız ana yemek istendi: 3 ana yemek 14 öğüne dengeli dağılır
     counts = {}
     for e in entries:
         counts[e["recipe"]["slug"]] = counts.get(e["recipe"]["slug"], 0) + 1
-    assert set(counts) == {"mercimek-corbasi", "kuru-fasulye", "karniyarik", "tavuk-sote"}
-    assert max(counts.values()) - min(counts.values()) <= 2
+    assert set(counts) == {"kuru-fasulye", "karniyarik", "tavuk-sote"}
+    assert max(counts.values()) - min(counts.values()) <= 3
 
     cost = plan["cost"]
     assert cost["portions"] == 28
@@ -133,7 +137,7 @@ async def test_weekly_plan_spreads_dishes(client, auth_headers, kitchen):
 async def test_daily_breakfast_plan_and_pantry(client, auth_headers, kitchen):
     _, ids = kitchen
     plan = (await client.post(
-        "/api/meal-plans", headers=auth_headers, json={"period": "daily", "servings": 4, "meal_slots": ["kahvalti"]}
+        "/api/meal-plans", headers=auth_headers, json={"period": "daily", "servings": 4, "meal_slots": ["kahvalti"], "courses": ["ana"]}
     )).json()
     assert plan["days"] == 1 and plan["start_date"] == date.today().isoformat()
     assert [e["recipe"]["slug"] for e in plan["entries"]] == ["menemen"]
@@ -164,7 +168,7 @@ async def test_unknown_cuisine_and_privacy(client, auth_headers):
 
 async def test_change_entry(client, auth_headers, kitchen):
     plan = (await client.post(
-        "/api/meal-plans", headers=auth_headers, json={"period": "daily", "meal_slots": ["aksam"]}
+        "/api/meal-plans", headers=auth_headers, json={"period": "daily", "meal_slots": ["aksam"], "courses": ["ana"]}
     )).json()
     entry = plan["entries"][0]
     url = f"/api/meal-plans/{plan['id']}/entries/{entry['id']}"
@@ -190,7 +194,7 @@ async def test_export_to_new_and_existing_list(client, auth_headers, kitchen):
     _, ids = kitchen
     plan = (await client.post(
         "/api/meal-plans", headers=auth_headers,
-        json={"period": "daily", "servings": 2, "meal_slots": ["kahvalti"], "name": "Pazar kahvaltısı"},
+        json={"period": "daily", "servings": 2, "meal_slots": ["kahvalti"], "courses": ["ana"], "name": "Pazar kahvaltısı"},
     )).json()
 
     r = await client.post(f"/api/meal-plans/{plan['id']}/to-list", headers=auth_headers, json={})
@@ -241,3 +245,82 @@ def test_generator_variety_unit():
     # Hepsi bugün yendiyse en az kullanılan
     assert _choose(recipes, Counter({1: 3, 2: 1, 3: 2}), {1, 2, 3}, set(), rng).id == 2
     assert _choose(recipes, Counter(), set(), set(), rng, exclude=3).id in {1, 2}
+
+
+async def test_full_menu_with_courses_and_drink_pairing(client, auth_headers, kitchen):
+    recipes = await _recipes(client)
+    plan = (await client.post(
+        "/api/meal-plans", headers=auth_headers,
+        json={"period": "weekly", "servings": 2, "meal_slots": ["kahvalti", "ogle", "ara", "aksam"]},
+    )).json()
+    assert plan["courses"] == ["corba", "ana", "salata", "tatli", "icecek"]
+    assert plan["entry_count"] == 28  # 7 gün x 4 öğün
+    for day in range(7):
+        meals = {}
+        for e in plan["entries"]:
+            if e["day_index"] == day:
+                meals.setdefault(e["slot"], []).append(e)
+        assert list(meals) == ["kahvalti", "ogle", "ara", "aksam"]
+        assert [e["course"] for e in meals["kahvalti"]] == ["ana", "icecek"]
+        assert [e["course"] for e in meals["ara"]] == ["ara"]
+        for slot in ("ogle", "aksam"):
+            assert [e["course"] for e in meals[slot]] == ["corba", "ana", "salata", "tatli", "icecek"]
+            main, drink = meals[slot][1]["recipe"], meals[slot][4]["recipe"]
+            assert drink["course_type"] == "icecek"
+            assert not drink["pairs_with"] or main["slug"] in drink["pairs_with"]
+        # Öğle ve akşam aynı çorba/ana yemek gelmez
+        for i in (0, 1):
+            assert meals["ogle"][i]["recipe"]["id"] != meals["aksam"][i]["recipe"]["id"]
+    assert plan["cost"]["portions"] == 28 * 2
+    assert "salgam" in recipes
+
+
+async def test_remove_and_add_back_course(client, auth_headers, kitchen):
+    plan = (await client.post(
+        "/api/meal-plans", headers=auth_headers, json={"period": "daily", "meal_slots": ["aksam"]}
+    )).json()
+    soup = next(e for e in plan["entries"] if e["course"] == "corba")
+    before = D(plan["cost"]["used_total"])
+
+    r = await client.delete(f"/api/meal-plans/{plan['id']}/entries/{soup['id']}", headers=auth_headers)
+    assert r.status_code == 200
+    after = r.json()
+    assert [e["course"] for e in after["entries"]] == ["ana", "salata", "tatli", "icecek"]
+    assert D(after["cost"]["used_total"]) < before
+    assert after["entry_count"] == 1 and after["cost"]["portions"] == 2  # hâlâ tek öğün
+
+    added = await client.post(
+        f"/api/meal-plans/{plan['id']}/entries", headers=auth_headers,
+        json={"day_index": 0, "slot": "aksam", "course": "corba"},
+    )
+    assert added.status_code == 201
+    assert [e["course"] for e in added.json()["entries"]] == ["corba", "ana", "salata", "tatli", "icecek"]
+    # Aynı türden ikinci yemek eklenmez; kahvaltıya çorba eklenmez; plan dışı gün olmaz
+    url = f"/api/meal-plans/{plan['id']}/entries"
+    assert (await client.post(url, headers=auth_headers, json={"day_index": 0, "slot": "aksam", "course": "corba"})).status_code == 409
+    assert (await client.post(url, headers=auth_headers, json={"day_index": 0, "slot": "kahvalti", "course": "corba"})).status_code == 422
+    assert (await client.post(url, headers=auth_headers, json={"day_index": 3, "slot": "aksam", "course": "ana"})).status_code == 422
+    # Yeni bir öğün (ara öğün) de eklenebilir
+    snack = await client.post(url, headers=auth_headers, json={"day_index": 0, "slot": "ara", "course": "ara"})
+    assert snack.status_code == 201 and snack.json()["entry_count"] == 2
+
+
+async def test_plan_without_soup_and_drink_follows_main(client, auth_headers, kitchen):
+    recipes = await _recipes(client)
+    plan = (await client.post(
+        "/api/meal-plans", headers=auth_headers,
+        json={"period": "daily", "meal_slots": ["aksam"], "courses": ["ana", "icecek"]},
+    )).json()
+    assert [e["course"] for e in plan["entries"]] == ["ana", "icecek"]
+    main = plan["entries"][0]
+    # Ana yemek tavuk sote olursa şalgam (yalnız fasulye/karnıyarık) uyumsuz kalır, içecek değişir
+    await client.patch(
+        f"/api/meal-plans/{plan['id']}/entries/{plan['entries'][1]['id']}", headers=auth_headers,
+        json={"recipe_id": recipes["salgam"]["id"]},
+    )
+    changed = (await client.patch(
+        f"/api/meal-plans/{plan['id']}/entries/{main['id']}", headers=auth_headers,
+        json={"recipe_id": recipes["tavuk-sote"]["id"]},
+    )).json()
+    drink = changed["entries"][1]["recipe"]
+    assert drink["slug"] != "salgam" and "tavuk-sote" in drink["pairs_with"]

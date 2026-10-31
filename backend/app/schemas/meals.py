@@ -4,7 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 from app.models.enums import Unit
-from app.models.meals import MealSlot, PlanPeriod
+from app.models.meals import CourseType, MealSlot, PlanPeriod
 from app.schemas.lists import ListDetail
 
 
@@ -21,7 +21,9 @@ class RecipeSummary(BaseModel):
     slug: str
     name: str
     cuisine: str  # slug
-    course: str
+    course: str  # gösterim: "Çorba"
+    course_type: CourseType
+    pairs_with: list[str]  # içecek: uyumlu ana yemekler (slug); boş = hepsi
     meal_slots: list[MealSlot]
     servings: int
     prep_minutes: int
@@ -67,7 +69,7 @@ class CostLine(BaseModel):
 class CostOut(BaseModel):
     purchase_total: Decimal  # alışveriş tutarı (paketler)
     used_total: Decimal  # yemeklerde kullanılan malzemenin değeri
-    per_serving: Decimal | None  # kişi başı bir öğün
+    per_serving: Decimal | None  # kişi başı bir öğün (çorba, ana yemek, tatlı... hepsi dahil)
     portions: int  # öğün x kişi
     missing_count: int  # fiyatı bulunamayan malzeme sayısı
     include_pantry: bool
@@ -86,6 +88,10 @@ class MealPlanCreate(BaseModel):
     cuisine: str | None = Field(default=None, max_length=32)  # boş = varsayılan mutfak (Anadolu)
     servings: int = Field(default=2, ge=1, le=12)
     meal_slots: list[MealSlot] = Field(default_factory=lambda: [MealSlot.DINNER], min_length=1)
+    # Öğle/akşam menüsünde olacak türler; çıkarılan tür (ör. çorba) hiç önerilmez
+    courses: list[CourseType] = Field(
+        default_factory=lambda: [c for c in CourseType if c is not CourseType.SNACK], min_length=1
+    )
     start_date: date | None = None  # boş = bugün
     name: str | None = Field(default=None, max_length=120)
 
@@ -101,11 +107,21 @@ class EntryUpdate(BaseModel):
     recipe_id: int | None = None
 
 
+class EntryCreate(BaseModel):
+    """Kaldırılan bir yemeği geri ekle; recipe_id boşsa önerilir."""
+
+    day_index: int = Field(ge=0, le=6)
+    slot: MealSlot
+    course: CourseType
+    recipe_id: int | None = None
+
+
 class MealPlanEntryOut(BaseModel):
     id: int
     day_index: int
     date: date
     slot: MealSlot
+    course: CourseType
     recipe: RecipeSummary
 
 
@@ -118,7 +134,8 @@ class MealPlanSummary(BaseModel):
     days: int
     servings: int
     meal_slots: list[MealSlot]
-    entry_count: int
+    courses: list[CourseType]
+    entry_count: int  # öğün sayısı (gün x öğün)
     exported_list_id: int | None
     created_at: datetime
 

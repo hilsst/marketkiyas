@@ -22,7 +22,19 @@ from app.models.enums import Unit, enum_values
 class MealSlot(str, enum.Enum):
     BREAKFAST = "kahvalti"
     LUNCH = "ogle"
+    SNACK = "ara"  # ara öğün (ikindi)
     DINNER = "aksam"
+
+
+class CourseType(str, enum.Enum):
+    """Bir öğündeki yemek türü. Öğle/akşam: çorba + ana yemek + salata + tatlı + içecek."""
+
+    SOUP = "corba"
+    MAIN = "ana"  # ana yemek; kahvaltıda kahvaltılık (menemen)
+    SALAD = "salata"
+    DESSERT = "tatli"
+    DRINK = "icecek"  # hazır içecek; ana yemekle uyumlu olanlar önerilir
+    SNACK = "ara"  # ara öğün atıştırmalığı
 
 
 class PlanPeriod(str, enum.Enum):
@@ -52,6 +64,11 @@ class Recipe(Base):
     slug: Mapped[str] = mapped_column(String(64), unique=True)
     name: Mapped[str] = mapped_column(String(120))
     course: Mapped[str] = mapped_column(String(32))  # gösterim: "Çorba", "Ana yemek", "Kahvaltılık"
+    course_type: Mapped[CourseType] = mapped_column(
+        Enum(CourseType, native_enum=False, length=16, values_callable=enum_values)
+    )
+    # İçecekler için: hangi ana yemeklerle uyumlu (slug, virgülle); boş = hepsiyle
+    pairs_with: Mapped[str | None] = mapped_column(String(255))
     # Hangi öğünlerde önerilebilir: "ogle,aksam"
     meal_slots: Mapped[str] = mapped_column(String(64))
     servings: Mapped[int] = mapped_column(Integer)  # tarifteki miktarlar kaç kişilik
@@ -71,6 +88,11 @@ class Recipe(Base):
     @property
     def slots(self) -> list[MealSlot]:
         return [MealSlot(s) for s in self.meal_slots.split(",") if s]
+
+    def pairs(self, main: "Recipe | None") -> bool:
+        if not self.pairs_with or main is None:
+            return True
+        return main.slug in self.pairs_with.split(",")
 
 
 class RecipeIngredient(Base):
@@ -106,6 +128,8 @@ class MealPlan(TimestampMixin, Base):
     start_date: Mapped[date] = mapped_column(Date)
     servings: Mapped[int] = mapped_column(Integer)  # kaç kişilik
     meal_slots: Mapped[str] = mapped_column(String(64))  # plandaki öğünler: "ogle,aksam"
+    # Öğle/akşam (ve kahvaltı) menüsünde olacak yemek türleri: "corba,ana,salata,tatli,icecek"
+    courses: Mapped[str] = mapped_column(String(64))
     # En son aktarıldığı alışveriş listesi (bilgi amaçlı)
     exported_list_id: Mapped[int | None] = mapped_column(ForeignKey("shopping_lists.id", ondelete="SET NULL"))
 
@@ -118,6 +142,10 @@ class MealPlan(TimestampMixin, Base):
     def slots(self) -> list[MealSlot]:
         return [MealSlot(s) for s in self.meal_slots.split(",") if s]
 
+    @property
+    def course_list(self) -> list[CourseType]:
+        return [CourseType(c) for c in self.courses.split(",") if c]
+
 
 class MealPlanEntry(Base):
     __tablename__ = "meal_plan_entries"
@@ -128,7 +156,11 @@ class MealPlanEntry(Base):
     slot: Mapped[MealSlot] = mapped_column(
         Enum(MealSlot, native_enum=False, length=16, values_callable=enum_values)
     )
-    slot_order: Mapped[int] = mapped_column(Integer)  # kahvaltı < öğle < akşam sıralaması
+    course: Mapped[CourseType] = mapped_column(
+        Enum(CourseType, native_enum=False, length=16, values_callable=enum_values)
+    )
+    # Sıralama: öğün (kahvaltı < öğle < ara < akşam) x 10 + yemek türü (çorba < ana < salata < tatlı < içecek)
+    slot_order: Mapped[int] = mapped_column(Integer)
     recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="RESTRICT"))
 
     plan: Mapped[MealPlan] = relationship(back_populates="entries")

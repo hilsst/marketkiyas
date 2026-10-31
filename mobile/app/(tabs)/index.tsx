@@ -27,8 +27,16 @@ const QUICK = [
  * Ana sayfa, Kemal'in sırasıyla: arama, bu ayki tasarruf, hızlı erişim, kategoriler, fırsat ürünleri (yatay),
  * aktüel ürünler (yatay), yakındaki marketler. Reklam yerleri: üst barın altı ve kategorilerin bitimi.
  */
+// Karşılama ekranı uygulama her açıldığında bir kez gösterilir
+let welcomed = false;
+
 export default function HomeScreen() {
   const t = useTheme();
+  useEffect(() => {
+    if (welcomed) return;
+    welcomed = true;
+    router.push('/welcome');
+  }, []);
   const { user } = useAuth();
   const { categories, categoryIcon } = useCatalog();
   const [vault, setVault] = useState<SavingsVault | null>(null);
