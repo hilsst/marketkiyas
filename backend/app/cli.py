@@ -7,6 +7,7 @@
     python -m app.cli scrape --market sok --limit 100           # market sitesinden (Şok, A101)
     python -m app.cli aktuel --every-hours 12                   # BİM/Şok aktüel broşür ürünleri
     python -m app.cli seed-demo                                 # demo kataloğu + demo@marketkiyas.app
+    python -m app.cli recipes-check                             # malzemesi marketlerde olmayan tarifleri gizle
 """
 
 import argparse
@@ -56,9 +57,25 @@ async def _sync_selected(args: argparse.Namespace) -> None:
         async with SessionLocal() as db:
             # Yeni gelen ürünlerle aynı ürünü anlatan gruplar birleşsin
             await regroup(db)
+        await _check_recipes()
         if not args.every_hours:
             return
         await asyncio.sleep(args.every_hours * 3600)
+
+
+async def _check_recipes() -> None:
+    """Yeni fiyatlardan sonra: malzemesi hiçbir markette bulunmayan tarifler gizlensin, gelenler açılsın."""
+    from app.services.meals import refresh_availability
+
+    try:
+        async with SessionLocal() as db:
+            log.info("tarifler: %s", await refresh_availability(db))
+    except Exception:
+        log.exception("tarif bulunabilirlik kontrolü başarısız")
+
+
+async def _recipes_check(args: argparse.Namespace) -> None:
+    await _check_recipes()
 
 
 async def _regroup(args: argparse.Namespace) -> None:
@@ -91,6 +108,7 @@ async def _scrape(args: argparse.Namespace) -> None:
                 await _scrape_once(market, args.limit)
             except Exception:
                 log.exception("%s taraması başarısız", market)
+        await _check_recipes()
         if not args.every_hours:
             return
         await asyncio.sleep(args.every_hours * 3600)
@@ -116,6 +134,7 @@ async def _seed_demo(args: argparse.Namespace) -> None:
 
     async with SessionLocal() as db:
         stats = await seed_demo(db)
+    await _check_recipes()
     log.info("demo verisi: %s (giriş: %s / %s)", stats, DEMO_EMAIL, DEMO_PASSWORD)
 
 
@@ -156,6 +175,9 @@ def main() -> None:
     p.add_argument("--market", choices=["bim", "sok", "all"], default="all")
     p.add_argument("--every-hours", type=float, default=0, help="0 = bir kez çalış")
     p.set_defaults(func=_aktuel)
+
+    p = sub.add_parser("recipes-check", help="malzemesi marketlerde bulunmayan tarifleri gizle (ve bulunanları aç)")
+    p.set_defaults(func=_recipes_check)
 
     p = sub.add_parser("seed-demo", help="demo kataloğunu ve örnek listeleri yükle (gerçek fiyat değil)")
     p.set_defaults(func=_seed_demo)

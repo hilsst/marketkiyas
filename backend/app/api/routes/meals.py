@@ -25,7 +25,8 @@ router = APIRouter(tags=["meals"])
 
 @router.get("/cuisines", response_model=list[CuisineOut])
 async def list_cuisines(db: DbSession) -> list[CuisineOut]:
-    """Plan için seçilebilecek mutfaklar (şimdilik Anadolu; yenileri tabloya eklenerek gelir)."""
+    """Plan için seçilebilecek mutfaklar (Türk, İtalyan, Uzak Doğu, Meksika); tarif sayısı ve örnekler
+    yalnız malzemeleri marketlerde bulunan tariflerden."""
     return await svc.cuisines(db)
 
 
@@ -67,9 +68,11 @@ async def list_plans(user: CurrentUser, db: DbSession) -> list[MealPlanSummary]:
 
 @router.post("/meal-plans", response_model=MealPlanDetail, status_code=status.HTTP_201_CREATED)
 async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) -> MealPlanDetail:
-    """Günlük (1 gün) ya da haftalık (7 gün) plan: seçilen öğünlere mutfaktan çeşitli yemekler dağıtılır."""
+    """Günlük (1 gün) ya da haftalık (7 gün) plan: seçilen mutfaklardan çeşitli yemekler öğünlere dağıtılır;
+    her öğün tek mutfaktan gelir."""
     plan = await svc.create_plan(
-        db, user, period=body.period, cuisine_slug=body.cuisine, servings=body.servings,
+        db, user, period=body.period, cuisine_slugs=body.cuisines or ([body.cuisine] if body.cuisine else []),
+        servings=body.servings,
         slots=body.meal_slots, courses=body.courses, start=body.start_date, name=body.name,
         diets=body.diets, avoid=body.avoid_allergens,
     )

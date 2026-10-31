@@ -112,6 +112,9 @@ class Recipe(Base):
     # kullanıcıların beğenileri eklenir; öneride sevilen tarifler öne çıkar
     popularity: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     like_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Uygulamadaki marketlerde bulunamayan malzemeler (virgülle). Boş = hepsi bulundu, NULL = henüz
+    # kontrol edilmedi. Eksiği olan tarif planlarda ve tarif listesinde gösterilmez (meals.refresh_availability).
+    missing_ingredients: Mapped[str | None] = mapped_column(String(512))
 
     cuisine: Mapped[Cuisine] = relationship(back_populates="recipes")
     ingredients: Mapped[list["RecipeIngredient"]] = relationship(
@@ -138,6 +141,10 @@ class Recipe(Base):
         mine = self.diet_list
         allergens = self.allergen_list
         return all(d in mine for d in diets) and not any(a in allergens for a in avoid)
+
+    @property
+    def available(self) -> bool:
+        return not self.missing_ingredients
 
     @property
     def score(self) -> int:
@@ -192,7 +199,10 @@ class MealPlan(TimestampMixin, Base):
     period: Mapped[PlanPeriod] = mapped_column(
         Enum(PlanPeriod, native_enum=False, length=16, values_callable=enum_values)
     )
-    cuisine_id: Mapped[int] = mapped_column(ForeignKey("cuisines.id", ondelete="RESTRICT"))
+    cuisine_id: Mapped[int] = mapped_column(ForeignKey("cuisines.id", ondelete="RESTRICT"))  # ilk seçilen mutfak
+    # Bu plan için seçilen mutfaklar (slug, virgülle): "anadolu,italyan,uzakdogu". Her öğün tek mutfaktan
+    # gelir, mutfaklar günlere dengeli dağıtılır.
+    cuisines: Mapped[str] = mapped_column(String(255), default="", server_default="")
     start_date: Mapped[date] = mapped_column(Date)
     servings: Mapped[int] = mapped_column(Integer)  # kaç kişilik
     meal_slots: Mapped[str] = mapped_column(String(64))  # plandaki öğünler: "ogle,aksam"
@@ -212,6 +222,10 @@ class MealPlan(TimestampMixin, Base):
     @property
     def slots(self) -> list[MealSlot]:
         return [MealSlot(s) for s in self.meal_slots.split(",") if s]
+
+    @property
+    def cuisine_slugs(self) -> list[str]:
+        return [c for c in self.cuisines.split(",") if c] or [self.cuisine.slug]
 
     @property
     def course_list(self) -> list[CourseType]:

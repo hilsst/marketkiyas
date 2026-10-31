@@ -80,27 +80,39 @@ async def _with_mains(client, headers, plan, slugs):
 
 async def test_cuisines_and_seeded_recipes(client):
     cuisines = (await client.get("/api/cuisines")).json()
-    assert cuisines == [
-        {"slug": "anadolu", "name": "Anadolu (Türk) Mutfağı", "icon": "🇹🇷", "is_default": True, "recipe_count": 42}
+    assert [(c["slug"], c["name"], c["icon"], c["is_default"]) for c in cuisines] == [
+        ("anadolu", "Türk Mutfağı", "🇹🇷", True),
+        ("italyan", "İtalyan Mutfağı", "🍝", False),
+        ("uzakdogu", "Uzak Doğu Mutfağı", "🥢", False),
+        ("meksika", "Meksika Mutfağı", "🌮", False),
     ]
-    recipes = await _recipes(client)
+    assert [c["recipe_count"] for c in cuisines] == [42, 15, 15, 12]
+    assert all(len(c["examples"]) == 3 for c in cuisines)
+    recipes = await _recipes(client, cuisine="anadolu")
     assert {"mercimek-corbasi", "kuru-fasulye", "karniyarik", "menemen", "tavuk-sote", "izmir-kofte", "manti"} <= set(recipes)
-    assert set(await _recipes(client, slot="kahvalti")) == {
+    assert set(await _recipes(client, cuisine="anadolu", slot="kahvalti")) == {
         "menemen", "portakal-suyu", "sucuklu-yumurta", "kahvalti-tabagi", "cay",
     }
-    assert set(await _recipes(client, course="corba")) == {
+    assert set(await _recipes(client, cuisine="anadolu", course="corba")) == {
         "mercimek-corbasi", "ezogelin-corbasi", "yayla-corbasi", "domates-corbasi", "tarhana-corbasi", "tavuk-corbasi",
     }
-    assert set(await _recipes(client, course="yan")) == {"pirinc-pilavi", "bulgur-pilavi", "patates-puresi", "tereyagli-makarna"}
-    assert set(await _recipes(client, course="ara")) == {"meyve-tabagi", "cevizli-yogurt"}
-    assert len(await _recipes(client, course="salata")) == 4 and len(await _recipes(client, course="tatli")) == 5
-    assert len(await _recipes(client, course="ana")) == 16
+    assert set(await _recipes(client, cuisine="anadolu", course="yan")) == {
+        "pirinc-pilavi", "bulgur-pilavi", "patates-puresi", "tereyagli-makarna",
+    }
+    assert set(await _recipes(client, cuisine="anadolu", course="ara")) == {"meyve-tabagi", "cevizli-yogurt"}
+    assert len(await _recipes(client, cuisine="anadolu", course="salata")) == 4
+    assert len(await _recipes(client, cuisine="anadolu", course="tatli")) == 5
+    assert len(await _recipes(client, cuisine="anadolu", course="ana")) == 16
     assert recipes["salgam"]["pairs_with"] == ["kuru-fasulye", "karniyarik", "etli-nohut", "mercimek-koftesi", "izmir-kofte"]
     # En sevilenler önce
     scores = [r["like_count"] for r in recipes.values()]
     assert list(recipes)[0] == "cay" and scores == [0] * len(scores)
-    assert "karniyarik" not in await _recipes(client, slot="ogle")
-    assert await _recipes(client, cuisine="italyan") == {}
+    assert "karniyarik" not in await _recipes(client, cuisine="anadolu", slot="ogle")
+    italian = await _recipes(client, cuisine="italyan")
+    assert {"spagetti-bolonez", "firinda-lazanya", "tiramisu", "minestrone"} <= set(italian)
+    assert all(r["cuisine"] == "italyan" for r in italian.values())
+    # Filtresiz liste bütün mutfakları getirir
+    assert len(await _recipes(client)) == 42 + 15 + 15 + 12
 
 
 async def test_recipe_detail_cost_scales_with_servings(client, kitchen):
@@ -189,7 +201,7 @@ async def test_daily_breakfast_plan_and_pantry(client, auth_headers, kitchen):
 
 
 async def test_unknown_cuisine_and_privacy(client, auth_headers):
-    r = await client.post("/api/meal-plans", headers=auth_headers, json={"cuisine": "italyan"})
+    r = await client.post("/api/meal-plans", headers=auth_headers, json={"cuisine": "fransiz"})
     assert r.status_code == 404
     plan = (await client.post("/api/meal-plans", headers=auth_headers, json={"period": "daily"})).json()
 
