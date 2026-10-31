@@ -13,7 +13,8 @@ import { useAuth } from '@/lib/auth';
 const SLOTS: MealSlot[] = ['kahvalti', 'ogle', 'ara', 'aksam'];
 const COURSES: CourseType[] = ['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek'];
 const COURSE_ICONS: Record<CourseType, string> = { corba: '🥣', ana: '🍛', yan: '🍚', salata: '🥗', tatli: '🍮', icecek: '🥤', ara: '🍎' };
-const DIETS: Diet[] = ['vejetaryen', 'vegan', 'glutensiz'];
+// Glutensiz ayrı bir seçenek değil: alerji listesindeki "Gluten" aynı işi görür
+const DIETS: Diet[] = ['vejetaryen', 'vegan'];
 const ALLERGENS: Allergen[] = ['gluten', 'sut', 'yumurta', 'kuruyemis', 'susam', 'balik'];
 
 /** Yemek planlayıcı: günlük / haftalık plan oluştur, planlarım ve tarifler */

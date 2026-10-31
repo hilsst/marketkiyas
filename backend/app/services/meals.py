@@ -204,6 +204,7 @@ class _Need:
     unit: Unit
     search_term: str
     excludes: tuple[str, ...]
+    categories: tuple[str, ...]  # izin verilen kategori slug'ları; boş = sınır yok
     is_pantry: bool
     quantity: Decimal = Decimal(0)
     recipes: list[str] = field(default_factory=list)
@@ -247,11 +248,23 @@ def _price_for(group: GroupSummary, need: _Need) -> _Pick | None:
 NON_FOOD_CATEGORIES = ("temizlik", "kisisel-bakim", "bebek")
 
 
-async def _non_food_category_ids(db: AsyncSession) -> set[int]:
-    return set((await db.scalars(select(Category.id).where(Category.slug.in_(NON_FOOD_CATEGORIES)))).all())
+async def _category_ids(db: AsyncSession) -> dict[str, int]:
+    """Ana kategoriler (alt kategoriler değil): slug -> id."""
+    return dict((await db.execute(select(Category.slug, Category.id).where(Category.parent_id.is_(None)))).all())
 
 
-async def _match(db: AsyncSession, need: _Need, user_id: int | None, non_food: set[int]) -> _Pick | None:
+def _category_ok(group: GroupSummary, need: _Need, categories: dict[str, int]) -> bool:
+    """Temizlik/bakım/bebek ürünü hiçbir zaman; malzemenin kategori listesi varsa kategorisi bilinen ürün
+    o listede olmalı ("Ice Tea Limon" İçecek'te, limon Meyve & Sebze'den gelir)."""
+    non_food = {categories[s] for s in NON_FOOD_CATEGORIES if s in categories}
+    if group.category_id in non_food or group.subcategory_id in non_food:
+        return False
+    if not need.categories or group.category_id is None:
+        return True
+    return group.category_id in {categories[s] for s in need.categories if s in categories}
+
+
+async def _match(db: AsyncSession, need: _Need, user_id: int | None, categories: dict[str, int]) -> _Pick | None:
     """Gereken miktarı en ucuza karşılayan grup. Ürün adı arama ifadesinin malzemesi olmalıdır
     (bkz. ingredient_match: "limon" için "Limonlu Popkek", "pul biber" için "Sivri Biber" sayılmaz);
     bulunamazsa malzeme eksik görünür. Arama ifadesi "|" ile alternatif içerebilir: "tavuk gogus|pilic gogus"."""
@@ -260,7 +273,7 @@ async def _match(db: AsyncSession, need: _Need, user_id: int | None, non_food: s
         if not term:
             continue
         for group in await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id):
-            if group.id in picks or group.category_id in non_food or group.subcategory_id in non_food:
+            if group.id in picks or not _category_ok(group, need, categories):
                 continue
             if not name_matches(term, group.name, need.excludes):
                 continue
@@ -278,7 +291,8 @@ def _collect_needs(uses: list[tuple[Recipe, Decimal]]) -> list[_Need]:
             need = needs.get(key)
             if need is None:
                 excludes = tuple(normalize_text(e) for e in (ing.exclude_terms or "").split(",") if e.strip())
-                need = needs[key] = _Need(ing.name, ing.unit, ing.search_term, excludes, ing.is_pantry)
+                categories = tuple(c.strip() for c in (ing.categories or "").split(",") if c.strip())
+                need = needs[key] = _Need(ing.name, ing.unit, ing.search_term, excludes, categories, ing.is_pantry)
             need.quantity += Decimal(ing.quantity) * factor
             if recipe.name not in need.recipes:
                 need.recipes.append(recipe.name)
@@ -295,12 +309,12 @@ async def compute_cost(
     """uses: (tarif, çarpan) — çarpan = plan kişi sayısı / tarifin kişi sayısı, her öğün için ayrı."""
     lines: list[CostLine] = []
     pantry: list[str] = []
-    non_food = await _non_food_category_ids(db)
+    categories = await _category_ids(db)
     for need in _collect_needs(uses):
         if need.is_pantry and not include_pantry:
             pantry.append(need.name)
             continue
-        pick = await _match(db, need, user_id, non_food)
+        pick = await _match(db, need, user_id, categories)
         lines.append(
             CostLine(
                 name=need.name,

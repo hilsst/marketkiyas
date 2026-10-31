@@ -50,6 +50,7 @@ async def kitchen(db):
         "sabun": await group("Zeytinyağlı Sıvı Sabun 1 L", Unit.ML, 1000, [("bim", "45.00")]),
         "popkek": await group("Limonlu Popkek 45 g", Unit.G, 45, [("bim", "8.00")]),
         "salca_domates": await group("Domates Salçalı Sos 500 g", Unit.G, 500, [("bim", "15.00")]),
+        "icetea": await group("Ice Tea Limon 1 Lt", Unit.ML, 1000, [("sok", "30.00")]),
     }
     await db.commit()
     return markets, ids
@@ -379,7 +380,37 @@ async def test_ingredients_do_not_match_soap_or_cake(client, kitchen):
     assert lines["Limon"]["match"]["group_id"] == ids["limon"]
     assert lines["Domates"]["match"]["group_id"] == ids["domates"]
     matched = {line["match"]["group_id"] for line in salad["lines"] if line["match"]}
-    assert not matched & {ids["sabun"], ids["popkek"], ids["salca_domates"]}
+    assert not matched & {ids["sabun"], ids["popkek"], ids["salca_domates"], ids["icetea"]}
+
+
+async def test_ingredient_category_gate(client, db, kitchen):
+    """Kemal'in ikinci bulduğu: revanideki limon için "Ice Tea Limon". Ürünün kategorisi biliniyorsa
+    malzemenin kategorisinde olmalı (limon: Meyve & Sebze)."""
+    from app.models import Category, ProductGroup
+
+    _, ids = kitchen
+    cats = {c.slug: c.id for c in (await db.scalars(select(Category))).all()}
+    # Kelime kuralını aşan, kategorisi İçecek olan bir ürün: yalnız kategori kuralı eler
+    tricky = ProductGroup(
+        name="Limon 1 L Şişe", normalized_name=normalize_name("Limon 1 L Şişe"), unit=Unit.G, quantity=1000,
+        category_id=cats["icecek"],
+    )
+    db.add(tricky)
+    await db.flush()
+    markets = {m.slug: m.id for m in (await db.scalars(select(Market))).all()}
+    p = Product(market_id=markets["bim"], external_id="tricky", name=tricky.name, normalized_name=tricky.normalized_name,
+                current_price=D("5.00"))
+    db.add(p)
+    await db.flush()
+    db.add(GroupMember(group_id=tricky.id, product_id=p.id))
+    limon = await db.get(ProductGroup, ids["limon"])
+    limon.category_id = cats["meyve-sebze"]
+    await db.commit()
+
+    recipes = await _recipes(client)
+    revani = (await client.get(f"/api/recipes/{recipes['revani']['id']}")).json()["cost"]
+    line = next(line for line in revani["lines"] if line["name"] == "Limon")
+    assert line["match"]["group_id"] == ids["limon"]
 
 
 async def test_side_dish_follows_main(client, auth_headers, kitchen):

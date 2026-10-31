@@ -15,6 +15,8 @@ from app.services.ingredient_match import name_matches
         ("limon", "Limon Kolonyası 400 ml", False),
         ("limon", "Limon Aromalı Gazoz 1 L", False),
         ("limon", "Limon Suyu 500 ml", False),
+        ("limon", "Ice Tea Limon 1 Lt", False),
+        ("limon", "Lipton Ice Tea Limon Aromalı 1,5 L", False),
         ("domates salcasi", "Tat Domates Salçası 830 g", True),
         ("domates", "Domates Salçası 830 g", False),
         ("domates", "Domates Kg", True),
