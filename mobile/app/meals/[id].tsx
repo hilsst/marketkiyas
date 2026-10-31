@@ -5,8 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ListPicker from '@/components/ListPicker';
 import MealCostCard from '@/components/MealCostCard';
+import NutritionCard from '@/components/NutritionCard';
 import { Button, Card, Muted, useTheme } from '@/components/ui';
-import { api, COURSE_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealSlot, SLOT_COURSES } from '@/lib/api';
+import { ALLERGEN_LABELS, api, COURSE_LABELS, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealSlot, SLOT_COURSES } from '@/lib/api';
 
 const dayLabel = (d: Date) => d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -82,13 +83,20 @@ export default function MealPlanScreen() {
       <ScrollView>
         <View style={{ padding: 16, gap: 16 }}>
           <Muted>{plan.days} gün · {plan.servings} kişilik · {plan.meal_slots.map(s => MEAL_SLOT_LABELS[s]).join(', ')}. İstemediğiniz yemeği ✕ ile kaldırın, 🔄 ile değiştirin.</Muted>
+          {(plan.diets.length > 0 || plan.avoid_allergens.length > 0) && (
+            <Muted>
+              {[...plan.diets.map(d => DIET_LABELS[d]), ...plan.avoid_allergens.map(a => `${ALLERGEN_LABELS[a]} yok`)].join(' · ')}
+            </Muted>
+          )}
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
 
           {days.map(({ day, date, meals }) => (
             <Card key={day} style={{ gap: 12 }}>
               <Text style={{ color: t.text, fontWeight: '800', fontSize: 16, textTransform: 'capitalize' }}>{dayLabel(date)}</Text>
               {meals.map(({ slot, entries }) => {
-                const missing = SLOT_COURSES[slot].filter(c => !entries.some(e => e.course === c));
+                const hasMain = entries.some(e => e.course === 'ana');
+                // Yan yemek (pilav, püre) yalnız ana yemek varken eklenebilir
+                const missing = SLOT_COURSES[slot].filter(c => !entries.some(e => e.course === c) && (c !== 'yan' || hasMain));
                 return (
                   <View key={slot} style={{ gap: 8 }}>
                     <Text style={{ color: t.tint, fontWeight: '800', fontSize: 13 }}>{MEAL_SLOT_LABELS[slot].toLocaleUpperCase('tr-TR')}</Text>
@@ -140,6 +148,11 @@ export default function MealPlanScreen() {
             <Text style={{ color: t.text, flex: 1 }}>Evdekileri de hesapla (tuz, baharat)</Text>
             <Switch value={includePantry} onValueChange={setIncludePantry} trackColor={{ true: t.tint }} />
           </View>
+
+          {plan.daily_nutrition && (
+            <NutritionCard nutrition={plan.daily_nutrition} title="Kişi başı, günde (plandaki öğünler)"
+              note="Plandaki yemeklerin yaklaşık değerleri toplanıp gün sayısına bölündü." />
+          )}
 
           <MealCostCard cost={plan.cost} />
 

@@ -100,23 +100,33 @@ export interface AktuelResponse { sources: AktuelSource[]; items: AktuelItem[]; 
 
 // Yemek planlayıcı: mutfak (şimdilik Anadolu), tarifler, günlük/haftalık plan ve malzeme maliyeti
 export type MealSlot = 'kahvalti' | 'ogle' | 'ara' | 'aksam';
-export type CourseType = 'corba' | 'ana' | 'salata' | 'tatli' | 'icecek' | 'ara';
+export type CourseType = 'corba' | 'ana' | 'yan' | 'salata' | 'tatli' | 'icecek' | 'ara';
+export type Diet = 'vejetaryen' | 'vegan' | 'glutensiz';
+export type Allergen = 'gluten' | 'sut' | 'yumurta' | 'kuruyemis' | 'susam' | 'soya' | 'balik' | 'kereviz' | 'hardal';
 export type PlanPeriod = 'daily' | 'weekly';
 export const MEAL_SLOT_LABELS: Record<MealSlot, string> = { kahvalti: 'Kahvaltı', ogle: 'Öğle', ara: 'Ara öğün', aksam: 'Akşam' };
 export const COURSE_LABELS: Record<CourseType, string> = {
-  corba: 'Çorba', ana: 'Ana yemek', salata: 'Salata', tatli: 'Tatlı', icecek: 'İçecek', ara: 'Ara öğün',
+  corba: 'Çorba', ana: 'Ana yemek', yan: 'Yanında', salata: 'Salata', tatli: 'Tatlı', icecek: 'İçecek', ara: 'Ara öğün',
+};
+export const DIET_LABELS: Record<Diet, string> = { vejetaryen: 'Vejetaryen', vegan: 'Vegan', glutensiz: 'Glutensiz' };
+export const ALLERGEN_LABELS: Record<Allergen, string> = {
+  gluten: 'Gluten', sut: 'Süt', yumurta: 'Yumurta', kuruyemis: 'Kuruyemiş', susam: 'Susam', soya: 'Soya', balik: 'Balık',
+  kereviz: 'Kereviz', hardal: 'Hardal',
 };
 // Her öğünde önerilen yemek türleri (sunucudaki SLOT_COURSES ile aynı)
 export const SLOT_COURSES: Record<MealSlot, CourseType[]> = {
-  kahvalti: ['ana', 'icecek'], ogle: ['corba', 'ana', 'salata', 'tatli', 'icecek'], ara: ['ara'],
-  aksam: ['corba', 'ana', 'salata', 'tatli', 'icecek'],
+  kahvalti: ['ana', 'icecek'], ogle: ['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek'], ara: ['ara'],
+  aksam: ['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek'],
 };
 export interface Cuisine { slug: string; name: string; icon: string | null; is_default: boolean; recipe_count: number; }
 export interface RecipeSummary {
   id: number; slug: string; name: string; cuisine: string; course: string; course_type: CourseType; pairs_with: string[];
   meal_slots: MealSlot[]; servings: number;
   prep_minutes: number; cook_minutes: number; description: string; icon: string | null; image_url: string | null;
+  allergens: Allergen[]; diets: Diet[]; nutrition: Nutrition | null; like_count: number; liked: boolean;
 }
+/** Kişi başı yaklaşık değerler */
+export interface Nutrition { kcal: number; protein_g: number; carbs_g: number; fat_g: number; }
 export interface MealCostLine {
   name: string; needed_quantity: Money; unit: Unit; is_pantry: boolean; recipes: string[];
   match: { group_id: number; name: string; quantity: Money | null; unit: Unit | null; image_url: string | null; price: Money; market_id: number | null } | null;
@@ -131,12 +141,14 @@ export interface RecipeDetail extends RecipeSummary {
 }
 export interface MealPlanSummary {
   id: number; name: string; period: PlanPeriod; cuisine: string; start_date: string; days: number; servings: number;
-  meal_slots: MealSlot[]; courses: CourseType[]; entry_count: number; exported_list_id: number | null; created_at: string;
+  meal_slots: MealSlot[]; courses: CourseType[]; diets: Diet[]; avoid_allergens: Allergen[]; entry_count: number;
+  exported_list_id: number | null; created_at: string;
 }
 export interface MealPlanEntry { id: number; day_index: number; date: string; slot: MealSlot; course: CourseType; recipe: RecipeSummary; }
-export interface MealPlanDetail extends MealPlanSummary { entries: MealPlanEntry[]; cost: MealCost; }
+export interface MealPlanDetail extends MealPlanSummary { entries: MealPlanEntry[]; cost: MealCost; daily_nutrition: Nutrition | null; }
 export interface MealPlanCreate {
   period: PlanPeriod; cuisine?: string | null; servings: number; meal_slots: MealSlot[]; courses: CourseType[]; start_date?: string | null; name?: string | null;
+  diets?: Diet[]; avoid_allergens?: Allergen[];
 }
 export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; }
 
@@ -271,7 +283,13 @@ export const api = {
   removeFamilyMember: (userId: number) => request<void>('DELETE', '/family/members/' + userId),
   // Yemek planlayıcı
   cuisines: () => request<Cuisine[]>('GET', '/cuisines'),
-  recipes: (cuisine?: string | null, slot?: MealSlot | null) => request<RecipeSummary[]>('GET', '/recipes' + qs({ cuisine, slot })),
+  // En sevilenler önce; diyete uymayan / alerjen içeren tarifler gelmez
+  recipes: (cuisine?: string | null, diets: Diet[] = [], avoid: Allergen[] = []) => {
+    const filters = [...diets.map(d => 'diet=' + d), ...avoid.map(a => 'avoid=' + a)].join('&');
+    const base = qs({ cuisine });
+    return request<RecipeSummary[]>('GET', '/recipes' + base + (filters ? (base ? '&' : '?') + filters : ''));
+  },
+  likeRecipe: (id: number, like: boolean) => request<void>(like ? 'PUT' : 'DELETE', `/recipes/${id}/like`),
   recipe: (id: number, servings?: number) => request<RecipeDetail>('GET', '/recipes/' + id + qs({ servings })),
   mealPlans: () => request<MealPlanSummary[]>('GET', '/meal-plans'),
   mealPlan: (id: number, includePantry = false) =>

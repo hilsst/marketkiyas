@@ -4,12 +4,17 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card, LoginPrompt, Muted, useTheme } from '@/components/ui';
-import { api, COURSE_LABELS, CourseType, Cuisine, MEAL_SLOT_LABELS, MealPlanSummary, MealSlot, PlanPeriod, RecipeSummary } from '@/lib/api';
+import {
+  Allergen, ALLERGEN_LABELS, api, COURSE_LABELS, CourseType, Cuisine, Diet, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanSummary, MealSlot,
+  PlanPeriod, RecipeSummary,
+} from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 const SLOTS: MealSlot[] = ['kahvalti', 'ogle', 'ara', 'aksam'];
-const COURSES: CourseType[] = ['corba', 'ana', 'salata', 'tatli', 'icecek'];
-const COURSE_ICONS: Record<CourseType, string> = { corba: '🥣', ana: '🍛', salata: '🥗', tatli: '🍮', icecek: '🥤', ara: '🍎' };
+const COURSES: CourseType[] = ['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek'];
+const COURSE_ICONS: Record<CourseType, string> = { corba: '🥣', ana: '🍛', yan: '🍚', salata: '🥗', tatli: '🍮', icecek: '🥤', ara: '🍎' };
+const DIETS: Diet[] = ['vejetaryen', 'vegan', 'glutensiz'];
+const ALLERGENS: Allergen[] = ['gluten', 'sut', 'yumurta', 'kuruyemis', 'susam', 'balik'];
 
 /** Yemek planlayıcı: günlük / haftalık plan oluştur, planlarım ve tarifler */
 export default function MealsScreen() {
@@ -23,6 +28,8 @@ export default function MealsScreen() {
   const [servings, setServings] = useState(2);
   const [slots, setSlots] = useState<MealSlot[]>(['aksam']);
   const [courses, setCourses] = useState<CourseType[]>(COURSES);
+  const [diets, setDiets] = useState<Diet[]>([]);
+  const [avoid, setAvoid] = useState<Allergen[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +39,8 @@ export default function MealsScreen() {
       setCuisine(c => c ?? cs.find(x => x.is_default)?.slug ?? cs[0]?.slug ?? null);
     }).catch(e => setError(e.message));
   }, []);
-  useEffect(() => { api.recipes(cuisine).then(setRecipes).catch(() => setRecipes([])); }, [cuisine]);
+  // Tarifler de seçilen diyete göre süzülür ki kullanıcı ne çıkacağını görsün
+  useEffect(() => { api.recipes(cuisine, diets, avoid).then(setRecipes).catch(() => setRecipes([])); }, [cuisine, diets, avoid]);
   useFocusEffect(useCallback(() => {
     if (user) api.mealPlans().then(setPlans).catch(() => {});
   }, [user]));
@@ -43,11 +51,14 @@ export default function MealsScreen() {
   const toggleCourse = (course: CourseType) =>
     setCourses(cur => cur.includes(course) ? (cur.length > 1 ? cur.filter(c => c !== course) : cur) : [...cur, course]);
 
+  const toggle = <T,>(set: (fn: (cur: T[]) => T[]) => void, value: T) =>
+    set(cur => cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value]);
+
   const create = async () => {
     setBusy(true);
     setError(null);
     try {
-      const plan = await api.createMealPlan({ period, cuisine, servings, meal_slots: slots, courses });
+      const plan = await api.createMealPlan({ period, cuisine, servings, meal_slots: slots, courses, diets, avoid_allergens: avoid });
       router.push({ pathname: '/meals/[id]', params: { id: String(plan.id) } });
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
@@ -95,7 +106,25 @@ export default function MealsScreen() {
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {COURSES.map(c => chip(c, courses.includes(c), `${COURSE_ICONS[c]} ${COURSE_LABELS[c]}`, () => toggleCourse(c)))}
                 </View>
+                {courses.includes('yan') && <Muted style={{ fontSize: 12 }}>Yanında: pilav, makarna, püre gibi, yalnız uyduğu ana yemekle önerilir (ör. kuru fasulyeye pilav; mantıya önerilmez).</Muted>}
                 {courses.includes('icecek') && <Muted style={{ fontSize: 12 }}>İçecek, ana yemekle uyumlu hazır içeceklerden seçilir (ör. kuru fasulyeye ayran).</Muted>}
+              </View>
+
+              <View style={{ gap: 6 }}>
+                <Muted>Beslenme şekli (isteğe bağlı)</Muted>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {DIETS.map(d => chip(d, diets.includes(d), DIET_LABELS[d], () => toggle(setDiets, d)))}
+                </View>
+              </View>
+
+              <View style={{ gap: 6 }}>
+                <Muted>Alerjim var, bunlar olmasın</Muted>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {ALLERGENS.map(a => chip(a, avoid.includes(a), `🚫 ${ALLERGEN_LABELS[a]}`, () => toggle(setAvoid, a)))}
+                </View>
+                {(diets.length > 0 || avoid.length > 0) && (
+                  <Muted style={{ fontSize: 12 }}>Paketli ürünlerin etiketini yine de kontrol edin; alerjen bilgisi tarifteki malzemelere göredir.</Muted>
+                )}
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -135,7 +164,8 @@ export default function MealsScreen() {
           {recipes.length > 0 && (
             <View style={{ gap: 10 }}>
               {sectionTitle('Tarifler')}
-              {(['corba', 'ana', 'salata', 'tatli', 'icecek', 'ara'] as CourseType[]).map(course => {
+              <Muted style={{ marginTop: -4 }}>En sevilenler önde. Beğendiğiniz tarifi ❤️ ile işaretleyin; planlarda daha sık önerilir.</Muted>
+              {(['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek', 'ara'] as CourseType[]).map(course => {
                 const group = recipes.filter(r => r.course_type === course);
                 if (!group.length) return null;
                 return (
@@ -148,7 +178,11 @@ export default function MealsScreen() {
                           <Card style={{ width: 132, gap: 4, padding: 12 }}>
                             <Text style={{ fontSize: 30 }}>{r.icon ?? '🍽️'}</Text>
                             <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{r.name}</Text>
-                            <Muted style={{ fontSize: 12 }}>{r.prep_minutes + r.cook_minutes > 0 ? `${r.prep_minutes + r.cook_minutes} dk` : 'Hazır'}</Muted>
+                            <Muted style={{ fontSize: 12 }}>
+                              {r.prep_minutes + r.cook_minutes > 0 ? `${r.prep_minutes + r.cook_minutes} dk` : 'Hazır'}
+                              {r.nutrition ? ` · ${r.nutrition.kcal} kcal` : ''}
+                            </Muted>
+                            {(r.liked || r.like_count > 0) && <Muted style={{ fontSize: 12 }}>{r.liked ? '❤️' : '🤍'} {r.like_count}</Muted>}
                           </Card>
                         </Pressable>
                       ))}

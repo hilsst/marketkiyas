@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query, Response, status
 
 from app.api.deps import CurrentUser, DbSession, OptionalUser
-from app.models import CourseType, MealSlot
+from app.models import Allergen, CourseType, Diet, MealSlot
 from app.schemas.meals import (
     CuisineOut,
     EntryCreate,
@@ -31,9 +31,24 @@ async def list_cuisines(db: DbSession) -> list[CuisineOut]:
 
 @router.get("/recipes", response_model=list[RecipeSummary])
 async def list_recipes(
-    db: DbSession, cuisine: str | None = None, slot: MealSlot | None = None, course: CourseType | None = None
+    db: DbSession, user: OptionalUser, cuisine: str | None = None, slot: MealSlot | None = None,
+    course: CourseType | None = None, diet: Annotated[list[Diet] | None, Query()] = None,
+    avoid: Annotated[list[Allergen] | None, Query()] = None,
 ) -> list[RecipeSummary]:
-    return await svc.list_recipes(db, cuisine, slot, course)
+    """En sevilen tarifler önce. diet=vegan&avoid=gluten: yalnız uyanlar."""
+    return await svc.list_recipes(db, cuisine, slot, course, diet, avoid, user.id if user else None)
+
+
+@router.put("/recipes/{recipe_id}/like", status_code=status.HTTP_204_NO_CONTENT)
+async def like_recipe(recipe_id: int, user: CurrentUser, db: DbSession) -> Response:
+    await svc.set_like(db, user, await svc.get_recipe(db, recipe_id), True)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/recipes/{recipe_id}/like", status_code=status.HTTP_204_NO_CONTENT)
+async def unlike_recipe(recipe_id: int, user: CurrentUser, db: DbSession) -> Response:
+    await svc.set_like(db, user, await svc.get_recipe(db, recipe_id), False)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/recipes/{recipe_id}", response_model=RecipeDetail)
@@ -56,6 +71,7 @@ async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) ->
     plan = await svc.create_plan(
         db, user, period=body.period, cuisine_slug=body.cuisine, servings=body.servings,
         slots=body.meal_slots, courses=body.courses, start=body.start_date, name=body.name,
+        diets=body.diets, avoid=body.avoid_allergens,
     )
     return await svc.to_detail(db, plan, user.id)
 

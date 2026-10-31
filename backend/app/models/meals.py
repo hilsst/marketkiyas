@@ -31,10 +31,31 @@ class CourseType(str, enum.Enum):
 
     SOUP = "corba"
     MAIN = "ana"  # ana yemek; kahvaltıda kahvaltılık (menemen)
+    SIDE = "yan"  # ana yemeğin yanına: pilav, makarna, püre (yalnızca uyumlu ana yemeklerle)
     SALAD = "salata"
     DESSERT = "tatli"
     DRINK = "icecek"  # hazır içecek; ana yemekle uyumlu olanlar önerilir
     SNACK = "ara"  # ara öğün atıştırmalığı
+
+
+class Diet(str, enum.Enum):
+    VEGETARIAN = "vejetaryen"  # et, tavuk, balık yok
+    VEGAN = "vegan"  # hiçbir hayvansal ürün yok (süt, yumurta, bal da)
+    GLUTEN_FREE = "glutensiz"  # gluten alerjeni olmayan tarifler
+
+
+class Allergen(str, enum.Enum):
+    """Türk Gıda Kodeksi'ndeki başlıca alerjenlerden tariflerde geçenler."""
+
+    GLUTEN = "gluten"  # buğday, bulgur, irmik, makarna, ekmek, un
+    MILK = "sut"  # süt, yoğurt, ayran, peynir, tereyağı
+    EGG = "yumurta"
+    NUTS = "kuruyemis"  # ceviz, fındık, badem, fıstık
+    SESAME = "susam"  # susam, tahin
+    SOY = "soya"
+    FISH = "balik"
+    CELERY = "kereviz"
+    MUSTARD = "hardal"
 
 
 class PlanPeriod(str, enum.Enum):
@@ -79,6 +100,18 @@ class Recipe(Base):
     icon: Mapped[str | None] = mapped_column(String(16))
     image_url: Mapped[str | None] = mapped_column(String(1024))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    # Alerjenler (Allergen, virgülle) ve uyduğu diyetler (vejetaryen, vegan; glutensiz alerjenden çıkar)
+    allergens: Mapped[str] = mapped_column(String(128), default="", server_default="")
+    diets: Mapped[str] = mapped_column(String(64), default="", server_default="")
+    # Kişi başı yaklaşık besin değerleri
+    kcal: Mapped[int | None] = mapped_column(Integer)
+    protein_g: Mapped[int | None] = mapped_column(Integer)
+    carbs_g: Mapped[int | None] = mapped_column(Integer)
+    fat_g: Mapped[int | None] = mapped_column(Integer)
+    # Sevilme puanı (0-100): önce tarif sitelerindeki genel ilgiye göre başlangıç değeri, üstüne
+    # kullanıcıların beğenileri eklenir; öneride sevilen tarifler öne çıkar
+    popularity: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    like_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     cuisine: Mapped[Cuisine] = relationship(back_populates="recipes")
     ingredients: Mapped[list["RecipeIngredient"]] = relationship(
@@ -89,10 +122,42 @@ class Recipe(Base):
     def slots(self) -> list[MealSlot]:
         return [MealSlot(s) for s in self.meal_slots.split(",") if s]
 
+    @property
+    def allergen_list(self) -> list[Allergen]:
+        return [Allergen(a) for a in self.allergens.split(",") if a]
+
+    @property
+    def diet_list(self) -> list[Diet]:
+        diets = [Diet(d) for d in self.diets.split(",") if d]
+        if Allergen.GLUTEN not in self.allergen_list:
+            diets.append(Diet.GLUTEN_FREE)
+        return diets
+
+    def suits(self, diets: list[Diet], avoid: list[Allergen]) -> bool:
+        """Kullanıcının diyetine uyuyor ve kaçındığı alerjenlerin hiçbirini içermiyor mu?"""
+        mine = self.diet_list
+        allergens = self.allergen_list
+        return all(d in mine for d in diets) and not any(a in allergens for a in avoid)
+
+    @property
+    def score(self) -> int:
+        return self.popularity + 3 * self.like_count
+
     def pairs(self, main: "Recipe | None") -> bool:
+        """İçecek: pairs_with boşsa her yemeğe uyar. Yan yemek (pilav, püre): yalnızca listelenen ana
+        yemeklerin yanında önerilir; karnıyarığa pilav uyar, mantıya ya da İzmir köfteye gerekmez."""
+        if self.course_type is CourseType.SIDE:
+            return main is not None and main.slug in (self.pairs_with or "").split(",")
         if not self.pairs_with or main is None:
             return True
         return main.slug in self.pairs_with.split(",")
+
+
+class RecipeLike(Base):
+    __tablename__ = "recipe_likes"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True, index=True)
 
 
 class RecipeIngredient(Base):
@@ -130,6 +195,9 @@ class MealPlan(TimestampMixin, Base):
     meal_slots: Mapped[str] = mapped_column(String(64))  # plandaki öğünler: "ogle,aksam"
     # Öğle/akşam (ve kahvaltı) menüsünde olacak yemek türleri: "corba,ana,salata,tatli,icecek"
     courses: Mapped[str] = mapped_column(String(64))
+    # Plan oluştururken seçilen diyet ve kaçınılan alerjenler; "başka öner" de bunlara uyar
+    diets: Mapped[str] = mapped_column(String(64), default="", server_default="")
+    avoid_allergens: Mapped[str] = mapped_column(String(128), default="", server_default="")
     # En son aktarıldığı alışveriş listesi (bilgi amaçlı)
     exported_list_id: Mapped[int | None] = mapped_column(ForeignKey("shopping_lists.id", ondelete="SET NULL"))
 
@@ -145,6 +213,14 @@ class MealPlan(TimestampMixin, Base):
     @property
     def course_list(self) -> list[CourseType]:
         return [CourseType(c) for c in self.courses.split(",") if c]
+
+    @property
+    def diet_list(self) -> list[Diet]:
+        return [Diet(d) for d in self.diets.split(",") if d]
+
+    @property
+    def avoid_list(self) -> list[Allergen]:
+        return [Allergen(a) for a in self.avoid_allergens.split(",") if a]
 
 
 class MealPlanEntry(Base):

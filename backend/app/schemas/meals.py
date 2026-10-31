@@ -4,7 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 from app.models.enums import Unit
-from app.models.meals import CourseType, MealSlot, PlanPeriod
+from app.models.meals import Allergen, CourseType, Diet, MealSlot, PlanPeriod
 from app.schemas.lists import ListDetail
 
 
@@ -16,6 +16,15 @@ class CuisineOut(BaseModel):
     recipe_count: int
 
 
+class Nutrition(BaseModel):
+    """Kişi başı yaklaşık besin değerleri (tarif için bir porsiyon, plan için günlük ortalama)."""
+
+    kcal: int
+    protein_g: int
+    carbs_g: int
+    fat_g: int
+
+
 class RecipeSummary(BaseModel):
     id: int
     slug: str
@@ -23,7 +32,7 @@ class RecipeSummary(BaseModel):
     cuisine: str  # slug
     course: str  # gösterim: "Çorba"
     course_type: CourseType
-    pairs_with: list[str]  # içecek: uyumlu ana yemekler (slug); boş = hepsi
+    pairs_with: list[str]  # içecek: uyumlu ana yemekler (slug), boş = hepsi; yan yemek: yalnız bunlar
     meal_slots: list[MealSlot]
     servings: int
     prep_minutes: int
@@ -31,6 +40,11 @@ class RecipeSummary(BaseModel):
     description: str
     icon: str | None
     image_url: str | None
+    allergens: list[Allergen]
+    diets: list[Diet]
+    nutrition: Nutrition | None  # kişi başı bir porsiyon, yaklaşık
+    like_count: int
+    liked: bool  # giriş yapan kullanıcı beğendi mi
 
 
 class IngredientOut(BaseModel):
@@ -94,6 +108,9 @@ class MealPlanCreate(BaseModel):
     )
     start_date: date | None = None  # boş = bugün
     name: str | None = Field(default=None, max_length=120)
+    # Yalnız bu diyetlere uyan ve bu alerjenleri içermeyen tarifler önerilir
+    diets: list[Diet] = Field(default_factory=list)
+    avoid_allergens: list[Allergen] = Field(default_factory=list)
 
 
 class MealPlanUpdate(BaseModel):
@@ -135,6 +152,8 @@ class MealPlanSummary(BaseModel):
     servings: int
     meal_slots: list[MealSlot]
     courses: list[CourseType]
+    diets: list[Diet]
+    avoid_allergens: list[Allergen]
     entry_count: int  # öğün sayısı (gün x öğün)
     exported_list_id: int | None
     created_at: datetime
@@ -142,6 +161,7 @@ class MealPlanSummary(BaseModel):
 
 class MealPlanDetail(MealPlanSummary):
     entries: list[MealPlanEntryOut]
+    daily_nutrition: Nutrition | None  # kişi başı günlük ortalama, yaklaşık
     cost: CostOut
 
 
