@@ -4,9 +4,12 @@
  *
  * Adres EXPO_PUBLIC_API_URL ile verilir. Geliştirmede telefon aynı Wi-Fi'deki bilgisayara
  * web arayüzünün /api vekili üzerinden bağlanır (BASLAT.bat: http://<bilgisayar-ip>:3000/api).
+ * Bilgisayarın adresi modemden modeme değiştiği için Expo'nun bağlandığı adresten alınır.
  */
+import Constants from 'expo-constants';
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.68.119:3000/api';
+const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${devHost}:3000/api`;
 
 export type Money = string; // sunucu Decimal'leri metin gönderir: "32.50"
 export type Unit = 'ml' | 'g' | 'adet';
