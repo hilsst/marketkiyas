@@ -240,7 +240,7 @@ class ExportOut(BaseModel):
 class PantryItemOut(BaseModel):
     id: int
     name: str
-    quantity: Decimal
+    quantity: Decimal | None  # boş = miktar belirtilmedi ("var")
     unit: Unit
     expires_on: date | None  # boş = bozulmaz
 

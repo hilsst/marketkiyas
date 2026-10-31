@@ -50,7 +50,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
         <View style={{ backgroundColor: t.tint, paddingTop: 48, paddingBottom: 16, paddingHorizontal: 20, gap: 4 }}>
           <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>🧺 Dolabımda ne var?</Text>
           <Text style={{ color: '#fff', opacity: 0.9 }}>
-            Evde olanları seç. Bunları kullanan yemekler öne çıkar; alışveriş listesine eklenmez.
+            Evde olanları seç. Dolabım’a da eklenir; bunları kullanan yemekler öne çıkar, alışveriş listesine eklenmez.
           </Text>
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }} keyboardShouldPersistTaps="handled">

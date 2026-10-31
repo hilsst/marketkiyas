@@ -301,6 +301,7 @@ class PantryItem(TimestampMixin, Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     key: Mapped[str] = mapped_column(String(120))  # malzemenin arama ifadesi (normalize): "kirmizi mercimek"
     name: Mapped[str] = mapped_column(String(120))  # gösterim: "Kırmızı mercimek"
-    quantity: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    # Boş = miktar bilinmiyor ("dolabımda var" diye seçildi); gereken her miktarı karşılar
+    quantity: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     unit: Mapped[Unit] = mapped_column(Enum(Unit, native_enum=False, length=8, values_callable=enum_values))
     expires_on: Mapped[date | None] = mapped_column(Date)  # boş = bozulmaz (bakliyat, un, yağ)

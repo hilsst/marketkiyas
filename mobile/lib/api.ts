@@ -173,7 +173,7 @@ export interface MealPlanCreate {
 }
 export interface StockUse { name: string; quantity: Money; unit: Unit; }
 /** Dolabım: alınan paketlerden artanlar; expires_on boş = bozulmaz */
-export interface PantryItem { id: number; name: string; quantity: Money; unit: Unit; expires_on: string | null; }
+export interface PantryItem { id: number; name: string; /** boş = miktar belirtilmedi */ quantity: Money | null; unit: Unit; expires_on: string | null; }
 export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; stored?: StockUse[]; }
 
 export class ApiError extends Error {

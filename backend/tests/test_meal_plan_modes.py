@@ -248,3 +248,50 @@ async def test_expired_pantry_items_drop(client, auth_headers, db):
     await db.commit()
     names = [p["name"] for p in (await client.get("/api/pantry", headers=auth_headers)).json()]
     assert names == ["Pirinç"]
+
+
+async def test_export_when_stock_runs_out_and_package_leftover(client, auth_headers, kitchen, db):
+    """Dolaptaki miktar bitip üstüne yeni paket alınınca (aynı malzeme silinip yeniden eklenir) 500 olmamalı."""
+    from app.models import PantryItem, Unit, User
+    from sqlalchemy import select
+
+    user = await db.scalar(select(User))
+    # Mercimek çorbası 4 kişi: 200 g mercimek; dolapta 50 g var -> 150 g için 500 g paket, 350 g artar
+    db.add(PantryItem(user_id=user.id, key="kirmizi mercimek", name="Kırmızı mercimek", quantity=D(50), unit=Unit.G))
+    await db.commit()
+    soup = (await _recipes(client))["mercimek-corbasi"]
+    plan = await _create(client, auth_headers, period="daily", servings=4, meal_slots=["aksam"], courses=["corba"])
+    entry = plan["entries"][0]
+    plan = (await client.patch(
+        f"/api/meal-plans/{plan['id']}/entries/{entry['id']}", headers=auth_headers, json={"recipe_id": soup["id"]}
+    )).json()
+    assert D(plan["cost"]["from_stock"][0]["quantity"]) == 50
+    r = await client.post(f"/api/meal-plans/{plan['id']}/to-list", headers=auth_headers, json={})
+    assert r.status_code == 200, r.text
+    pantry = {p["name"]: p for p in (await client.get("/api/pantry", headers=auth_headers)).json()}
+    assert D(pantry["Kırmızı mercimek"]["quantity"]) == 350
+
+
+async def test_have_items_saved_to_pantry_without_quantity(client, auth_headers, kitchen):
+    soup = (await _recipes(client))["mercimek-corbasi"]
+    plan = await _create(client, auth_headers, period="daily", meal_slots=["aksam"], courses=["corba"],
+                         have=["Kırmızı mercimek"])
+    pantry = {p["name"]: p for p in (await client.get("/api/pantry", headers=auth_headers)).json()}
+    assert pantry["Kırmızı mercimek"]["quantity"] is None and pantry["Kırmızı mercimek"]["expires_on"] is None
+
+    # Sonraki plan "dolabımda ne var" seçilmeden de mercimeği dolaptan sayar, almaz
+    nxt = await _create(client, auth_headers, period="daily", meal_slots=["aksam"], courses=["corba"])
+    entry = nxt["entries"][0]
+    nxt = (await client.patch(
+        f"/api/meal-plans/{nxt['id']}/entries/{entry['id']}", headers=auth_headers, json={"recipe_id": soup["id"]}
+    )).json()
+    assert "Kırmızı mercimek" in {s["name"] for s in nxt["cost"]["from_stock"]}
+    assert "Kırmızı mercimek" not in {x["name"] for x in nxt["cost"]["lines"]}
+    r = await client.post(f"/api/meal-plans/{nxt['id']}/to-list", headers=auth_headers, json={})
+    assert r.status_code == 200, r.text
+    # Miktarsız kayıt aktarmada düşülmez, miktar girilince miktarlı olur
+    item = next(p for p in (await client.get("/api/pantry", headers=auth_headers)).json() if p["name"] == "Kırmızı mercimek")
+    assert item["quantity"] is None
+    after = (await client.patch(f"/api/pantry/{item['id']}", headers=auth_headers, json={"quantity": 250})).json()
+    assert D(next(p for p in after if p["id"] == item["id"])["quantity"]) == 250
+    assert plan["have"] == ["Kırmızı mercimek"]

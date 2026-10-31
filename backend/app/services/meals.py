@@ -773,6 +773,7 @@ async def create_plan(
     prices = None
     if budget is not None:
         prices = {r.id: await _estimate(db, r, servings, user.id, have_names, cache, categories) for r in recipes}
+    await remember_have(db, user, have_names)
     stock = await load_stock(db, user.id)
     prefs = _Prefs(recipes, low_waste, have_names, prices, {key for key, _ in stock})
     by_id = {r.id: r for r in recipes}
@@ -1135,7 +1136,7 @@ async def _pantry_rows(db: AsyncSession, user_id: int) -> list[PantryItem]:
     today = date.today()
     fresh = []
     for row in rows:
-        if row.expires_on is not None and row.expires_on < today or row.quantity <= 0:
+        if row.expires_on is not None and row.expires_on < today or (row.quantity is not None and row.quantity <= 0):
             await db.delete(row)
         else:
             fresh.append(row)
@@ -1147,7 +1148,37 @@ async def _pantry_rows(db: AsyncSession, user_id: int) -> list[PantryItem]:
 async def load_stock(db: AsyncSession, user_id: int | None) -> dict[tuple[str, Unit], Decimal]:
     if user_id is None:
         return {}
-    return {(r.key, r.unit): Decimal(r.quantity) for r in await _pantry_rows(db, user_id)}
+    # Miktarı belirsiz olan ("dolabımda var" diye seçilen) gereken her miktarı karşılar
+    return {
+        (r.key, r.unit): Decimal(r.quantity) if r.quantity is not None else UNLIMITED
+        for r in await _pantry_rows(db, user_id)
+    }
+
+
+UNLIMITED = Decimal("Infinity")
+
+
+async def remember_have(db: AsyncSession, user: User, have: set[str]) -> None:
+    """"Dolabımda ne var"da seçilen malzemeler Dolabım'a miktarsız ("var") yazılır; dolapta miktarıyla
+    zaten varsa dokunulmaz. Bozulabilenlere bugünden itibaren dayanma süresi verilir."""
+    if not have:
+        return
+    rows = {(r.key, r.unit): r for r in await _pantry_rows(db, user.id)}
+    today = date.today()
+    ingredients = (await db.scalars(select(RecipeIngredient).where(RecipeIngredient.is_pantry.is_(False)))).all()
+    for ing in ingredients:
+        if normalize_text(ing.name) not in have:
+            continue
+        need = _need_of(ing)
+        key = (normalize_text(ing.search_term), ing.unit)
+        if key in rows:
+            continue
+        days = shelf_life(need.categories)
+        rows[key] = PantryItem(
+            user_id=user.id, key=key[0], name=ing.name, quantity=None, unit=ing.unit,
+            expires_on=today + timedelta(days=days) if days is not None else None,
+        )
+        db.add(rows[key])
 
 
 async def pantry(db: AsyncSession, user: User) -> list[PantryItemOut]:
@@ -1182,11 +1213,8 @@ async def _record_stock(db: AsyncSession, user: User, plan: MealPlan, cost: Cost
             continue
         used.append({"key": need.key, "unit": need.unit.value, "quantity": str(use.quantity), "name": use.name})
         row = rows.get((need.key, need.unit))
-        if row is not None:
+        if row is not None and row.quantity is not None:  # miktarı belirsiz ("var") olan düşülmez
             row.quantity = max(Decimal(0), Decimal(row.quantity) - use.quantity)
-            if row.quantity <= 0:
-                await db.delete(row)
-                del rows[(need.key, need.unit)]
     plan.stock_used = json.dumps(used, ensure_ascii=False)
 
     stored: list[StockUse] = []
@@ -1209,8 +1237,14 @@ async def _record_stock(db: AsyncSession, user: User, plan: MealPlan, cost: Cost
             db.add(row)
         elif expires is not None and (row.expires_on is None or expires < row.expires_on):
             row.expires_on = expires
-        row.quantity = Decimal(row.quantity) + extra
-        stored.append(StockUse(name=line.name, quantity=_qty(extra), unit=line.unit))
+        if row.quantity is not None:
+            row.quantity = Decimal(row.quantity) + extra
+            stored.append(StockUse(name=line.name, quantity=_qty(extra), unit=line.unit))
+    # Biten malzemeler en sonda silinir: aynı malzeme hem bitip hem yeni paketten artabilir; silip
+    # yeniden eklemek aynı (kullanıcı, malzeme, birim) satırını iki kez yazmaya çalışırdı
+    for row in rows.values():
+        if row.quantity is not None and row.quantity <= 0 and row.id is not None:
+            await db.delete(row)
     return stored
 
 
