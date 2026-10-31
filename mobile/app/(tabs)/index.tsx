@@ -19,6 +19,7 @@ const QUICK = [
   { href: '/lists', icon: '📋', label: 'Listelerim' },
   { href: '/deals', icon: '🏷️', label: 'Fırsatlar' },
   { href: '/alerts', icon: '🔔', label: 'Alarmlar' },
+  { href: '/meals', icon: '🍲', label: 'Yemek Planı' },
   { href: '/stores', icon: '📍', label: 'Yakınımdakiler' },
 ] as const;
 
