@@ -29,6 +29,7 @@ export default function MealsScreen() {
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [plans, setPlans] = useState<MealPlanSummary[]>([]);
+  const [stockCount, setStockCount] = useState(0);
   const [days, setDays] = useState(7);
   const [weekdays, setWeekdays] = useState<number[]>(ALL_DAYS);
   const [budget, setBudget] = useState('');
@@ -59,7 +60,10 @@ export default function MealsScreen() {
   useEffect(() => { api.recipes(browse, diets, avoid).then(setRecipes).catch(() => setRecipes([])); }, [browse, diets, avoid]);
   const cuisineOf = (slug: string) => cuisines.find(c => c.slug === slug);
   useFocusEffect(useCallback(() => {
-    if (user) api.mealPlans().then(setPlans).catch(() => {});
+    if (user) {
+      api.mealPlans().then(setPlans).catch(() => {});
+      api.pantry().then(p => setStockCount(p.length)).catch(() => {});
+    }
   }, [user]));
 
   const toggleSlot = (slot: MealSlot) =>
@@ -218,6 +222,19 @@ export default function MealsScreen() {
             </Card>
           ) : (
             <LoginPrompt what="Yemek planı yapmak" />
+          )}
+
+          {user && stockCount > 0 && (
+            <Pressable onPress={() => router.push('/meals/pantry')}>
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Text style={{ fontSize: 28 }}>🧊</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: t.text, fontWeight: '700' }}>Dolabım: {stockCount} malzeme artmış</Text>
+                  <Muted style={{ fontSize: 12 }}>Önceki alışverişten artanlar; yeni plan önce bunları kullanır.</Muted>
+                </View>
+                <Text style={{ color: t.tint, fontWeight: '700' }}>Gör ›</Text>
+              </Card>
+            </Pressable>
           )}
 
           {plans.length > 0 && (

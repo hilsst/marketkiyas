@@ -29,6 +29,9 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
       {num(cost.leftover_value ?? 0) > 0 && (
         <Muted>🧩 Paketlerden artacak malzemenin değeri yaklaşık {tl(cost.leftover_value ?? 0)}.</Muted>
       )}
+      {(cost.from_stock?.length ?? 0) > 0 && (
+        <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>🧊 Dolabından (önceki alışverişten artan): {cost.from_stock!.map(s => `${s.name} ${formatSize(s.quantity, s.unit)}`).join(', ')}</Text>
+      )}
       {cost.missing_count > 0 && (
         <Text style={{ color: t.danger, fontSize: 13 }}>
           {cost.missing_count} malzemenin fiyatı marketlerinizde bulunamadı; toplama eklenmedi.

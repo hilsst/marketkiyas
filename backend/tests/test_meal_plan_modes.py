@@ -180,3 +180,71 @@ async def test_budget_swaps_expensive_dishes(client, auth_headers, kitchen):
     tiny = await _create(client, auth_headers, days=2, meal_slots=["aksam"], courses=["ana", "tatli", "icecek"], budget="1")
     assert tiny["budget_status"]["within"] is False and tiny["budget_status"]["swaps"] > 0
     assert sorted(e["course"] for e in tiny["entries"]) == ["ana", "ana"]
+
+
+async def test_leftover_packages_go_to_pantry_and_next_plan(client, auth_headers, kitchen):
+    """Mercimek çorbası 2 kişi: 100 g mercimek; 500 g'lık paket alınır, 400 g dolaba kalır. Sonraki
+    plan önce dolaptakini kullanır, yalnız eksik kısım için paket alır."""
+    soup = (await _recipes(client))["mercimek-corbasi"]
+
+    async def soup_plan():
+        plan = await _create(client, auth_headers, period="daily", servings=2, meal_slots=["aksam"], courses=["corba"])
+        entry = plan["entries"][0]
+        r = await client.patch(
+            f"/api/meal-plans/{plan['id']}/entries/{entry['id']}", headers=auth_headers, json={"recipe_id": soup["id"]}
+        )
+        return r.json()
+
+    first = await soup_plan()
+    line = next(x for x in first["cost"]["lines"] if x["name"] == "Kırmızı mercimek")
+    assert D(line["needed_quantity"]) == 100 and line["match"]["name"] == "Kırmızı Mercimek 500 g"
+    assert first["cost"]["from_stock"] == []
+
+    out = (await client.post(f"/api/meal-plans/{first['id']}/to-list", headers=auth_headers, json={})).json()
+    stored = {s["name"]: s for s in out["stored"]}
+    assert D(stored["Kırmızı mercimek"]["quantity"]) == 400
+    pantry = {p["name"]: p for p in (await client.get("/api/pantry", headers=auth_headers)).json()}
+    assert D(pantry["Kırmızı mercimek"]["quantity"]) == 400
+    assert pantry["Kırmızı mercimek"]["expires_on"] is None  # bakliyat bozulmaz
+    # Sebze (soğan) dayanma süresiyle kaydedilir
+    assert pantry["Kuru soğan"]["expires_on"] is not None
+
+    # Aktarılmış planın maliyeti kendi artanıyla değişmez; tekrar aktarmak dolabı değiştirmez
+    again = (await client.get(f"/api/meal-plans/{first['id']}", headers=auth_headers)).json()
+    assert again["cost"]["from_stock"] == [] and again["cost"]["purchase_total"] == first["cost"]["purchase_total"]
+    await client.post(f"/api/meal-plans/{first['id']}/to-list", headers=auth_headers, json={})
+    pantry2 = {p["name"]: p for p in (await client.get("/api/pantry", headers=auth_headers)).json()}
+    assert D(pantry2["Kırmızı mercimek"]["quantity"]) == 400
+
+    # Yeni plan: mercimek dolaptan, alınmaz
+    second = await soup_plan()
+    used = {s["name"]: s for s in second["cost"]["from_stock"]}
+    assert D(used["Kırmızı mercimek"]["quantity"]) == 100
+    assert "Kırmızı mercimek" not in {x["name"] for x in second["cost"]["lines"]}
+    assert D(second["cost"]["purchase_total"]) < D(first["cost"]["purchase_total"])
+    await client.post(f"/api/meal-plans/{second['id']}/to-list", headers=auth_headers, json={})
+    pantry3 = {p["name"]: p for p in (await client.get("/api/pantry", headers=auth_headers)).json()}
+    assert D(pantry3["Kırmızı mercimek"]["quantity"]) == 300
+
+    # Elle düzeltme ve silme
+    item = pantry3["Kırmızı mercimek"]
+    after = (await client.patch(f"/api/pantry/{item['id']}", headers=auth_headers, json={"quantity": 50})).json()
+    assert D(next(p for p in after if p["id"] == item["id"])["quantity"]) == 50
+    after = (await client.delete(f"/api/pantry/{item['id']}", headers=auth_headers)).json()
+    assert all(p["id"] != item["id"] for p in after)
+    assert (await client.delete(f"/api/pantry/{item['id']}", headers=auth_headers)).status_code == 404
+
+
+async def test_expired_pantry_items_drop(client, auth_headers, db):
+    from datetime import timedelta
+
+    from app.models import PantryItem, Unit, User
+    from sqlalchemy import select
+
+    user = await db.scalar(select(User))
+    db.add(PantryItem(user_id=user.id, key="yogurt", name="Yoğurt", quantity=D(300), unit=Unit.G,
+                      expires_on=date.today() - timedelta(days=1)))
+    db.add(PantryItem(user_id=user.id, key="pirinc", name="Pirinç", quantity=D(500), unit=Unit.G))
+    await db.commit()
+    names = [p["name"] for p in (await client.get("/api/pantry", headers=auth_headers)).json()]
+    assert names == ["Pirinç"]

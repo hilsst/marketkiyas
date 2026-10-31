@@ -70,6 +70,7 @@ function RootLayoutNav() {
         <Stack.Screen name="welcome" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="meals/index" options={{ title: 'Yemek Planı' }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Yemek Planı' }} />
+        <Stack.Screen name="meals/pantry" options={{ title: 'Dolabım' }} />
         <Stack.Screen name="recipe/[id]" options={{ title: 'Tarif' }} />
         <Stack.Screen name="cook/[id]" options={{ title: 'Pişirme modu' }} />
       </Stack>
