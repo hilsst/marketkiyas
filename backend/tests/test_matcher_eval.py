@@ -17,6 +17,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import eval_matcher as ev  # noqa: E402
 
 PRODUCTS_SHA256 = "7538832182c64b2cb2f8b6205a06360aae0b6a90ed8db579cc9a734d7e39307d"
+SET2_PRODUCTS_SHA256 = "74164523d39ef7650ec64d7d645a23a598ea206b814c8a7dc55f261361ca2508"
+SET2_LABELS_SHA256 = "9d40c7721c839350443cd1a8950f0b53afb72923c5ca88f45b98df8bd8aa8f49"
 LABELS_SHA256 = "3201c13059dd0d7daf461302401a93ecd7a6afe31d0137f24047f55d101e4961"
 # Ölçülen dev değerlerinin (ilk ölçüm: malzeme %83,3, kesinlik %93,7, duyarlılık %96,3) yaklaşık 10 puan altı
 DEV_ACCURACY_FLOOR = 0.70
@@ -55,3 +57,19 @@ def test_dev_split_does_not_regress():
     for store in ("bim", "a101"):
         assert res[store]["precision"] >= DEV_PRECISION_FLOOR, store
         assert res[store]["recall"] >= DEV_RECALL_FLOOR, store
+
+
+def test_set2_is_frozen():
+    d = ev.SETS["2"]
+    assert hashlib.sha256((d / "labels.json").read_bytes()).hexdigest() == SET2_LABELS_SHA256
+    assert hashlib.sha256((d / "products.json").read_bytes()).hexdigest() == SET2_PRODUCTS_SHA256
+
+
+def test_set2_fresh_holdout_does_not_regress():
+    """Taze holdout: düzeltmelerden önce %88,5 (BİM %94,2 / A101 %88,5). Kümedeki hatalar görüldü; bu küme artık
+    sonraki ayar turları için bağımsız değildir (üçüncü küme gerekir). Taban gevşektir, hedef değildir."""
+    res = ev.evaluate("holdout", "ad", "2")
+    assert res["all"]["ingredient_accuracy"] >= 0.80
+    for store in ("bim", "a101"):
+        assert res[store]["precision"] >= 0.88, store
+        assert res[store]["recall"] >= 0.78, store

@@ -6,6 +6,13 @@ from app.services.ingredient_match import name_matches
 @pytest.mark.parametrize(
     ("term", "product", "expected"),
     [
+        # Bağımsız değerlendirme düzeltmeleri (BİM/A101 gerçek adları): tabak = ambalaj, konserve ton, margarin
+        ("mantar", "Mantar Tabak 300 Gr", True),
+        ("tavuk bonfile", "Bakpiliç Tavuk Bonfile Tabak 1 Kg", True),
+        ("ton baligi", "Dardanel Konserve Ton Balığı 3x75 Gr", True),
+        ("tereyagi", "Becel Klasik Tereyağı Keyfi Margarin 250 Gr", False),
+        ("tereyagi", "Sütaş Tereyağı 350 Gr", True),
+        ("margarin", "Sana Klasik Margarin 250 Gr", True),
         # Kemal'in bulduğu hatalar
         ("zeytinyagi", "Zeytinyağlı Sıvı Sabun 1,5 L", False),
         ("limon", "Limonlu Popkek 45 g", False),

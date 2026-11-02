@@ -35,10 +35,10 @@ OTHER_PRODUCT_WORDS = frozenset({
     "popkek", "kek", "biskuvi", "gofret", "kraker", "cips", "sakiz", "sekerleme", "lokum",
     "dondurma", "gazoz", "kola", "cikolata", "puding", "jole", "bar", "aroma", "aromali", "esans",
     "esansi", "sos", "ketcap", "mayonez", "tursu", "recel", "marmelat", "pekmez", "surup", "likor",
-    "icecek", "ice", "tea", "icetea", "enerji", "kokteyl", "sirop", "nektar", "limonata", "sirke", "konserve", "corba", "kadayif", "bulyon", "baharat",
+    "icecek", "ice", "tea", "icetea", "enerji", "kokteyl", "sirop", "nektar", "limonata", "sirke", "corba", "kadayif", "bulyon", "baharat",
     "cesni", "kabugu", "tozu", "tuzu", "suyu", "ezmesi", "unu", "yagi", "salca", "kurusu",
     "kurutulmus", "cubuk", "kraker", "tatlisi", "helva", "tahin", "kremasi", "dolgulu",
-    "kaplamali", "soslu", "turta", "pasta", "bebe", "bebek", "mama", "tohum", "fide", "bardak", "tabak",
+    "kaplamali", "soslu", "turta", "pasta", "bebe", "bebek", "mama", "tohum", "fide", "bardak",
     # mutfak gereci ve ev eşyası ("sarımsak ezici", "kaşar rendesi", "yumurta fırçası")
     "ezici", "soyucu", "press", "fircasi", "firca", "rende", "rendesi", "kabi", "kasik", "kasigi", "tuzluk",
     "suzgec", "suzgeci", "sikacagi", "surahisi", "kovasi", "kutusu", "kalibi", "lamba", "lambasi", "pano",
@@ -56,7 +56,7 @@ OTHER_PRODUCT_WORDS = frozenset({
     "bergamotlu", "ananasli", "cheesecake", "bardagi",
     # dolgulu / aromalı ürün sıfatları ("etli ekmek", "cevizli sucuk", "tereyağlı kuru fasulye")
     "etli", "kiymali", "peynirli", "sucuklu", "cevizli", "findikli", "fistikli", "bademli", "cikolatali",
-    "tereyagli",
+    "tereyagli", "margarin",
 })
 
 

@@ -4,6 +4,8 @@
 doğruluk ölçümü. Eski 202'lik küme (`../ingredient_match_set.json`, %97,5) eşleştirici ona bakılarak ayarlandığı
 için bir "ayar kümesi"dir; bu küme onun yerine genelleme ölçümüdür.
 
+> **Güncelleme:** önerilen düzeltmelerden 1, 2 ve 4 uygulandı ve taze bir holdout ile kontrol edildi; ayrıntı ve önce/sonra sayıları `../matcher_eval_2/README.md`'de. Aşağıdaki sayılar düzeltmelerden ÖNCEKİ durumdur.
+
 ## Veri
 - Kaynak: marketfiyati.org.tr `/api/v2/search` ham yanıtları (Kemal'in PC'sinden, 2026-11-02, Ankara şubeleri, 60 sorgu
   × 2 sayfa × 25). Hiçbir ürün adı uydurulmadı; ham dosyalar repoda değil, `raw_manifest.json` her birinin SHA-256'sını tutar (izlenebilirlik), `products.json` ve `labels.json` testte SHA ile sabitlenir. BİM için 472, A101 için 562 (ürün, sorgu) çifti çıktı; bunlardan 639 benzersiz ürün aday oldu.
