@@ -1,0 +1,3714 @@
+[
+{
+"key": "domates",
+"term": "domates",
+"exclude": "salca,sos,ketcap,kurutulmus,konserve,rendesi,suyu,cherry,kokteyl",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1ISV",
+"ok": true
+},
+{
+"id": "1QEN",
+"ok": false
+},
+{
+"id": "1UKT",
+"ok": false
+},
+{
+"id": "20PN",
+"ok": false
+},
+{
+"id": "3W7U",
+"ok": false
+},
+{
+"id": "1UZW",
+"ok": false
+},
+{
+"id": "035J",
+"ok": false
+},
+{
+"id": "1NXF",
+"ok": null
+},
+{
+"id": "20QT",
+"ok": false
+},
+{
+"id": "0009",
+"ok": true
+},
+{
+"id": "1ZHR",
+"ok": false
+},
+{
+"id": "051J",
+"ok": null
+},
+{
+"id": "1IQ0",
+"ok": true
+},
+{
+"id": "1RLZ",
+"ok": false
+},
+{
+"id": "13TL",
+"ok": false
+},
+{
+"id": "0PX3",
+"ok": true
+},
+{
+"id": "20VU",
+"ok": false
+},
+{
+"id": "100N",
+"ok": false
+},
+{
+"id": "21MB",
+"ok": false
+}
+]
+},
+{
+"key": "sogan",
+"term": "kuru sogan",
+"exclude": "toz,granul",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "219J",
+"ok": false
+},
+{
+"id": "0PVW",
+"ok": true
+},
+{
+"id": "00R0",
+"ok": false
+},
+{
+"id": "0PTQ",
+"ok": null
+},
+{
+"id": "0JDD",
+"ok": true
+},
+{
+"id": "1J0K",
+"ok": false
+},
+{
+"id": "1ZQH",
+"ok": false
+},
+{
+"id": "1GYQ",
+"ok": false
+},
+{
+"id": "0Z47",
+"ok": false
+},
+{
+"id": "1JZI",
+"ok": false
+},
+{
+"id": "11BI",
+"ok": false
+}
+]
+},
+{
+"key": "sarimsak",
+"term": "sarimsak",
+"exclude": "toz,granul",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "0YR4",
+"ok": false
+},
+{
+"id": "04HR",
+"ok": true
+},
+{
+"id": "0149",
+"ok": true
+},
+{
+"id": "052U",
+"ok": false
+},
+{
+"id": "1ZWQ",
+"ok": false
+},
+{
+"id": "1EZR",
+"ok": false
+}
+]
+},
+{
+"key": "sivribiber",
+"term": "sivri biber",
+"exclude": "tursu,toz",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "06CQ",
+"ok": false
+},
+{
+"id": "0N27",
+"ok": true
+},
+{
+"id": "06D9",
+"ok": false
+},
+{
+"id": "0OGK",
+"ok": false
+},
+{
+"id": "1NS4",
+"ok": null
+},
+{
+"id": "21NY",
+"ok": false
+},
+{
+"id": "11EY",
+"ok": false
+},
+{
+"id": "129D",
+"ok": false
+},
+{
+"id": "11NO",
+"ok": false
+},
+{
+"id": "04BO",
+"ok": false
+},
+{
+"id": "134Z",
+"ok": null
+},
+{
+"id": "10MO",
+"ok": false
+},
+{
+"id": "0QMU",
+"ok": null
+},
+{
+"id": "04H7",
+"ok": false
+},
+{
+"id": "0AIR",
+"ok": null
+},
+{
+"id": "10QD",
+"ok": false
+},
+{
+"id": "0YWX",
+"ok": false
+},
+{
+"id": "1TYK",
+"ok": false
+},
+{
+"id": "19YH",
+"ok": null
+},
+{
+"id": "04ZW",
+"ok": false
+}
+]
+},
+{
+"key": "kapya",
+"term": "kapya biber|kirmizi biber|renkli biber",
+"exclude": "pul,toz,salca,tursu,kozlenmis,konserve,sos",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "11NO",
+"ok": false
+},
+{
+"id": "0AIR",
+"ok": true
+},
+{
+"id": "06CQ",
+"ok": false
+},
+{
+"id": "1FWY",
+"ok": false
+},
+{
+"id": "1NS4",
+"ok": null
+},
+{
+"id": "1ZXU",
+"ok": false
+},
+{
+"id": "0QMU",
+"ok": null
+},
+{
+"id": "0YWX",
+"ok": false
+},
+{
+"id": "19YH",
+"ok": null
+},
+{
+"id": "124I",
+"ok": false
+},
+{
+"id": "134Z",
+"ok": null
+},
+{
+"id": "0N27",
+"ok": null
+},
+{
+"id": "04H7",
+"ok": false
+},
+{
+"id": "014F",
+"ok": false
+},
+{
+"id": "11EY",
+"ok": false
+},
+{
+"id": "04BO",
+"ok": false
+},
+{
+"id": "201O",
+"ok": false
+},
+{
+"id": "01XP",
+"ok": true
+},
+{
+"id": "3W9N",
+"ok": null
+},
+{
+"id": "10YU",
+"ok": false
+}
+]
+},
+{
+"key": "havuc",
+"term": "havuc",
+"exclude": "suyu,rendesi,tursu",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "01VQ",
+"ok": false
+},
+{
+"id": "1YL3",
+"ok": false
+},
+{
+"id": "1YUC",
+"ok": false
+},
+{
+"id": "1U5E",
+"ok": true
+},
+{
+"id": "1IPB",
+"ok": false
+},
+{
+"id": "01T4",
+"ok": true
+}
+]
+},
+{
+"key": "kabak",
+"term": "kabak",
+"exclude": "bal,cekirde,tatlisi",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "102P",
+"ok": true
+},
+{
+"id": "1YL0",
+"ok": false
+},
+{
+"id": "0UAF",
+"ok": false
+},
+{
+"id": "11VR",
+"ok": false
+},
+{
+"id": "0PGX",
+"ok": false
+},
+{
+"id": "015L",
+"ok": false
+},
+{
+"id": "13ZZ",
+"ok": false
+},
+{
+"id": "13HJ",
+"ok": false
+}
+]
+},
+{
+"key": "patates",
+"term": "patates",
+"exclude": "cips,kizartma,dondurulmus,pure",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "0VUG",
+"ok": false
+},
+{
+"id": "07CU",
+"ok": false
+},
+{
+"id": "0GM6",
+"ok": false
+},
+{
+"id": "1AG8",
+"ok": false
+},
+{
+"id": "1PSP",
+"ok": false
+},
+{
+"id": "1U0B",
+"ok": false
+},
+{
+"id": "0W3A",
+"ok": true
+},
+{
+"id": "01U6",
+"ok": false
+},
+{
+"id": "0NQ5",
+"ok": true
+},
+{
+"id": "01QN",
+"ok": false
+},
+{
+"id": "1IYP",
+"ok": false
+},
+{
+"id": "1ZWL",
+"ok": false
+},
+{
+"id": "02B7",
+"ok": false
+},
+{
+"id": "1NCL",
+"ok": true
+},
+{
+"id": "1K46",
+"ok": false
+},
+{
+"id": "1J0K",
+"ok": false
+},
+{
+"id": "0IM6",
+"ok": false
+},
+{
+"id": "0IM6",
+"ok": false
+},
+{
+"id": "13ZZ",
+"ok": false
+}
+]
+},
+{
+"key": "patlican",
+"term": "patlican",
+"exclude": "salata,kozlenmis,konserve,tursu,kuru,kizartma",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "10X2",
+"ok": false
+},
+{
+"id": "1AAX",
+"ok": false
+},
+{
+"id": "0YMZ",
+"ok": false
+},
+{
+"id": "19A6",
+"ok": false
+},
+{
+"id": "12N3",
+"ok": false
+},
+{
+"id": "12A1",
+"ok": true
+},
+{
+"id": "0475",
+"ok": false
+},
+{
+"id": "21K7",
+"ok": false
+}
+]
+},
+{
+"key": "mantar",
+"term": "mantar",
+"exclude": "konserve,tursu,sos,corba",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "0ZF2",
+"ok": true
+},
+{
+"id": "21MB",
+"ok": false
+},
+{
+"id": "1OIP",
+"ok": true
+},
+{
+"id": "06E4",
+"ok": true
+},
+{
+"id": "0C43",
+"ok": false
+},
+{
+"id": "0RVT",
+"ok": false
+},
+{
+"id": "082M",
+"ok": true
+},
+{
+"id": "21HD",
+"ok": false
+},
+{
+"id": "1YJI",
+"ok": false
+}
+]
+},
+{
+"key": "ispanak",
+"term": "ispanak",
+"exclude": "dondurulmus,konserve",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "1K49",
+"ok": false
+},
+{
+"id": "10H7",
+"ok": null
+},
+{
+"id": "1JQZ",
+"ok": false
+},
+{
+"id": "3WPM",
+"ok": false
+},
+{
+"id": "3WPM",
+"ok": false
+}
+]
+},
+{
+"key": "salatalik",
+"term": "salatalik",
+"exclude": "tursu,kornison",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "0LMI",
+"ok": false
+},
+{
+"id": "12AZ",
+"ok": false
+},
+{
+"id": "0GVV",
+"ok": false
+},
+{
+"id": "0Q7Q",
+"ok": true
+},
+{
+"id": "0GM6",
+"ok": false
+},
+{
+"id": "1MZQ",
+"ok": true
+},
+{
+"id": "13ZX",
+"ok": false
+},
+{
+"id": "02WN",
+"ok": false
+},
+{
+"id": "0OBP",
+"ok": true
+},
+{
+"id": "1HRU",
+"ok": false
+},
+{
+"id": "03JT",
+"ok": false
+},
+{
+"id": "108Q",
+"ok": false
+}
+]
+},
+{
+"key": "bezelye",
+"term": "bezelye",
+"exclude": "konserve",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "02BP",
+"ok": false
+},
+{
+"id": "0YUW",
+"ok": false
+},
+{
+"id": "0XAR",
+"ok": false
+},
+{
+"id": "0KQR",
+"ok": null
+},
+{
+"id": "01QU",
+"ok": null
+},
+{
+"id": "0009",
+"ok": false
+},
+{
+"id": "0X3X",
+"ok": false
+},
+{
+"id": "01RV",
+"ok": false
+}
+]
+},
+{
+"key": "limon",
+"term": "limon",
+"exclude": "sosu,kolonya,tuzu,suyu,aromali",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "21JN",
+"ok": false
+},
+{
+"id": "1ZVG",
+"ok": false
+},
+{
+"id": "3X21",
+"ok": false
+},
+{
+"id": "11F3",
+"ok": false
+},
+{
+"id": "1R56",
+"ok": false
+},
+{
+"id": "0SES",
+"ok": false
+},
+{
+"id": "3WK1",
+"ok": false
+},
+{
+"id": "065N",
+"ok": false
+},
+{
+"id": "1HVH",
+"ok": false
+},
+{
+"id": "1X2U",
+"ok": true
+},
+{
+"id": "1BE3",
+"ok": false
+},
+{
+"id": "07CU",
+"ok": false
+},
+{
+"id": "0KGL",
+"ok": false
+},
+{
+"id": "1JS2",
+"ok": false
+},
+{
+"id": "3WPM",
+"ok": false
+},
+{
+"id": "0M9B",
+"ok": false
+},
+{
+"id": "1635",
+"ok": false
+},
+{
+"id": "11LQ",
+"ok": false
+}
+]
+},
+{
+"key": "misir",
+"term": "misir konservesi|konserve misir|tatli misir|misir",
+"exclude": "cips,patlak,patlamis,unu,nisasta,gevrek,yag,irmik",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "0PCM",
+"ok": false
+},
+{
+"id": "1JZI",
+"ok": false
+},
+{
+"id": "07NG",
+"ok": false
+},
+{
+"id": "1ZSG",
+"ok": false
+},
+{
+"id": "1Z40",
+"ok": false
+},
+{
+"id": "0MWB",
+"ok": false
+},
+{
+"id": "04T9",
+"ok": false
+},
+{
+"id": "11B8",
+"ok": false
+},
+{
+"id": "0ZD9",
+"ok": false
+},
+{
+"id": "1QZ2",
+"ok": false
+},
+{
+"id": "01R0",
+"ok": true
+},
+{
+"id": "210N",
+"ok": false
+},
+{
+"id": "1WB9",
+"ok": false
+},
+{
+"id": "1EES",
+"ok": false
+},
+{
+"id": "1OYH",
+"ok": false
+},
+{
+"id": "02PF",
+"ok": false
+},
+{
+"id": "0YMZ",
+"ok": false
+},
+{
+"id": "1QHG",
+"ok": false
+},
+{
+"id": "201O",
+"ok": false
+},
+{
+"id": "0ZT4",
+"ok": true
+}
+]
+},
+{
+"key": "nohut",
+"term": "nohut",
+"exclude": "konserve,haslanmis,leblebi,unu",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "02EE",
+"ok": false
+},
+{
+"id": "1VYK",
+"ok": false
+},
+{
+"id": "18JH",
+"ok": false
+},
+{
+"id": "06D9",
+"ok": true
+},
+{
+"id": "0FM2",
+"ok": true
+},
+{
+"id": "13HY",
+"ok": true
+},
+{
+"id": "0TDB",
+"ok": true
+},
+{
+"id": "0F43",
+"ok": true
+},
+{
+"id": "1CGI",
+"ok": false
+},
+{
+"id": "1YP3",
+"ok": false
+},
+{
+"id": "00K4",
+"ok": false
+},
+{
+"id": "1NYJ",
+"ok": false
+},
+{
+"id": "1QVB",
+"ok": false
+},
+{
+"id": "05R6",
+"ok": false
+},
+{
+"id": "04Q4",
+"ok": true
+}
+]
+},
+{
+"key": "kirmizimercimek",
+"term": "kirmizi mercimek",
+"exclude": "",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "0GVV",
+"ok": true
+},
+{
+"id": "13SR",
+"ok": true
+},
+{
+"id": "0YWG",
+"ok": true
+},
+{
+"id": "14HR",
+"ok": true
+},
+{
+"id": "0N76",
+"ok": false
+},
+{
+"id": "011I",
+"ok": false
+},
+{
+"id": "1U5E",
+"ok": false
+},
+{
+"id": "052U",
+"ok": true
+},
+{
+"id": "10XY",
+"ok": false
+},
+{
+"id": "18L8",
+"ok": false
+},
+{
+"id": "0TSP",
+"ok": true
+},
+{
+"id": "0RDI",
+"ok": false
+},
+{
+"id": "01QL",
+"ok": true
+},
+{
+"id": "0XAL",
+"ok": false
+}
+]
+},
+{
+"key": "kurufasulye",
+"term": "kuru fasulye",
+"exclude": "konserve,haslanmis",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1HJ6",
+"ok": false
+},
+{
+"id": "14BK",
+"ok": false
+},
+{
+"id": "0YGW",
+"ok": false
+},
+{
+"id": "13I1",
+"ok": false
+},
+{
+"id": "1YA3",
+"ok": null
+},
+{
+"id": "0YKZ",
+"ok": true
+},
+{
+"id": "12AO",
+"ok": false
+},
+{
+"id": "0J36",
+"ok": false
+},
+{
+"id": "1MTH",
+"ok": false
+},
+{
+"id": "216G",
+"ok": false
+},
+{
+"id": "1CGI",
+"ok": false
+},
+{
+"id": "1YA7",
+"ok": true
+},
+{
+"id": "0H55",
+"ok": false
+},
+{
+"id": "034U",
+"ok": true
+},
+{
+"id": "0YW7",
+"ok": false
+},
+{
+"id": "0LFF",
+"ok": true
+}
+]
+},
+{
+"key": "barbunya",
+"term": "kirmizi fasulye|barbunya",
+"exclude": "tursu,pilaki",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1CGI",
+"ok": false
+},
+{
+"id": "0YKZ",
+"ok": false
+},
+{
+"id": "01JV",
+"ok": false
+},
+{
+"id": "01JV",
+"ok": false
+},
+{
+"id": "216G",
+"ok": false
+},
+{
+"id": "12AO",
+"ok": false
+},
+{
+"id": "1HJ6",
+"ok": false
+},
+{
+"id": "0J36",
+"ok": false
+},
+{
+"id": "0YS5",
+"ok": false
+},
+{
+"id": "034U",
+"ok": false
+},
+{
+"id": "0LFF",
+"ok": false
+},
+{
+"id": "1MTH",
+"ok": false
+},
+{
+"id": "1YA3",
+"ok": false
+},
+{
+"id": "116W",
+"ok": false
+},
+{
+"id": "0YGW",
+"ok": false
+},
+{
+"id": "1YA7",
+"ok": false
+}
+]
+},
+{
+"key": "un",
+"term": "bugday unu|un",
+"exclude": "kurabiye,manti,makarna,helva,biskuvi,galeta,misir,pirinc,nohut,cavdar,patlagi,elegi",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1GIG",
+"ok": false
+},
+{
+"id": "3WMF",
+"ok": true
+},
+{
+"id": "14GC",
+"ok": true
+},
+{
+"id": "05UP",
+"ok": false
+},
+{
+"id": "02VH",
+"ok": true
+},
+{
+"id": "05T1",
+"ok": true
+},
+{
+"id": "119S",
+"ok": true
+},
+{
+"id": "0ZN5",
+"ok": true
+},
+{
+"id": "14AU",
+"ok": true
+},
+{
+"id": "026Q",
+"ok": false
+},
+{
+"id": "002P",
+"ok": false
+},
+{
+"id": "0WC7",
+"ok": true
+},
+{
+"id": "18L8",
+"ok": true
+},
+{
+"id": "01JV",
+"ok": false
+},
+{
+"id": "3WJF",
+"ok": true
+},
+{
+"id": "045Q",
+"ok": true
+},
+{
+"id": "17K7",
+"ok": true
+},
+{
+"id": "23G6",
+"ok": false
+},
+{
+"id": "11KI",
+"ok": null
+},
+{
+"id": "100Q",
+"ok": false
+}
+]
+},
+{
+"key": "nisasta",
+"term": "misir nisastasi|nisasta",
+"exclude": "",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "003Q",
+"ok": false
+},
+{
+"id": "1ET6",
+"ok": true
+},
+{
+"id": "07JR",
+"ok": true
+},
+{
+"id": "1EU8",
+"ok": true
+},
+{
+"id": "0TN2",
+"ok": false
+},
+{
+"id": "0MG7",
+"ok": false
+},
+{
+"id": "269V",
+"ok": true
+},
+{
+"id": "13K6",
+"ok": true
+},
+{
+"id": "03FN",
+"ok": false
+}
+]
+},
+{
+"key": "pirinc",
+"term": "pirinc",
+"exclude": "unu,patlagi,sirkesi",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1IVV",
+"ok": false
+},
+{
+"id": "16UU",
+"ok": true
+},
+{
+"id": "0OMH",
+"ok": true
+},
+{
+"id": "0S8O",
+"ok": false
+},
+{
+"id": "0WYR",
+"ok": true
+},
+{
+"id": "06G7",
+"ok": true
+},
+{
+"id": "07QD",
+"ok": true
+},
+{
+"id": "02LV",
+"ok": true
+},
+{
+"id": "1ZVP",
+"ok": true
+},
+{
+"id": "04AM",
+"ok": true
+},
+{
+"id": "02BP",
+"ok": true
+},
+{
+"id": "10OE",
+"ok": false
+},
+{
+"id": "100N",
+"ok": true
+},
+{
+"id": "0YS0",
+"ok": true
+},
+{
+"id": "0J9O",
+"ok": true
+},
+{
+"id": "0P6A",
+"ok": true
+},
+{
+"id": "13K8",
+"ok": false
+},
+{
+"id": "13OG",
+"ok": true
+},
+{
+"id": "1ESC",
+"ok": true
+},
+{
+"id": "13TP",
+"ok": true
+}
+]
+},
+{
+"key": "bulgur",
+"term": "pilavlik bulgur|bulgur",
+"exclude": "koftelik,kofte,ince",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1QWY",
+"ok": false
+},
+{
+"id": "0T7R",
+"ok": false
+},
+{
+"id": "1MZQ",
+"ok": false
+},
+{
+"id": "0NFR",
+"ok": true
+},
+{
+"id": "0QL5",
+"ok": true
+},
+{
+"id": "0ZD9",
+"ok": false
+},
+{
+"id": "01QU",
+"ok": false
+},
+{
+"id": "0577",
+"ok": false
+},
+{
+"id": "1HPV",
+"ok": false
+},
+{
+"id": "20E5",
+"ok": false
+},
+{
+"id": "0MK4",
+"ok": false
+},
+{
+"id": "1GIL",
+"ok": true
+},
+{
+"id": "1L7N",
+"ok": null
+},
+{
+"id": "1PU8",
+"ok": true
+},
+{
+"id": "1PHS",
+"ok": true
+},
+{
+"id": "13IM",
+"ok": true
+},
+{
+"id": "1924",
+"ok": false
+},
+{
+"id": "14G7",
+"ok": false
+},
+{
+"id": "11T4",
+"ok": true
+}
+]
+},
+{
+"key": "makarna",
+"term": "makarna|spagetti|penne",
+"exclude": "",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "0PJH",
+"ok": true
+},
+{
+"id": "10FZ",
+"ok": true
+},
+{
+"id": "2246",
+"ok": false
+},
+{
+"id": "2246",
+"ok": false
+},
+{
+"id": "083Q",
+"ok": true
+},
+{
+"id": "0QCU",
+"ok": true
+},
+{
+"id": "20FP",
+"ok": true
+},
+{
+"id": "13X5",
+"ok": true
+},
+{
+"id": "21XQ",
+"ok": true
+},
+{
+"id": "0FSW",
+"ok": true
+},
+{
+"id": "0WXL",
+"ok": true
+},
+{
+"id": "20GD",
+"ok": true
+},
+{
+"id": "21Q4",
+"ok": true
+},
+{
+"id": "1ZQH",
+"ok": false
+},
+{
+"id": "128A",
+"ok": true
+},
+{
+"id": "00K4",
+"ok": false
+},
+{
+"id": "07A4",
+"ok": true
+}
+]
+},
+{
+"key": "seker",
+"term": "toz seker",
+"exclude": "pudra,esmer,kup",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "0KGL",
+"ok": true
+},
+{
+"id": "21HD",
+"ok": true
+},
+{
+"id": "101W",
+"ok": true
+},
+{
+"id": "02EE",
+"ok": true
+},
+{
+"id": "01RY",
+"ok": false
+},
+{
+"id": "17W6",
+"ok": true
+},
+{
+"id": "07CD",
+"ok": true
+},
+{
+"id": "00GW",
+"ok": true
+},
+{
+"id": "04GE",
+"ok": true
+},
+{
+"id": "21L0",
+"ok": true
+},
+{
+"id": "11HC",
+"ok": true
+},
+{
+"id": "20QU",
+"ok": false
+},
+{
+"id": "0UVK",
+"ok": false
+},
+{
+"id": "1PCF",
+"ok": true
+},
+{
+"id": "11B8",
+"ok": false
+},
+{
+"id": "01N9",
+"ok": false
+},
+{
+"id": "1PK8",
+"ok": true
+},
+{
+"id": "1SU8",
+"ok": true
+}
+]
+},
+{
+"key": "bal",
+"term": "bal",
+"exclude": "balik,kabak,kabag,cekirdek",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "03VU",
+"ok": false
+},
+{
+"id": "17NJ",
+"ok": true
+},
+{
+"id": "14KK",
+"ok": true
+},
+{
+"id": "0SNA",
+"ok": true
+},
+{
+"id": "02TB",
+"ok": true
+},
+{
+"id": "1622",
+"ok": false
+},
+{
+"id": "1YN5",
+"ok": false
+},
+{
+"id": "083Q",
+"ok": false
+},
+{
+"id": "00EF",
+"ok": true
+},
+{
+"id": "100N",
+"ok": false
+},
+{
+"id": "1G6B",
+"ok": true
+},
+{
+"id": "1QQ4",
+"ok": true
+},
+{
+"id": "21MF",
+"ok": true
+},
+{
+"id": "1ACC",
+"ok": true
+},
+{
+"id": "14JC",
+"ok": true
+},
+{
+"id": "1YKX",
+"ok": true
+},
+{
+"id": "0UHO",
+"ok": true
+},
+{
+"id": "01QN",
+"ok": true
+}
+]
+},
+{
+"key": "kakao",
+"term": "kakao",
+"exclude": "kremasi,sutlu,icecek,gofret,findik",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1ZCV",
+"ok": true
+},
+{
+"id": "0IM6",
+"ok": false
+},
+{
+"id": "06JD",
+"ok": false
+},
+{
+"id": "02QS",
+"ok": false
+},
+{
+"id": "1REB",
+"ok": false
+},
+{
+"id": "23KC",
+"ok": false
+},
+{
+"id": "0H55",
+"ok": false
+},
+{
+"id": "2149",
+"ok": false
+},
+{
+"id": "0VGW",
+"ok": false
+},
+{
+"id": "1IYP",
+"ok": false
+},
+{
+"id": "04EY",
+"ok": false
+},
+{
+"id": "07ON",
+"ok": false
+},
+{
+"id": "05ZE",
+"ok": false
+},
+{
+"id": "0VM4",
+"ok": false
+},
+{
+"id": "1232",
+"ok": true
+},
+{
+"id": "11QR",
+"ok": false
+},
+{
+"id": "1O2K",
+"ok": false
+},
+{
+"id": "23KD",
+"ok": false
+},
+{
+"id": "23KE",
+"ok": false
+}
+]
+},
+{
+"key": "salca",
+"term": "domates salcasi",
+"exclude": "",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1ZHR",
+"ok": true
+},
+{
+"id": "11V6",
+"ok": null
+},
+{
+"id": "1ZVP",
+"ok": false
+},
+{
+"id": "1389",
+"ok": true
+},
+{
+"id": "0YWX",
+"ok": false
+},
+{
+"id": "04ZW",
+"ok": false
+},
+{
+"id": "13TL",
+"ok": true
+},
+{
+"id": "2246",
+"ok": false
+},
+{
+"id": "07K0",
+"ok": null
+},
+{
+"id": "1RLZ",
+"ok": false
+},
+{
+"id": "1188",
+"ok": false
+},
+{
+"id": "1JBK",
+"ok": false
+},
+{
+"id": "1UKT",
+"ok": true
+},
+{
+"id": "01PK",
+"ok": false
+},
+{
+"id": "10MO",
+"ok": false
+},
+{
+"id": "124I",
+"ok": false
+},
+{
+"id": "035J",
+"ok": true
+},
+{
+"id": "20PN",
+"ok": true
+},
+{
+"id": "04BO",
+"ok": false
+},
+{
+"id": "1I61",
+"ok": true
+}
+]
+},
+{
+"key": "sirke",
+"term": "elma sirkesi|uzum sirkesi|sirke",
+"exclude": "",
+"unit": "ml",
+"split": "dev",
+"products": [
+{
+"id": "0J8J",
+"ok": true
+},
+{
+"id": "20QU",
+"ok": false
+},
+{
+"id": "13I1",
+"ok": true
+},
+{
+"id": "0VE9",
+"ok": true
+},
+{
+"id": "1Z9D",
+"ok": false
+},
+{
+"id": "0OOP",
+"ok": true
+},
+{
+"id": "0XW1",
+"ok": true
+},
+{
+"id": "10MI",
+"ok": true
+},
+{
+"id": "3WPM",
+"ok": false
+},
+{
+"id": "03PJ",
+"ok": true
+},
+{
+"id": "0577",
+"ok": false
+},
+{
+"id": "0KH9",
+"ok": false
+},
+{
+"id": "03IH",
+"ok": true
+},
+{
+"id": "0AXL",
+"ok": true
+},
+{
+"id": "1GMP",
+"ok": null
+},
+{
+"id": "01QF",
+"ok": true
+},
+{
+"id": "1YKX",
+"ok": false
+}
+]
+},
+{
+"key": "zeytinyagi",
+"term": "zeytinyagi",
+"exclude": "",
+"unit": "ml",
+"split": "dev",
+"products": [
+{
+"id": "1DD2",
+"ok": true
+},
+{
+"id": "23G6",
+"ok": true
+},
+{
+"id": "1FM3",
+"ok": true
+},
+{
+"id": "0YR4",
+"ok": true
+},
+{
+"id": "1WI8",
+"ok": false
+},
+{
+"id": "114S",
+"ok": true
+},
+{
+"id": "0ZNS",
+"ok": true
+},
+{
+"id": "0VO0",
+"ok": true
+},
+{
+"id": "12N3",
+"ok": true
+},
+{
+"id": "01T4",
+"ok": false
+},
+{
+"id": "1GYQ",
+"ok": false
+},
+{
+"id": "1490",
+"ok": true
+},
+{
+"id": "14BK",
+"ok": true
+},
+{
+"id": "0KQR",
+"ok": false
+},
+{
+"id": "0H55",
+"ok": true
+},
+{
+"id": "06PV",
+"ok": true
+},
+{
+"id": "033E",
+"ok": true
+}
+]
+},
+{
+"key": "aycicek",
+"term": "aycicek yagi",
+"exclude": "",
+"unit": "ml",
+"split": "dev",
+"products": [
+{
+"id": "0YT7",
+"ok": true
+},
+{
+"id": "0IZE",
+"ok": false
+},
+{
+"id": "13WJ",
+"ok": true
+},
+{
+"id": "1M20",
+"ok": false
+},
+{
+"id": "03MX",
+"ok": true
+},
+{
+"id": "1F5L",
+"ok": true
+},
+{
+"id": "0OZO",
+"ok": true
+},
+{
+"id": "0848",
+"ok": true
+},
+{
+"id": "0MJ1",
+"ok": false
+},
+{
+"id": "1QYG",
+"ok": true
+},
+{
+"id": "12ND",
+"ok": true
+},
+{
+"id": "106V",
+"ok": true
+},
+{
+"id": "12B0",
+"ok": true
+},
+{
+"id": "03OP",
+"ok": true
+},
+{
+"id": "0R82",
+"ok": true
+},
+{
+"id": "01PH",
+"ok": false
+},
+{
+"id": "11LQ",
+"ok": true
+}
+]
+},
+{
+"key": "tuz",
+"term": "tuz",
+"exclude": "tuzsuz,tuzlu",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1PLP",
+"ok": true
+},
+{
+"id": "00O6",
+"ok": true
+},
+{
+"id": "19JD",
+"ok": false
+},
+{
+"id": "1NCS",
+"ok": false
+},
+{
+"id": "1UW3",
+"ok": false
+},
+{
+"id": "1XUF",
+"ok": true
+},
+{
+"id": "0YN7",
+"ok": false
+},
+{
+"id": "039A",
+"ok": false
+},
+{
+"id": "1CK8",
+"ok": null
+},
+{
+"id": "1571",
+"ok": true
+},
+{
+"id": "11IB",
+"ok": true
+},
+{
+"id": "129D",
+"ok": false
+},
+{
+"id": "01PV",
+"ok": false
+},
+{
+"id": "1OR3",
+"ok": true
+},
+{
+"id": "1R56",
+"ok": false
+},
+{
+"id": "21TK",
+"ok": false
+},
+{
+"id": "07NG",
+"ok": false
+},
+{
+"id": "10ZA",
+"ok": false
+}
+]
+},
+{
+"key": "kabartma",
+"term": "kabartma tozu",
+"exclude": "",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1YX3",
+"ok": true
+},
+{
+"id": "11T4",
+"ok": false
+},
+{
+"id": "21TC",
+"ok": false
+},
+{
+"id": "0012",
+"ok": false
+},
+{
+"id": "0RY0",
+"ok": true
+},
+{
+"id": "00EQ",
+"ok": false
+},
+{
+"id": "1P8W",
+"ok": false
+},
+{
+"id": "1COJ",
+"ok": false
+},
+{
+"id": "07V9",
+"ok": true
+},
+{
+"id": "0LPU",
+"ok": false
+},
+{
+"id": "11N9",
+"ok": true
+},
+{
+"id": "12YC",
+"ok": true
+},
+{
+"id": "07NG",
+"ok": false
+},
+{
+"id": "1YBQ",
+"ok": false
+},
+{
+"id": "1OFF",
+"ok": true
+}
+]
+},
+{
+"key": "vanilya",
+"term": "vanilya|vanilin",
+"exclude": "",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "23KD",
+"ok": false
+},
+{
+"id": "0IM6",
+"ok": false
+},
+{
+"id": "00JK",
+"ok": false
+},
+{
+"id": "1A94",
+"ok": false
+},
+{
+"id": "215F",
+"ok": false
+},
+{
+"id": "0ZUL",
+"ok": false
+},
+{
+"id": "06JD",
+"ok": false
+},
+{
+"id": "1ZZO",
+"ok": false
+},
+{
+"id": "1O2K",
+"ok": false
+},
+{
+"id": "146P",
+"ok": false
+},
+{
+"id": "035J",
+"ok": false
+},
+{
+"id": "035J",
+"ok": false
+},
+{
+"id": "23KE",
+"ok": false
+},
+{
+"id": "1IWY",
+"ok": false
+},
+{
+"id": "23KC",
+"ok": false
+},
+{
+"id": "0YOB",
+"ok": true
+},
+{
+"id": "0VGW",
+"ok": false
+},
+{
+"id": "1NDX",
+"ok": false
+},
+{
+"id": "16B9",
+"ok": false
+},
+{
+"id": "2246",
+"ok": false
+}
+]
+},
+{
+"key": "cay",
+"term": "cay",
+"exclude": "bitki,yesil,ada,ihlamur,soguk,kupa,bardak,demlik,makinesi,kasigi",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "1WZN",
+"ok": true
+},
+{
+"id": "12CC",
+"ok": true
+},
+{
+"id": "01KL",
+"ok": true
+},
+{
+"id": "0YIS",
+"ok": false
+},
+{
+"id": "05N0",
+"ok": true
+},
+{
+"id": "1IPB",
+"ok": true
+},
+{
+"id": "1OKY",
+"ok": false
+},
+{
+"id": "1W39",
+"ok": true
+},
+{
+"id": "13JM",
+"ok": false
+},
+{
+"id": "1H68",
+"ok": true
+},
+{
+"id": "11JV",
+"ok": false
+},
+{
+"id": "10Q7",
+"ok": false
+},
+{
+"id": "10SS",
+"ok": false
+},
+{
+"id": "0655",
+"ok": true
+},
+{
+"id": "0MJ1",
+"ok": true
+},
+{
+"id": "0577",
+"ok": false
+},
+{
+"id": "0M83",
+"ok": true
+},
+{
+"id": "0XKB",
+"ok": true
+}
+]
+},
+{
+"key": "turkkahvesi",
+"term": "turk kahvesi",
+"exclude": "sutlu,3u1,2si1,kapsul",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "107K",
+"ok": false
+},
+{
+"id": "1OCG",
+"ok": false
+},
+{
+"id": "00RG",
+"ok": false
+},
+{
+"id": "00XW",
+"ok": false
+},
+{
+"id": "0WDE",
+"ok": false
+},
+{
+"id": "00MT",
+"ok": false
+},
+{
+"id": "13N5",
+"ok": false
+},
+{
+"id": "05BO",
+"ok": false
+},
+{
+"id": "0I4J",
+"ok": false
+},
+{
+"id": "3WMQ",
+"ok": false
+},
+{
+"id": "1NIG",
+"ok": false
+},
+{
+"id": "10K5",
+"ok": false
+},
+{
+"id": "10YU",
+"ok": false
+},
+{
+"id": "206F",
+"ok": true
+},
+{
+"id": "0N3F",
+"ok": false
+},
+{
+"id": "0HJZ",
+"ok": false
+},
+{
+"id": "1CXT",
+"ok": false
+},
+{
+"id": "1282",
+"ok": false
+},
+{
+"id": "1KER",
+"ok": false
+}
+]
+},
+{
+"key": "sodasu",
+"term": "maden suyu|soda",
+"exclude": "aromali,meyveli",
+"unit": "ml",
+"split": "dev",
+"products": [
+{
+"id": "02XX",
+"ok": false
+},
+{
+"id": "00MT",
+"ok": false
+},
+{
+"id": "1JVB",
+"ok": false
+},
+{
+"id": "1TJ7",
+"ok": true
+},
+{
+"id": "1ZOI",
+"ok": true
+},
+{
+"id": "1COJ",
+"ok": true
+},
+{
+"id": "1IVV",
+"ok": false
+},
+{
+"id": "1P7S",
+"ok": true
+},
+{
+"id": "1VSQ",
+"ok": null
+},
+{
+"id": "21NO",
+"ok": false
+},
+{
+"id": "1NFI",
+"ok": true
+},
+{
+"id": "1TZH",
+"ok": true
+},
+{
+"id": "25HA",
+"ok": true
+},
+{
+"id": "0M9B",
+"ok": false
+},
+{
+"id": "1KI7",
+"ok": true
+},
+{
+"id": "1R3T",
+"ok": false
+},
+{
+"id": "10VG",
+"ok": false
+},
+{
+"id": "0WZV",
+"ok": false
+},
+{
+"id": "0YU6",
+"ok": false
+}
+]
+},
+{
+"key": "sut",
+"term": "sut",
+"exclude": "tozu,cikolatali,kakaolu,cilekli,muzlu,laktozsuz,keci,badem,soya,hindistan",
+"unit": "ml",
+"split": "holdout",
+"products": [
+{
+"id": "21OB",
+"ok": false
+},
+{
+"id": "1PGU",
+"ok": false
+},
+{
+"id": "225R",
+"ok": true
+},
+{
+"id": "06E8",
+"ok": false
+},
+{
+"id": "1P44",
+"ok": false
+},
+{
+"id": "1188",
+"ok": true
+},
+{
+"id": "20VU",
+"ok": false
+},
+{
+"id": "20VU",
+"ok": false
+},
+{
+"id": "11VM",
+"ok": null
+},
+{
+"id": "1O0V",
+"ok": false
+},
+{
+"id": "1ZNC",
+"ok": false
+},
+{
+"id": "01XV",
+"ok": false
+},
+{
+"id": "0385",
+"ok": null
+},
+{
+"id": "10NW",
+"ok": true
+},
+{
+"id": "1NNL",
+"ok": true
+},
+{
+"id": "1IYV",
+"ok": false
+},
+{
+"id": "1FJ0",
+"ok": true
+},
+{
+"id": "1OL6",
+"ok": false
+},
+{
+"id": "0T7R",
+"ok": false
+}
+]
+},
+{
+"key": "yogurt",
+"term": "yogurt",
+"exclude": "icecek,meyveli,suzme,cilekli,kakaolu",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "20QT",
+"ok": false
+},
+{
+"id": "1WZN",
+"ok": false
+},
+{
+"id": "0X0F",
+"ok": true
+},
+{
+"id": "1EJT",
+"ok": true
+},
+{
+"id": "0ZL7",
+"ok": true
+},
+{
+"id": "1VLI",
+"ok": true
+},
+{
+"id": "0LVI",
+"ok": true
+},
+{
+"id": "06LL",
+"ok": true
+},
+{
+"id": "1T7S",
+"ok": false
+},
+{
+"id": "1Z3F",
+"ok": null
+},
+{
+"id": "1BJ2",
+"ok": true
+},
+{
+"id": "03UP",
+"ok": false
+},
+{
+"id": "1GNI",
+"ok": false
+},
+{
+"id": "00JK",
+"ok": true
+},
+{
+"id": "0TJ3",
+"ok": false
+},
+{
+"id": "13MO",
+"ok": true
+},
+{
+"id": "16EY",
+"ok": true
+},
+{
+"id": "007X",
+"ok": true
+},
+{
+"id": "1M5S",
+"ok": false
+},
+{
+"id": "1OLM",
+"ok": false
+}
+]
+},
+{
+"key": "beyazpeynir",
+"term": "beyaz peynir",
+"exclude": "light,yarim",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "10Y1",
+"ok": true
+},
+{
+"id": "0V7K",
+"ok": true
+},
+{
+"id": "03E0",
+"ok": true
+},
+{
+"id": "01OX",
+"ok": true
+},
+{
+"id": "087J",
+"ok": true
+},
+{
+"id": "1EA0",
+"ok": true
+},
+{
+"id": "04T3",
+"ok": true
+},
+{
+"id": "12FI",
+"ok": false
+},
+{
+"id": "09SN",
+"ok": true
+},
+{
+"id": "11F3",
+"ok": false
+},
+{
+"id": "1ITH",
+"ok": true
+},
+{
+"id": "0577",
+"ok": false
+},
+{
+"id": "0Z47",
+"ok": false
+},
+{
+"id": "04D8",
+"ok": true
+},
+{
+"id": "0LO4",
+"ok": true
+},
+{
+"id": "141G",
+"ok": true
+},
+{
+"id": "12F7",
+"ok": true
+},
+{
+"id": "0YZH",
+"ok": true
+},
+{
+"id": "10LO",
+"ok": true
+}
+]
+},
+{
+"key": "kasar",
+"term": "kasar peyniri|kasar",
+"exclude": "tost,cubuk",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "04R5",
+"ok": true
+},
+{
+"id": "01N9",
+"ok": true
+},
+{
+"id": "1F7S",
+"ok": true
+},
+{
+"id": "1NMY",
+"ok": null
+},
+{
+"id": "07K0",
+"ok": false
+},
+{
+"id": "02VH",
+"ok": false
+},
+{
+"id": "10PC",
+"ok": true
+},
+{
+"id": "05UP",
+"ok": true
+},
+{
+"id": "1RFK",
+"ok": true
+},
+{
+"id": "11BZ",
+"ok": true
+},
+{
+"id": "0IZE",
+"ok": false
+},
+{
+"id": "00A8",
+"ok": true
+},
+{
+"id": "0XUO",
+"ok": true
+},
+{
+"id": "1A0F",
+"ok": true
+},
+{
+"id": "00BN",
+"ok": true
+},
+{
+"id": "1N24",
+"ok": true
+},
+{
+"id": "21QC",
+"ok": false
+},
+{
+"id": "0ZWO",
+"ok": true
+},
+{
+"id": "10YS",
+"ok": true
+},
+{
+"id": "0Z6U",
+"ok": true
+}
+]
+},
+{
+"key": "krema",
+"term": "sivi krema|krema",
+"exclude": "sanitize,sekerli,kakaolu,kremasi,cikolata,kahve,sac,yuz,el",
+"unit": "ml",
+"split": "dev",
+"products": [
+{
+"id": "0MWB",
+"ok": false
+},
+{
+"id": "110S",
+"ok": false
+},
+{
+"id": "0IUJ",
+"ok": true
+},
+{
+"id": "2655",
+"ok": false
+},
+{
+"id": "1ZCV",
+"ok": false
+},
+{
+"id": "100Q",
+"ok": false
+},
+{
+"id": "1YN5",
+"ok": false
+},
+{
+"id": "07C8",
+"ok": false
+},
+{
+"id": "1R2Q",
+"ok": true
+},
+{
+"id": "07CH",
+"ok": false
+},
+{
+"id": "20XC",
+"ok": false
+},
+{
+"id": "3WP2",
+"ok": false
+},
+{
+"id": "21MP",
+"ok": false
+},
+{
+"id": "146G",
+"ok": false
+},
+{
+"id": "2650",
+"ok": true
+},
+{
+"id": "11SW",
+"ok": true
+},
+{
+"id": "1Z40",
+"ok": false
+},
+{
+"id": "21NN",
+"ok": true
+}
+]
+},
+{
+"key": "tereyagi",
+"term": "tereyagi",
+"exclude": "",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "1NN3",
+"ok": false
+},
+{
+"id": "1VZY",
+"ok": false
+},
+{
+"id": "0QL5",
+"ok": false
+},
+{
+"id": "0SZ1",
+"ok": true
+},
+{
+"id": "0Q71",
+"ok": false
+},
+{
+"id": "023X",
+"ok": true
+},
+{
+"id": "030C",
+"ok": true
+},
+{
+"id": "02QS",
+"ok": true
+},
+{
+"id": "01EP",
+"ok": false
+},
+{
+"id": "116W",
+"ok": true
+},
+{
+"id": "0AQ4",
+"ok": true
+},
+{
+"id": "0YRV",
+"ok": false
+},
+{
+"id": "0ZUL",
+"ok": false
+},
+{
+"id": "04Q4",
+"ok": false
+},
+{
+"id": "01VQ",
+"ok": true
+},
+{
+"id": "1IQ9",
+"ok": true
+},
+{
+"id": "0VX2",
+"ok": false
+},
+{
+"id": "04AM",
+"ok": false
+}
+]
+},
+{
+"key": "yumurta",
+"term": "yumurta",
+"exclude": "cikolata,makarna,eriste",
+"unit": "adet",
+"split": "dev",
+"products": [
+{
+"id": "3WMA",
+"ok": false
+},
+{
+"id": "0QE9",
+"ok": true
+},
+{
+"id": "01PV",
+"ok": true
+},
+{
+"id": "3W82",
+"ok": true
+},
+{
+"id": "0009",
+"ok": false
+},
+{
+"id": "3W7U",
+"ok": true
+},
+{
+"id": "1OLM",
+"ok": null
+},
+{
+"id": "1YBA",
+"ok": false
+},
+{
+"id": "182O",
+"ok": true
+},
+{
+"id": "1M8A",
+"ok": false
+},
+{
+"id": "251B",
+"ok": false
+},
+{
+"id": "3W83",
+"ok": true
+},
+{
+"id": "0W9J",
+"ok": false
+},
+{
+"id": "01RD",
+"ok": true
+},
+{
+"id": "2ORD",
+"ok": false
+},
+{
+"id": "0AD5",
+"ok": false
+},
+{
+"id": "01XN",
+"ok": false
+},
+{
+"id": "1UO1",
+"ok": false
+},
+{
+"id": "3WB3",
+"ok": false
+}
+]
+},
+{
+"key": "kiyma",
+"term": "dana kiyma|kiyma",
+"exclude": "tavuk,hindi,kuzu",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "18TW",
+"ok": null
+},
+{
+"id": "10QD",
+"ok": false
+},
+{
+"id": "002E",
+"ok": true
+},
+{
+"id": "147T",
+"ok": true
+},
+{
+"id": "01VQ",
+"ok": false
+},
+{
+"id": "07QX",
+"ok": false
+},
+{
+"id": "0PS7",
+"ok": false
+},
+{
+"id": "0X9L",
+"ok": false
+},
+{
+"id": "12Y7",
+"ok": true
+}
+]
+},
+{
+"key": "kusbasi",
+"term": "dana kusbasi|kusbasi",
+"exclude": "tavuk,hindi,kuzu",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1Z9D",
+"ok": false
+},
+{
+"id": "04EQ",
+"ok": false
+},
+{
+"id": "0YMJ",
+"ok": false
+},
+{
+"id": "1VYK",
+"ok": false
+},
+{
+"id": "01RG",
+"ok": true
+},
+{
+"id": "06AO",
+"ok": false
+},
+{
+"id": "1UO1",
+"ok": false
+},
+{
+"id": "21XK",
+"ok": false
+},
+{
+"id": "0SJ2",
+"ok": false
+},
+{
+"id": "1ZSG",
+"ok": false
+},
+{
+"id": "0QOY",
+"ok": false
+}
+]
+},
+{
+"key": "tavukgogus",
+"term": "tavuk gogus|pilic gogus|pilic bonfile|tavuk bonfile|pilic fileto",
+"exclude": "fume,jambon,salam,doner,pane,haslanmis",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "0313",
+"ok": null
+},
+{
+"id": "14H6",
+"ok": true
+},
+{
+"id": "21DT",
+"ok": true
+},
+{
+"id": "1233",
+"ok": false
+},
+{
+"id": "16OZ",
+"ok": true
+},
+{
+"id": "07G3",
+"ok": false
+},
+{
+"id": "003Q",
+"ok": false
+},
+{
+"id": "107P",
+"ok": true
+},
+{
+"id": "07C8",
+"ok": true
+},
+{
+"id": "1SOA",
+"ok": false
+},
+{
+"id": "07B4",
+"ok": true
+},
+{
+"id": "2243",
+"ok": false
+},
+{
+"id": "1Z3F",
+"ok": false
+}
+]
+},
+{
+"key": "tavukbut",
+"term": "tavuk but|pilic but",
+"exclude": "pane,haslanmis,fume",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "1YA3",
+"ok": false
+},
+{
+"id": "13YS",
+"ok": null
+},
+{
+"id": "035X",
+"ok": null
+},
+{
+"id": "129N",
+"ok": null
+},
+{
+"id": "12AE",
+"ok": null
+},
+{
+"id": "14PB",
+"ok": null
+},
+{
+"id": "06KS",
+"ok": null
+},
+{
+"id": "0NPR",
+"ok": null
+},
+{
+"id": "13JM",
+"ok": false
+},
+{
+"id": "16C2",
+"ok": null
+},
+{
+"id": "01TS",
+"ok": null
+},
+{
+"id": "00UA",
+"ok": true
+},
+{
+"id": "11FF",
+"ok": null
+},
+{
+"id": "20OL",
+"ok": false
+},
+{
+"id": "2243",
+"ok": false
+},
+{
+"id": "07SV",
+"ok": null
+},
+{
+"id": "19W2",
+"ok": true
+},
+{
+"id": "0TQL",
+"ok": null
+},
+{
+"id": "0I4J",
+"ok": false
+},
+{
+"id": "01HL",
+"ok": true
+}
+]
+},
+{
+"key": "sucuk",
+"term": "sucuk",
+"exclude": "tost,pizza,cips",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1NZ6",
+"ok": true
+},
+{
+"id": "1P7N",
+"ok": true
+},
+{
+"id": "10O0",
+"ok": true
+},
+{
+"id": "3X21",
+"ok": false
+},
+{
+"id": "0XQW",
+"ok": false
+},
+{
+"id": "0S3T",
+"ok": true
+},
+{
+"id": "05HP",
+"ok": false
+},
+{
+"id": "1O8N",
+"ok": true
+},
+{
+"id": "0ZHL",
+"ok": true
+},
+{
+"id": "13ZX",
+"ok": true
+},
+{
+"id": "11CP",
+"ok": true
+},
+{
+"id": "0N0H",
+"ok": true
+},
+{
+"id": "0551",
+"ok": true
+},
+{
+"id": "1HKB",
+"ok": true
+},
+{
+"id": "0MK4",
+"ok": true
+},
+{
+"id": "1YXA",
+"ok": true
+},
+{
+"id": "0BKO",
+"ok": false
+},
+{
+"id": "1CUG",
+"ok": true
+},
+{
+"id": "12NA",
+"ok": true
+},
+{
+"id": "042C",
+"ok": true
+}
+]
+},
+{
+"key": "tonbaligi",
+"term": "ton baligi",
+"exclude": "",
+"unit": "g",
+"split": "holdout",
+"products": [
+{
+"id": "10Q7",
+"ok": true
+},
+{
+"id": "1AG8",
+"ok": false
+},
+{
+"id": "00GW",
+"ok": false
+},
+{
+"id": "1SU8",
+"ok": false
+},
+{
+"id": "0V52",
+"ok": true
+},
+{
+"id": "03P6",
+"ok": true
+},
+{
+"id": "06X4",
+"ok": true
+},
+{
+"id": "19D2",
+"ok": false
+},
+{
+"id": "0YI2",
+"ok": true
+},
+{
+"id": "005S",
+"ok": null
+},
+{
+"id": "05WT",
+"ok": true
+},
+{
+"id": "17S9",
+"ok": true
+}
+]
+},
+{
+"key": "ekmek",
+"term": "ekmek",
+"exclude": "galeta,kirintisi,kadayif",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "1V4X",
+"ok": false
+},
+{
+"id": "3WOT",
+"ok": null
+},
+{
+"id": "2529",
+"ok": null
+},
+{
+"id": "059W",
+"ok": false
+},
+{
+"id": "020O",
+"ok": true
+},
+{
+"id": "10WG",
+"ok": true
+},
+{
+"id": "0VJ8",
+"ok": true
+},
+{
+"id": "1YFB",
+"ok": false
+},
+{
+"id": "0UTH",
+"ok": false
+},
+{
+"id": "13TG",
+"ok": null
+},
+{
+"id": "13JB",
+"ok": false
+},
+{
+"id": "1261",
+"ok": true
+},
+{
+"id": "1OLH",
+"ok": true
+},
+{
+"id": "12F4",
+"ok": null
+},
+{
+"id": "0XQW",
+"ok": true
+},
+{
+"id": "11IB",
+"ok": false
+},
+{
+"id": "0SZ1",
+"ok": false
+}
+]
+},
+{
+"key": "galetaunu",
+"term": "galeta unu",
+"exclude": "",
+"unit": "g",
+"split": "dev",
+"products": [
+{
+"id": "11V6",
+"ok": false
+},
+{
+"id": "00R0",
+"ok": false
+},
+{
+"id": "1GIG",
+"ok": true
+},
+{
+"id": "3WJF",
+"ok": false
+},
+{
+"id": "01JV",
+"ok": true
+},
+{
+"id": "2650",
+"ok": false
+}
+]
+}
+]
