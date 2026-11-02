@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "dev-only-secret-change-me-in-production-please"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 gün (mobil PWA için uzun oturum)
+    # Misafirin şifresi yok: anahtar biterse verisine bir daha ulaşamaz, bu yüzden uzun
+    guest_token_expire_minutes: int = 60 * 24 * 365
+    # Sunucu bir vekilin (Next.js /api, yük dengeleyici) arkasındaysa istemci adresi X-Forwarded-For'dadır
+    trust_forwarded_for: bool = False
+    guest_per_ip_per_hour: int = 20  # aynı adresten saatte açılabilecek misafir oturumu
 
     # marketfiyati.org.tr (T.C. Ticaret Bakanlığı / TÜBİTAK fiyat platformu)
     marketfiyati_base_url: str = "https://api.marketfiyati.org.tr"

@@ -1,15 +1,20 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { ACCOUNT_REASON_TEXT, AccountReason } from '@/lib/guest';
 
 /** Giriş ve üyelik tek ekranda. Google ile giriş, geliştirme sürümü (EAS) ve Google istemci kimliği gelince eklenir */
 export default function LoginScreen() {
   const t = useTheme();
-  const { login, register } = useAuth();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const { user, login, register, upgrade } = useAuth();
+  const { upgrade: upgradeParam, reason } = useLocalSearchParams<{ upgrade?: string; reason?: AccountReason }>();
+  // Misafir hesap açarken (kaydetme/paylaşma anı): verileri aynı kalır. Giriş sekmesi de var: eski hesabına girebilir.
+  const guest = !!user?.is_guest;
+  const upgrading = guest && upgradeParam === '1';
+  const [mode, setMode] = useState<'login' | 'register'>(upgrading ? 'register' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -25,6 +30,7 @@ export default function LoginScreen() {
     setBusy(true);
     try {
       if (mode === 'login') await login(email, password);
+      else if (guest) await upgrade(email, password, fullName);
       else await register(email, password, fullName);
       router.back();
     } catch (e) {
@@ -38,7 +44,12 @@ export default function LoginScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
         <Text style={{ fontSize: 28, fontWeight: '800', color: t.text }}>🛒 Ucuzu</Text>
-        <Muted>{mode === 'login' ? 'Listelerin, tasarrufun ve marketlerin için giriş yap.' : 'Ücretsiz üye ol, alışverişte tasarrufunu takip et.'}</Muted>
+        <Muted>{upgrading && reason && ACCOUNT_REASON_TEXT[reason]
+          ? ACCOUNT_REASON_TEXT[reason]
+          : mode === 'login' ? 'Listelerin, tasarrufun ve marketlerin için giriş yap.' : 'Ücretsiz üye ol, alışverişte tasarrufunu takip et.'}</Muted>
+        {guest && mode === 'login' && (
+          <Muted style={{ color: t.danger }}>Dikkat: Var olan hesabına girersen şu anki misafir planların ve listelerin bu hesaba taşınmaz. {'Onları korumak için "Üye ol" ile hesap aç.'}</Muted>
+        )}
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {(['login', 'register'] as const).map(m => (

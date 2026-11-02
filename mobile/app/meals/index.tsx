@@ -224,6 +224,17 @@ export default function MealsScreen() {
             <LoginPrompt what="Yemek planı yapmak" />
           )}
 
+          <Pressable onPress={() => router.push('/meals/deals')}>
+            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 28 }}>🏷️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: t.text, fontWeight: '700' }}>İndirimden menü</Text>
+                <Muted style={{ fontSize: 12 }}>Bu hafta indirimdeki malzemeleri seç, menü onlarla kurulsun.</Muted>
+              </View>
+              <Text style={{ color: t.tint, fontWeight: '700' }}>Kur ›</Text>
+            </Card>
+          </Pressable>
+
           {user && stockCount > 0 && (
             <Pressable onPress={() => router.push('/meals/pantry')}>
               <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

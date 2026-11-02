@@ -211,7 +211,7 @@ def reset_plan(shopping_list: ShoppingList) -> None:
 def _display_name(user: User | None) -> str | None:
     if user is None:
         return None
-    return user.full_name or user.email.split("@")[0]
+    return user.full_name or (user.email or "Misafir").split("@")[0]
 
 
 def _summary_fields(shopping_list: ShoppingList) -> dict:

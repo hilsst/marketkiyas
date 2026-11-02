@@ -7,6 +7,9 @@ import ListPicker from '@/components/ListPicker';
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
 import { Button, Card, Muted, useTheme } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { ACCOUNT_REASON_TEXT, accountRedirect } from '@/lib/guest';
+import { rescheduleWeekly } from '@/lib/weekly';
 import { ALLERGEN_LABELS, api, COURSE_LABELS, formatSize, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealSlot, SLOT_COURSES } from '@/lib/api';
 
 const dayLabel = (d: Date) => d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -16,6 +19,7 @@ export default function MealPlanScreen() {
   const t = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const planId = Number(id);
+  const { user } = useAuth();
   const [plan, setPlan] = useState<MealPlanDetail | null>(null);
   const [includePantry, setIncludePantry] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +31,8 @@ export default function MealPlanScreen() {
     .then(p => { setPlan(p); setError(null); })
     .catch(e => setError((e as Error).message)), [planId, includePantry]);
   useEffect(() => { load(); }, [load]);
+  // Haftalık menü bildirimi açıksa, bildirimdeki tutar bu planın güncel maliyetine çekilir
+  useEffect(() => { if (plan) void rescheduleWeekly(Number(plan.cost.purchase_total)).catch(() => {}); }, [plan]);
 
   // Gün -> öğün -> yemekler. Bütün yemekleri kaldırılan öğün de görünür ki geri eklenebilsin.
   const days = useMemo(() => {
@@ -88,6 +94,14 @@ export default function MealPlanScreen() {
       <Stack.Screen options={{ title: plan.name }} />
       <ScrollView>
         <View style={{ padding: 16, gap: 16 }}>
+          {user?.is_guest && (
+            <Pressable onPress={() => { const to = accountRedirect(user, 'plan'); if (to) router.push(to); }}>
+              <Card style={{ gap: 4, borderColor: t.tint }}>
+                <Text style={{ color: t.text, fontWeight: '700' }}>💾 Planını kaydet</Text>
+                <Muted>{ACCOUNT_REASON_TEXT.plan} Ücretsiz hesap aç ›</Muted>
+              </Card>
+            </Pressable>
+          )}
           <Muted>{plan.days} gün · {plan.servings} kişilik · {plan.meal_slots.map(s => MEAL_SLOT_LABELS[s]).join(', ')}. İstemediğiniz yemeği ✕ ile kaldırın, 🔄 ile değiştirin.</Muted>
           {(plan.diets.length > 0 || plan.avoid_allergens.length > 0) && (
             <Muted>

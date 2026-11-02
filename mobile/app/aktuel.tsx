@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import AdSlot from '@/components/AdSlot';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Button, Card, Muted, useTheme } from '@/components/ui';
@@ -96,7 +95,6 @@ export default function AktuelScreen() {
             const shown = expanded ? section.items : section.items.slice(0, PREVIEW);
             return (
               <View key={section.key} style={{ gap: 10 }}>
-                {index === 1 && <AdSlot placement="list" />}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <MarketBadge slug={section.slug} name={nameOf(section.slug)} size={30} />
                   <View style={{ flex: 1 }}>

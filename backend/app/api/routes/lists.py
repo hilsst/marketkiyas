@@ -4,7 +4,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Response, status
 from sqlalchemy import func, select
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import AccountUser, CurrentUser, DbSession
 from app.models import ShoppingList, ShoppingListItem
 from app.schemas.lists import (
     ApplyPlanRequest,
@@ -64,14 +64,14 @@ async def delete_list(list_id: int, user: CurrentUser, db: DbSession) -> Respons
 
 
 @router.post("/join", response_model=ListDetail)
-async def join_list(body: JoinListRequest, user: CurrentUser, db: DbSession) -> ListDetail:
+async def join_list(body: JoinListRequest, user: AccountUser, db: DbSession) -> ListDetail:
     """Davet koduyla ortak listeye katıl: liste iki tarafta da görünür, ikisi de düzenleyebilir."""
     list_id = await svc.join_list(db, user, body.code)
     return svc.to_detail(await svc.get_owned_list(db, user, list_id))
 
 
 @router.post("/{list_id}/share", response_model=ShareCodeOut)
-async def share_list(list_id: int, user: CurrentUser, db: DbSession) -> ShareCodeOut:
+async def share_list(list_id: int, user: AccountUser, db: DbSession) -> ShareCodeOut:
     """"Listeyi Paylaş": davet kodu (yoksa oluşturulur)."""
     shopping_list = await svc.get_owned_list(db, user, list_id)
     return ShareCodeOut(share_code=await svc.ensure_share_code(db, shopping_list))

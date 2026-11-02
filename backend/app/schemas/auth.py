@@ -9,6 +9,10 @@ class RegisterRequest(BaseModel):
     full_name: str | None = Field(default=None, max_length=120)
 
 
+class UpgradeRequest(RegisterRequest):
+    """Misafiri gerçek hesaba çevirir: aynı kullanıcı, aynı veriler."""
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -24,10 +28,11 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    email: EmailStr
+    email: EmailStr | None  # misafirde boş
     full_name: str | None
     created_at: datetime
     has_password: bool = True  # Google/Apple ile girenin şifresi yok (hesap silmede şifre sorulmaz)
+    is_guest: bool = False  # hesapsız başladı; kaydetme/paylaşma anında hesap açması istenir
 
 
 class AuthResponse(TokenResponse):
