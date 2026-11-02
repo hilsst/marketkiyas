@@ -1,3 +1,4 @@
+jest.mock('expo-constants', () => ({ __esModule: true, default: { executionEnvironment: 'bare' }, ExecutionEnvironment: { StoreClient: 'storeClient' } }));
 jest.mock('expo-secure-store', () => ({ getItemAsync: jest.fn(), setItemAsync: jest.fn(), deleteItemAsync: jest.fn() }));
 
 import { weeklyContent, WEEKLY_HOUR, WEEKLY_WEEKDAY } from '@/lib/weekly';

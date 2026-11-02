@@ -3,6 +3,7 @@
  * gerekmez); her pazar 11:00'de tekrarlanır. Metin sabit gittiği için son planın tutarı her plan
  * kaydında ve uygulama açılışında yeniden kurulur (reschedule).
  */
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
 import { loadFlag, saveFlag } from '@/lib/session';
@@ -22,7 +23,8 @@ export function weeklyContent(total?: number | null) {
   };
 }
 
-export const weeklySupported = Platform.OS !== 'web';
+// Expo Go'da expo-notifications'ın yerel modülleri eksik ("Cannot find native module"): orada özellik kapalı kalır
+export const weeklySupported = Platform.OS !== 'web' && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
 
 export async function isWeeklyOn(): Promise<boolean> {
   return (await loadFlag(WEEKLY_FLAG)) === '1';
