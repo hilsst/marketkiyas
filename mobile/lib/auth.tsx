@@ -27,9 +27,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Hesapsız başlangıç: oturum yoksa sessizce misafir açılır; sunucuya ulaşılamazsa kullanıcı boş kalır (eskisi gibi)
-  const startGuest = useCallback(async () => {
+  const startGuest = useCallback(async (timeoutMs: number = BOOT_TIMEOUT_MS) => {
     try {
-      const r = await api.guest(BOOT_TIMEOUT_MS);
+      const r = await api.guest(timeoutMs);
       setApiToken(r.access_token);
       await saveToken(r.access_token);
       setUser(r.user);
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let recovering: Promise<void> | null = null;
     setUnauthorizedHandler(() => {
       if (booting || recovering) return;
-      recovering = signOut().then(startGuest).finally(() => { recovering = null; });
+      recovering = signOut().then(() => startGuest()).finally(() => { recovering = null; });
     });
     (async () => {
       const saved = await loadToken();
@@ -62,6 +62,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
     return () => setUnauthorizedHandler(null);
   }, [signOut, startGuest]);
+
+  // Açılışta sunucu yetişemediyse misafir sonradan açılır; yoksa kullanıcı boş kalır ve ekranlar giriş ister
+  useEffect(() => {
+    if (!ready || user) return;
+    let cancelled = false;
+    let attempt = 0;
+    const tick = () => {
+      if (cancelled || attempt >= 6) return;
+      attempt += 1;
+      void startGuest(15000).then(() => { if (!cancelled) timer = setTimeout(tick, 2000 * attempt); });
+    };
+    let timer: ReturnType<typeof setTimeout> = setTimeout(tick, 2000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [ready, user, startGuest]);
 
   const start = useCallback(async (token: string, next: User) => {
     setApiToken(token);
