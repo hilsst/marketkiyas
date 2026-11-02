@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { api, ApiError, AuthResponse, setApiToken, setUnauthorizedHandler, User } from '@/lib/api';
+import { api, ApiError, AuthResponse, BOOT_TIMEOUT_MS, setApiToken, setUnauthorizedHandler, User } from '@/lib/api';
 import { loadToken, saveToken } from '@/lib/session';
 
 interface AuthState {
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Hesapsız başlangıç: oturum yoksa sessizce misafir açılır; sunucuya ulaşılamazsa kullanıcı boş kalır (eskisi gibi)
   const startGuest = useCallback(async () => {
     try {
-      const r = await api.guest();
+      const r = await api.guest(BOOT_TIMEOUT_MS);
       setApiToken(r.access_token);
       await saveToken(r.access_token);
       setUser(r.user);
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (saved) {
         setApiToken(saved);
         try {
-          setUser(await api.me());
+          setUser(await api.me(BOOT_TIMEOUT_MS));
         } catch (e) {
           // Yalnız sunucu anahtarı reddettiyse oturum silinir; çevrimdışıyken misafirin anahtarı (= verisi) korunur
           if (e instanceof ApiError && e.status === 401) { await signOut(); await startGuest(); }

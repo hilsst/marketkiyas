@@ -213,12 +213,20 @@ export type FamilyInvite = { id: number; family_name: string; invited_by: string
 // Aile üyeleri birbirinin bütün listelerini kodsuz görür; ailesi yoksa bana gelen davetler
 export type MyFamily = { family: Family | null; invites: FamilyInvite[] };
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+/** Sunucu yanıt vermezse (güvenlik duvarı paketi sessizce düşürürse) istek sonsuza dek asılı kalmasın. */
+export const REQUEST_TIMEOUT_MS = 20000;
+/** Açılışta (misafir/oturum denetimi) beklenen en çok süre; aşılırsa uygulama yine de açılır. */
+export const BOOT_TIMEOUT_MS = 6000;
+
+async function request<T>(method: string, path: string, body?: unknown, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
   let res: Response;
   // Açılıştaki ilk istekler de cihaz kimliğini taşısın (aynı kişi iki kişi sayılmasın); sonra anında döner
   await initDeviceId().catch(() => undefined);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     res = await fetch(API_URL + path, {
+      signal: controller.signal,
       method,
       headers: {
         Accept: 'application/json',
@@ -230,6 +238,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     });
   } catch {
     throw new ApiError('Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.', 0);
+  } finally {
+    clearTimeout(timer);
   }
   // Giriş/üyelik uçlarındaki 401 "şifre yanlış" demektir; oturumu (misafirin verisini) düşürmemeli
   if (res.status === 401 && token && !path.startsWith('/auth/')) onUnauthorized?.();
@@ -256,11 +266,11 @@ export function formatSize(quantity: Money | null, unit: Unit | null): string {
 export const api = {
   register: (email: string, password: string, full_name?: string) =>
     request<AuthResponse>('POST', '/auth/register', { email, password, full_name: full_name || null }),
-  guest: () => request<AuthResponse>('POST', '/auth/guest'),
+  guest: (timeoutMs?: number) => request<AuthResponse>('POST', '/auth/guest', undefined, timeoutMs),
   upgrade: (email: string, password: string, full_name?: string) =>
     request<AuthResponse>('POST', '/auth/upgrade', { email, password, full_name: full_name || null }),
   login: (email: string, password: string) => request<AuthResponse>('POST', '/auth/login', { email, password }),
-  me: () => request<User>('GET', '/auth/me'),
+  me: (timeoutMs?: number) => request<User>('GET', '/auth/me', undefined, timeoutMs),
   requestPasswordReset: (email: string) => request<{ detail: string }>('POST', '/auth/password-reset/request', { email }),
   confirmPasswordReset: (email: string, code: string, new_password: string) =>
     request<AuthResponse>('POST', '/auth/password-reset/confirm', { email, code, new_password }),
