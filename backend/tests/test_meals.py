@@ -184,7 +184,12 @@ async def test_daily_breakfast_plan_and_pantry(client, auth_headers, kitchen):
         "/api/meal-plans", headers=auth_headers, json={"period": "daily", "servings": 4, "meal_slots": ["kahvalti"], "courses": ["ana"]}
     )).json()
     assert plan["days"] == 1 and plan["start_date"] == date.today().isoformat()
-    assert [e["recipe"]["slug"] for e in plan["entries"]] in (["menemen"], ["sucuklu-yumurta"], ["kahvalti-tabagi"])
+    breakfast_mains = {
+        r["slug"] for r in (await client.get("/api/recipes", params={"cuisine": "anadolu", "slot": "kahvalti", "course": "ana"})).json()
+    }
+    assert {"menemen", "sucuklu-yumurta", "kahvalti-tabagi"} <= breakfast_mains
+    picked = [e["recipe"]["slug"] for e in plan["entries"]]
+    assert len(picked) == 1 and picked[0] in breakfast_mains  # katalog büyüdü: hepsi aday
     plan = await _set_recipe(client, auth_headers, plan, 0, "menemen")
     lines = {line["name"]: line for line in plan["cost"]["lines"]}
     # 4 kişilik menemen: 8 yumurta -> 15'li 1 koli; 900 g domates -> 1 kg
