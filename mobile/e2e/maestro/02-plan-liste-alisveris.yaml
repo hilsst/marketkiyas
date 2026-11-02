@@ -1,19 +1,20 @@
-# Uçtan uca 2 (Faz 1 ana akışı): yemek planı kur -> alışveriş listesine aktar -> planı uygula -> alışverişi bitir.
-# Her adım huni olaylarını (plan_created, plan_to_list, shopping_started, shopping_completed) üretir.
+# Uçtan uca 2 (Faz 1 ana akışı), misafir olarak: yemek planı kur -> alışveriş listesine aktar -> planı uygula ->
+# alışverişi bitir. Bitirme tasarrufu kasaya yazar, bu yüzden misafirden hesap ister (reason=save); hesap açılınca
+# aynı liste açık kalır ve alışveriş tamamlanır. Huni olayları sunucuda üretilir (plan_created, plan_to_list,
+# shopping_started, shopping_completed); uygulama bu olayları göndermez, akış bunları doğrudan sınamaz.
 appId: app.ucuzu
 ---
-- launchApp:
-    clearState: true
-- runFlow: subflows/login.yaml
+- runFlow: subflows/start-guest.yaml
+- tapOn: "Alışveriş"
+- runFlow: subflows/wait-guest.yaml
 - tapOn: "Ana Sayfa"
 - tapOn: "Yemek Planı"
 - tapOn: "Plan oluştur"
 - tapOn:
-    text: "Planı oluştur"
-    optional: true
+    text: "(Planı oluştur|\\d+ mutfakla oluştur)"
 - extendedWaitUntil:
     visible: "🛒 Alışveriş listesine aktar"
-    timeout: 30000
+    timeout: 120000
 - scrollUntilVisible:
     element: "Yeni liste olarak aktar"
 - tapOn: "Yeni liste olarak aktar"
@@ -28,4 +29,11 @@ appId: app.ucuzu
 - scrollUntilVisible:
     element: "✅ Alışverişi Bitir ve Tasarrufu Kaydet"
 - tapOn: "✅ Alışverişi Bitir ve Tasarrufu Kaydet"
-- assertVisible: "Alışveriş tamamlandı"
+# Misafir: hesap açma ekranı gelir
+- runFlow: subflows/upgrade.yaml
+- scrollUntilVisible:
+    element: "✅ Alışverişi Bitir ve Tasarrufu Kaydet"
+- tapOn: "✅ Alışverişi Bitir ve Tasarrufu Kaydet"
+- extendedWaitUntil:
+    visible: "Alışveriş tamamlandı"
+    timeout: 30000

@@ -1,0 +1,25 @@
+# Uçtan uca 3: ilk açılış misafir. Giriş/üye ol ekranı yok, uygulama doğrudan açılır, misafir uygulama kapatılıp
+# açılınca aynı cihazda kalır (token SecureStore'da).
+appId: app.ucuzu
+---
+- runFlow: subflows/start-guest.yaml
+- assertNotVisible: "Giriş yap / Üye ol"
+- tapOn: "Alışveriş"
+- assertVisible: "Ana Sayfa"
+- runFlow: subflows/wait-guest.yaml
+- assertVisible: "Hesapsız kullanıyorsun.*"
+- assertVisible: "Hesap aç"
+# Misafirde "Çıkış yap" yok
+- assertNotVisible: "Çıkış yap"
+# Listeler sekmesi giriş istemez
+- tapOn: "Listeler"
+- assertNotVisible: "Giriş yap / Üye ol"
+# Kapat-aç: temizlemeden başlat, yine misafir (yeni hesap açılmaz, token korunur)
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Bugün ne yapmak istersin?"
+    timeout: 60000
+- tapOn: "Alışveriş"
+- runFlow: subflows/wait-guest.yaml
+- assertNotVisible: "Giriş yap / Üye ol"
