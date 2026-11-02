@@ -5,8 +5,8 @@ doğruluk ölçümü. Eski 202'lik küme (`../ingredient_match_set.json`, %97,5)
 için bir "ayar kümesi"dir; bu küme onun yerine genelleme ölçümüdür.
 
 ## Veri
-- Kaynak: marketfiyati.org.tr `/api/v2/search` ham yanıtları (Kemal'in PC'sinden, 2026-11-02, Ankara şubeleri, 58 sorgu
-  × 2 sayfa × 25). Hiçbir ürün adı uydurulmadı. BİM'de 472, A101'de 562 benzersiz ürün çıktı; bunlardan 639'u aday oldu.
+- Kaynak: marketfiyati.org.tr `/api/v2/search` ham yanıtları (Kemal'in PC'sinden, 2026-11-02, Ankara şubeleri, 59 sorgu
+  × 2 sayfa × 25). Hiçbir ürün adı uydurulmadı. BİM için 472, A101 için 562 (ürün, sorgu) çifti çıktı; bunlardan 639 benzersiz ürün aday oldu.
 - `products.json`: aday ürünler (`id`, `title`, `stores`, `menu_category`, `main_category`, `quantity`).
 - `labels.json`: 52 malzeme (arama ifadeleri/elenecek kelimeler `alembic/recipe_data/vocab.py`'den aynen). Malzeme başına
   mağaza başına 8 hash-örneklenmiş sonuç + 2 başka sorgudan "kolay negatif". 811 aday satırı: 312 uygun, 450 uygun değil,
