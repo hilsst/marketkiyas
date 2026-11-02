@@ -24,13 +24,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.services.ingredient_match import accepts, grocery_like, name_matches, unit_compatible  # noqa: E402
 from app.services.normalize import normalize_text, parse_quantity  # noqa: E402
 
-DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "matcher_eval"
+FIX = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
+SETS = {"1": FIX / "matcher_eval", "2": FIX / "matcher_eval_2"}  # 2 = taze holdout (ikinci küme; tüm kayıtlar holdout)
+DIR = SETS["1"]
 NON_FOOD_MENUS = {"Temizlik Ürünleri", "Kişisel Bakım"}
 
 
-def load():
-    labels = json.loads((DIR / "labels.json").read_text())
-    products = {p["id"]: p for p in json.loads((DIR / "products.json").read_text())}
+def load(set_id: str = "1"):
+    d = SETS[set_id]
+    labels = json.loads((d / "labels.json").read_text())
+    products = {p["id"]: p for p in json.loads((d / "products.json").read_text())}
     return labels, products
 
 
@@ -58,8 +61,8 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return (max(0.0, c - h), min(1.0, c + h))
 
 
-def evaluate(split: str = "dev", mode: str = "ad") -> dict:
-    labels, products = load()
+def evaluate(split: str = "dev", mode: str = "ad", set_id: str = "1") -> dict:
+    labels, products = load(set_id)
     result = {}
     for store in ("bim", "a101", "all"):
         ing_pass = ing_total = tp = fp = fn = tn = 0
@@ -103,12 +106,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", default="dev", choices=["dev", "holdout", "all"])
     ap.add_argument("--mode", default="ad", choices=["ad", "kategori"])
+    ap.add_argument("--set", default="1", choices=list(SETS), dest="set_id", help="1: ilk küme, 2: taze holdout")
     ap.add_argument("--errors", action="store_true")
     a = ap.parse_args()
     sha = subprocess.run(["git", "log", "-1", "--format=%h", "--", "app/services/ingredient_match.py"],
-                         capture_output=True, text=True, cwd=DIR.parent.parent.parent).stdout.strip()
-    print(f"eşleştirici sürümü (son değiştiren commit): {sha}  bölüm={a.split}  mod={a.mode}")
-    res = evaluate(a.split, a.mode)
+                         capture_output=True, text=True, cwd=FIX.parent.parent).stdout.strip()
+    print(f"eşleştirici sürümü (son değiştiren commit): {sha}  küme={a.set_id}  bölüm={a.split}  mod={a.mode}")
+    res = evaluate(a.split, a.mode, a.set_id)
     for store, r in res.items():
         lo, hi = r["ingredient_ci95"]
         print(f"[{store}] malzeme={r['ingredients']} doğruluk={_fmt(r['ingredient_accuracy'])} (%95 GA {lo:.0%}-{hi:.0%}) "
