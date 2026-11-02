@@ -66,7 +66,7 @@ from app.schemas.meals import (
 )
 from app.schemas.products import GroupSummary
 from app.services import lists as list_svc
-from app.services.catalog import search_groups
+from app.services.catalog import search_groups, search_groups_many
 from app.services.ingredient_match import name_matches
 from app.services.normalize import normalize_text
 
@@ -368,8 +368,11 @@ async def _groups_for(
     key = (term, need.excludes, need.categories, user_id)
     if cache is not None and key in cache:
         return cache[key]
+    found = cache.get(("raw", term, user_id)) if cache is not None else None
+    if found is None:
+        found = await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id)
     groups = [
-        g for g in await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id)
+        g for g in found
         if _category_ok(g, need, categories) and name_matches(term, g.name, need.excludes)
     ]
     if cache is not None:
@@ -441,7 +444,23 @@ async def compute_cost(
     stock = dict(stock or {})
     if categories is None:
         categories = await _category_ids(db)
-    for need in _collect_needs(uses):
+    all_needs = _collect_needs(uses)
+    if cache is None:
+        cache = {}
+    # Aramalar tek seferde yüklenir: malzeme başına 5 sorgu yerine toplam birkaç sorgu (okuma yolunu hızlandırır)
+    terms = [
+        t
+        for n in all_needs
+        if (include_pantry or not n.is_pantry)
+        and not (have and n.names & have)
+        and n.quantity > stock.get((n.key, n.unit), Decimal(0))
+        for t in (x.strip() for x in n.search_term.split("|"))
+        if t and ("raw", t, user_id) not in cache
+    ]
+    if terms:
+        for t, groups in (await search_groups_many(db, terms, MATCH_CANDIDATES, user_id)).items():
+            cache[("raw", t, user_id)] = groups
+    for need in all_needs:
         if need.is_pantry and not include_pantry:
             pantry.append(need.name)
             continue
