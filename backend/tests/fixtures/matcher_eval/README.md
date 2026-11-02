@@ -5,8 +5,8 @@ doğruluk ölçümü. Eski 202'lik küme (`../ingredient_match_set.json`, %97,5)
 için bir "ayar kümesi"dir; bu küme onun yerine genelleme ölçümüdür.
 
 ## Veri
-- Kaynak: marketfiyati.org.tr `/api/v2/search` ham yanıtları (Kemal'in PC'sinden, 2026-11-02, Ankara şubeleri, 59 sorgu
-  × 2 sayfa × 25). Hiçbir ürün adı uydurulmadı. BİM için 472, A101 için 562 (ürün, sorgu) çifti çıktı; bunlardan 639 benzersiz ürün aday oldu.
+- Kaynak: marketfiyati.org.tr `/api/v2/search` ham yanıtları (Kemal'in PC'sinden, 2026-11-02, Ankara şubeleri, 60 sorgu
+  × 2 sayfa × 25). Hiçbir ürün adı uydurulmadı; ham dosyalar repoda değil, `raw_manifest.json` her birinin SHA-256'sını tutar (izlenebilirlik), `products.json` ve `labels.json` testte SHA ile sabitlenir. BİM için 472, A101 için 562 (ürün, sorgu) çifti çıktı; bunlardan 639 benzersiz ürün aday oldu.
 - `products.json`: aday ürünler (`id`, `title`, `stores`, `menu_category`, `main_category`, `quantity`).
 - `labels.json`: 52 malzeme (arama ifadeleri/elenecek kelimeler `alembic/recipe_data/vocab.py`'den aynen). Malzeme başına
   mağaza başına 8 hash-örneklenmiş sonuç + 2 başka sorgudan "kolay negatif". 811 aday satırı: 312 uygun, 450 uygun değil,
@@ -15,7 +15,7 @@ için bir "ayar kümesi"dir; bu küme onun yerine genelleme ölçümüdür.
   (`labels.json` SHA-256 `3201c130…`, `tests/test_matcher_eval.py` sabitler). Etiketleri tek kişi (Claude) verdi; Kemal'in
   ~%10 örnek kontrolü yapılmadı — bu bir sınırlama.
 - Bölme: arama ifadesinin hash'ine göre `dev` 36 / `holdout` 16 malzeme. Holdout ayar sırasında hiç çalıştırılmadı;
-  **tek bir kez** ölçüldü (aşağıda). Dev üzerinde hatalara bakıldı.
+  ayar yapılmadan, her mod için bir kez ölçüldü (ad modu, kategori modu ve `--split all` satırı; arada hiçbir değişiklik yok). Hata listelerine (`--errors`) holdout ölçümünden SONRA bakıldı. Dev üzerinde hatalara bakıldı.
 
 ## Sonuçlar (eşleştirici commit `e346399`, değişiklik yapılmadı)
 Malzeme doğruluğu = eski testle aynı tanım (yanlış kabul yok ve uygun ürün varsa ≥1'i kabul edildi). %95 Wilson aralığı.
@@ -33,10 +33,10 @@ Malzeme doğruluğu = eski testle aynı tanım (yanlış kabul yok ve uygun ür�
 | tümü | birleşik | 52 | **%80,8 (68–89)** | %94,2 | %93,6 |
 
 Okuma: bağımsız doğruluk ~%81 (güven aralığı geniş: ±~10 puan), eski "ayar kümesi" %97,5'inden belirgin düşük,
-eski ayarlanmamış kısmın ~%85'iyle uyumlu. Mağaza farkı (BİM %85 vs A101 %81) istatistiksel olarak ayırt edilemez.
+eski kümenin ayarlanmamış kısmı için kaydedilen ~%85 (o testin açıklamasındaki not, burada yeniden doğrulanmadı) ile aynı düzeyde. Mağaza farkı (BİM %85 vs A101 %81) istatistiksel olarak ayırt edilemez.
 Kategori modu (temizlik/kişisel bakım menü kategorisi + `grocery_like(category_known=True)`) bu kümede ad modundan
 **farksız** çıktı: hataların hiçbiri temizlik ürünü değil. Not: kategori modu üretimdeki `meals._groups_for`'un yaklaşığıdır
-(malzemenin kendi kategori listesi marketfiyati kategorilerine eşlenemediği için uygulanmadı). Kapsam: aday havuzu API'nin
+(malzemenin kendi kategori listesi marketfiyati kategorilerine eşlenemediği için uygulanmadı). Not: bir mağazada hiç uygun ürünü olmayan malzemeler (ör. BİM dev'de 7, tüm holdout'ta `ispanak`) yalnızca yanlış kabulle başarısız olabilir; bu tanım eski testle aynıdır ama mağaza bazlı doğruluğu şişirir. Kapsam: aday havuzu API'nin
 kendi arama sonuçlarıdır; arama dışında kalan ürünler için duyarlılık ölçülmedi.
 
 ## Ana hata kategorileri (52 malzeme; yanlış kabul = FA, uygun ürünü reddetme = FN)
@@ -59,7 +59,7 @@ kendi arama sonuçlarıdır; arama dışında kalan ürünler için duyarlılık
 4. Ürün adında `margarin` varsa, arama ifadesi `margarin` içermiyorsa reddet.
 5. Aroma sıfatları (`limonlu`, `mango`…) ve `cin` için engel: kanıt tek malzemede 3 ürün; şimdilik gözlem.
 
-**Uyarı:** 2–4 numaralı öneriler holdout hatalarına bakılarak çıkarıldı. Bunlardan herhangi biri uygulanırsa holdout
+**Uyarı:** 2–4 numaralı öneriler holdout hatalarına (ölçümden sonra açılan `--errors` çıktısına) bakılarak çıkarıldı; yukarıdaki hata kategorisi tablosu da holdout vakalarını içerir. Bunlardan herhangi biri uygulanırsa holdout
 artık bağımsız bir ölçüm olmaktan çıkar; yeni sayı için yeni aday havuzu (başka malzemeler/başka sorgular) gerekir.
 Kümenin yalnızca 36+16 malzemesi var; tek bir malzemeye dayanan düzeltmelere güvenilmemeli.
 
