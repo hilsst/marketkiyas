@@ -3,9 +3,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.api.deps import DbSession, OptionalUser
-from app.schemas.products import BarcodeResult, DealOut, GroupDetail, GroupSummary
-from app.services import barcode, catalog, similar
+from app.api.deps import CurrentUser, DbSession, OptionalUser
+from app.schemas.products import (
+    BarcodeResult,
+    DealOut,
+    GroupDetail,
+    GroupSummary,
+    PriceReportCreate,
+    PriceReportOut,
+)
+from app.services import barcode, catalog, reports, similar
 from app.services.marketfiyati.client import MarketFiyatiClient, MarketFiyatiError
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -99,3 +106,9 @@ async def get_product_group(group_id: int, db: DbSession, user: OptionalUser) ->
     if detail is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ürün grubu bulunamadı")
     return detail
+
+
+@router.post("/{group_id}/price-reports", response_model=PriceReportOut, status_code=status.HTTP_201_CREATED)
+async def report_wrong_price(group_id: int, body: PriceReportCreate, user: CurrentUser, db: DbSession) -> PriceReportOut:
+    """"Bu fiyat yanlış": kullanıcı rafta/kasada farklı fiyat gördü. Misafir de bildirebilir; günde 20."""
+    return await reports.report_price(db, user, group_id, body)

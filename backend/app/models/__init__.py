@@ -21,6 +21,7 @@ from app.models.meals import (
     RecipeLike,
 )
 from app.models.matching import GroupMember, ProductGroup
+from app.models.reports import PriceReport
 from app.models.savings import SavingsRecord
 from app.models.stores import Store, StorePrice, UserStore
 from app.models.shopping import ListMember, ShoppingList, ShoppingListItem
@@ -53,6 +54,7 @@ __all__ = [
     "PlanType",
     "PriceAlert",
     "PriceHistory",
+    "PriceReport",
     "Product",
     "ProductGroup",
     "SavingsRecord",

@@ -16,7 +16,7 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${devHost}:300
 export type Money = string; // sunucu Decimal'leri metin gönderir: "32.50"
 export type Unit = 'ml' | 'g' | 'adet';
 
-export interface User { id: number; email: string; full_name: string | null; has_password: boolean; }
+export interface User { id: number; email: string | null; full_name: string | null; has_password: boolean; is_guest: boolean; }
 export interface AuthResponse { access_token: string; token_type: string; expires_in: number; user: User; }
 export interface Market { id: number; slug: string; name: string; color: string | null; logo_url: string | null; }
 export interface Category { id: number; slug: string; name: string; icon: string | null; parent_id: number | null; }
@@ -30,7 +30,7 @@ export interface PricePoint { price: Money; recorded_at: string; }
 export interface GroupProduct {
   id: number; name: string; brand: string | null; market_id: number; price: Money | null; regular_price: Money | null;
   store_id: number | null; store_name: string | null; is_available: boolean; image_url: string | null;
-  price_history: PricePoint[]; store_prices: { store_id: number; store_name: string; price: Money; updated_at: string | null }[];
+  price_history: PricePoint[]; price_updated_at: string | null; store_prices: { store_id: number; store_name: string; price: Money; updated_at: string | null }[];
 }
 export interface GroupDetail extends GroupSummary { products: GroupProduct[]; }
 export type PlanType = 'single_market' | 'combination' | 'opportunist';
@@ -171,8 +171,16 @@ export interface MealPlanDetail extends MealPlanSummary {
 export interface MealPlanCreate {
   period: PlanPeriod; cuisines?: string[]; servings: number; meal_slots: MealSlot[]; courses: CourseType[]; start_date?: string | null; name?: string | null;
   diets?: Diet[]; avoid_allergens?: Allergen[];
+  /** indirimden menü: bu malzemeleri kullanan tarifler öne çıkar */ prefer?: string[];
   days?: number; weekdays?: number[]; budget?: number | null; leftovers?: boolean; low_waste?: boolean; have?: string[];
 }
+/** İndirimden menü: indirimdeki bir tarif malzemesi ve en iyi fırsatı */
+export interface DealIngredient {
+  name: string; recipe_count: number; source: 'deal' | 'aktuel'; product_name: string; group_id: number | null;
+  market_id: number | null; market_slug: string | null; image_url: string | null; price: Money; previous_price: Money | null;
+  discount_percent: number;
+}
+export interface PriceReportResult { id: number; shown_price: Money | null; reported_price: Money | null; detail: string; }
 export interface StockUse { name: string; quantity: Money; unit: Unit; }
 /** Dolabım: alınan paketlerden artanlar; expires_on boş = bozulmaz */
 export interface PantryItem { id: number; name: string; /** boş = miktar belirtilmedi */ quantity: Money | null; unit: Unit; expires_on: string | null; }
@@ -223,7 +231,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   } catch {
     throw new ApiError('Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.', 0);
   }
-  if (res.status === 401 && token) onUnauthorized?.();
+  // Giriş/üyelik uçlarındaki 401 "şifre yanlış" demektir; oturumu (misafirin verisini) düşürmemeli
+  if (res.status === 401 && token && !path.startsWith('/auth/')) onUnauthorized?.();
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     const detail = data?.detail;
@@ -244,22 +253,12 @@ export function formatSize(quantity: Money | null, unit: Unit | null): string {
   return `${fmt(q)} adet`;
 }
 
-/** Fiyatın kaynakta güncellenme zamanı: "bugün 09:15", "dün 18:40", "3 gün önce". */
-export function updatedLabel(iso: string | null | undefined, now = new Date()): string | null {
-  if (!iso) return null;
-  const at = new Date(iso);
-  if (isNaN(at.getTime())) return null;
-  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const days = Math.round((day(now) - day(at)) / 86400000);
-  const time = at.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-  if (days <= 0) return 'bugün ' + time;
-  if (days === 1) return 'dün ' + time;
-  return days + ' gün önce';
-}
-
 export const api = {
   register: (email: string, password: string, full_name?: string) =>
     request<AuthResponse>('POST', '/auth/register', { email, password, full_name: full_name || null }),
+  guest: () => request<AuthResponse>('POST', '/auth/guest'),
+  upgrade: (email: string, password: string, full_name?: string) =>
+    request<AuthResponse>('POST', '/auth/upgrade', { email, password, full_name: full_name || null }),
   login: (email: string, password: string) => request<AuthResponse>('POST', '/auth/login', { email, password }),
   me: () => request<User>('GET', '/auth/me'),
   requestPasswordReset: (email: string) => request<{ detail: string }>('POST', '/auth/password-reset/request', { email }),
@@ -295,6 +294,9 @@ export const api = {
   productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
   // Muadiller, seçili şubelere göre (şube seçilmemişse boş)
   similarGroups: (id: number) => request<GroupSummary[]>('GET', '/products/' + id + '/similar'),
+  reportPrice: (groupId: number, body: { product_id: number; store_id?: number | null; reported_price?: number | null; note?: string | null }) =>
+    request<PriceReportResult>('POST', `/products/${groupId}/price-reports`, body),
+  dealIngredients: () => request<DealIngredient[]>('GET', '/deal-menu/ingredients'),
   deals: () => request<Deal[]>('GET', '/products/deals'),
   aktuel: (market?: string | null) => request<AktuelResponse>('GET', '/aktuel' + qs({ market })),
   myStores: () => request<Store[]>('GET', '/me/stores'),

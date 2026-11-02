@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -8,6 +8,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { screenName, startAnalytics, track } from '@/lib/analytics';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { CatalogProvider } from '@/lib/catalog';
+import { listenWeeklyTaps } from '@/lib/weekly';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -58,6 +59,9 @@ function RootLayoutNav() {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
+  // Gezgin hazır olunca bağlanır: bildirime dokunarak soğuk açılışta da planlayıcı açılır
+  useEffect(() => (ready ? listenWeeklyTaps(url => router.push(url as '/meals')) : undefined), [ready]);
+
   if (!ready) return null;
 
   return (
@@ -75,6 +79,7 @@ function RootLayoutNav() {
         <Stack.Screen name="welcome" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="meals/index" options={{ title: 'Yemek Planı' }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Yemek Planı' }} />
+        <Stack.Screen name="meals/deals" options={{ title: 'İndirimden menü' }} />
         <Stack.Screen name="meals/pantry" options={{ title: 'Dolabım' }} />
         <Stack.Screen name="recipe/[id]" options={{ title: 'Tarif' }} />
         <Stack.Screen name="cook/[id]" options={{ title: 'Pişirme modu' }} />

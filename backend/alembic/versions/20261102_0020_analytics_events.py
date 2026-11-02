@@ -1,7 +1,7 @@
 """analytics_events: funnel measurement (plan -> list -> shopping, week-4 return)
 
-Revision ID: 0019
-Revises: 0018
+Revision ID: 0020
+Revises: 0019
 Create Date: 2026-11-02 13:00:00
 
 """
@@ -12,8 +12,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 
-revision: str = '0019'
-down_revision: str | None = '0018'
+revision: str = '0020'
+down_revision: str | None = '0019'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

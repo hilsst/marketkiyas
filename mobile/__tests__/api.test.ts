@@ -1,4 +1,4 @@
-import { api, ApiError, formatSize, num, setApiToken, setUnauthorizedHandler, updatedLabel } from '@/lib/api';
+import { api, ApiError, formatSize, num, setApiToken, setUnauthorizedHandler } from '@/lib/api';
 import { newDeviceId, setDeviceId } from '@/lib/device';
 
 jest.mock('expo-secure-store', () => ({ getItemAsync: jest.fn(), setItemAsync: jest.fn(), deleteItemAsync: jest.fn() }));
@@ -41,7 +41,7 @@ test('401 ve oturum açıkken çıkış işleyicisi çağrılır', async () => {
   setUnauthorizedHandler(onOut);
   setApiToken('eski');
   jest.spyOn(globalThis, 'fetch').mockReturnValue(ok({ detail: 'Oturum geçersiz' }, 401));
-  await expect(api.me()).rejects.toBeInstanceOf(ApiError);
+  await expect(api.lists()).rejects.toBeInstanceOf(ApiError);
   expect(onOut).toHaveBeenCalledTimes(1);
   setUnauthorizedHandler(null);
 });
@@ -54,15 +54,6 @@ test('boyut ve fiyat yardımcıları', () => {
   expect(formatSize(null, null)).toBe('');
   expect(num('32.50')).toBe(32.5);
   expect(num(null)).toBe(0);
-});
-
-test('fiyat güncellenme etiketi', () => {
-  const now = new Date(2026, 10, 2, 12, 0);
-  expect(updatedLabel(new Date(2026, 10, 2, 9, 15).toISOString(), now)).toMatch(/^bugün /);
-  expect(updatedLabel(new Date(2026, 10, 1, 18, 40).toISOString(), now)).toMatch(/^dün /);
-  expect(updatedLabel(new Date(2026, 9, 30, 8, 0).toISOString(), now)).toBe('3 gün önce');
-  expect(updatedLabel(null, now)).toBeNull();
-  expect(updatedLabel('bozuk', now)).toBeNull();
 });
 
 test('cihaz kimliği sunucunun kabul ettiği biçimde', () => {

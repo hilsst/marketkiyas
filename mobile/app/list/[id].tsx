@@ -9,6 +9,7 @@ import { Button, Card, Muted, Screen, useTheme } from '@/components/ui';
 import { api, CompleteResponse, ItemPatch, ListDetail, ListItem, num, OptimizeResult, Plan, PlanType } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
+import { accountRedirect } from '@/lib/guest';
 
 type Tab = 'items' | 'optimize';
 const SYNC_MS = 8000; // ortak listede diğer üyelerin değişiklikleri bu aralıkla çekilir
@@ -101,8 +102,11 @@ export default function ListScreen() {
   const completed = list.status === 'completed';
   const itemById = new Map(list.items.map(i => [i.id, i]));
 
+  // Alışverişi bitirmek tasarrufu kasaya kaydeder: misafirden hesap istenen an (liste ve ürünler olduğu gibi kalır)
   const finish = async () => {
     if (finishing) return;
+    const toAccount = accountRedirect(user, 'save');
+    if (toAccount) { router.push(toAccount); return; }
     setFinishing(true);
     try { setCelebration(await api.complete(list.id)); } catch (e) { setError((e as Error).message); } finally { setFinishing(false); }
   };
@@ -119,6 +123,8 @@ export default function ListScreen() {
   });
   /** Davet kodunu oluşturur ve telefonun paylaş penceresini açar (WhatsApp, SMS…) */
   const shareInvite = async () => {
+    const toAccount = accountRedirect(user, 'share');
+    if (toAccount) { router.push(toAccount); return; }
     try {
       const code = list.share_code || (await api.shareList(list.id)).share_code;
       setDetail({ ...list, share_code: code });

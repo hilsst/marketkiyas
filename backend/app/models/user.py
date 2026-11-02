@@ -15,12 +15,15 @@ class User(TimestampMixin, Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(320), unique=True, index=True)  # misafirde boş
     password_hash: Mapped[str | None] = mapped_column(String(255))  # Google/Apple ile girende boş
     full_name: Mapped[str | None] = mapped_column(String(120))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True)  # Google hesabının kalıcı kimliği
     apple_sub: Mapped[str | None] = mapped_column(String(255), unique=True)
+    # Misafir: uygulama ilk açılışta hesapsız başlar; e-posta yer tutucudur, şifre yoktur. Kaydetme ya da
+    # paylaşma anında /auth/upgrade ile gerçek hesaba dönüşür, verileri (plan, liste, dolap) aynı kalır.
+    is_guest: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     shopping_lists: Mapped[list["ShoppingList"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
