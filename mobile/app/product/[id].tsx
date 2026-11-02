@@ -9,8 +9,10 @@ import ListPicker from '@/components/ListPicker';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Button, Card, Muted, Screen, useTheme } from '@/components/ui';
-import { api, formatSize, GroupDetail, GroupSummary, num, PriceAlert, updatedLabel } from '@/lib/api';
+import { api, formatSize, GroupDetail, GroupSummary, num, PriceAlert } from '@/lib/api';
+import PriceReport from '@/components/PriceReport';
 import { useAuth } from '@/lib/auth';
+import { priceFreshness } from '@/lib/trust';
 import { useCatalog } from '@/lib/catalog';
 
 /**
@@ -32,6 +34,7 @@ export default function ProductScreen() {
   const [alert, setAlert] = useState<PriceAlert | null>(null);
   const [alertSheet, setAlertSheet] = useState(false);
   const [alertNote, setAlertNote] = useState<string | null>(null);
+  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     api.productGroup(Number(id)).then(setGroup).catch(() => setGroup(null));
@@ -53,8 +56,8 @@ export default function ProductScreen() {
   const offers = useMemo(() => (group?.products ?? [])
     .filter(p => p.price != null)
     .flatMap(p => p.store_prices.length
-      ? p.store_prices.map(sp => ({ key: `${p.id}-${sp.store_id}`, product: p, store: sp.store_name as string | null, price: num(sp.price), updated: updatedLabel(sp.updated_at) }))
-      : [{ key: String(p.id), product: p, store: p.store_name, price: num(p.price), updated: null as string | null }])
+      ? p.store_prices.map(sp => ({ key: `${p.id}-${sp.store_id}`, product: p, store: sp.store_name as string | null, storeId: sp.store_id as number | null, price: num(sp.price), fresh: priceFreshness(sp.updated_at) }))
+      : [{ key: String(p.id), product: p, store: p.store_name, storeId: p.store_id, price: num(p.price), fresh: priceFreshness(p.price_updated_at) }])
     .sort((a, b) => a.price - b.price), [group]);
 
   const addTo = async (target: number) => {
@@ -76,6 +79,8 @@ export default function ProductScreen() {
     else router.dismissTo('/');
   };
   const selectedProduct = group?.products.find(p => p.id === selected);
+  // Bildirim, seçili markanın (yoksa en ucuz) fiyatı için
+  const reportOffer = offers.find(o => o.product.id === selected) ?? offers[0];
 
   if (group === undefined) return <Screen safeTop={false}><ActivityIndicator color={t.tint} style={{ marginTop: 40 }} /></Screen>;
   if (group === null) return <Screen safeTop={false}><Muted>Ürün bulunamadı.</Muted></Screen>;
@@ -107,7 +112,11 @@ export default function ProductScreen() {
                 {marketById(o.product.market_id)?.name}{o.store ? ` · ${o.store}` : ''}
               </Text>
               <Muted>{o.product.brand ? `${o.product.brand} · ` : ''}{o.product.name}</Muted>
-              {o.updated && <Text style={{ color: t.textMuted, fontSize: 10 }}>Fiyat {o.updated} güncellendi</Text>}
+              {o.fresh && (
+                <Text style={{ color: o.fresh.stale ? '#b45309' : t.textMuted, fontSize: 10, fontWeight: o.fresh.stale ? '700' : '400' }}>
+                  {o.fresh.stale ? '⚠ ' : ''}Fiyat {o.fresh.label} güncellendi{o.fresh.stale ? ' · kasada değişmiş olabilir' : ''}
+                </Text>
+              )}
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ color: i === 0 ? t.tint : t.text, fontWeight: '800', fontSize: 16 }}>{o.price.toFixed(2)} ₺</Text>
@@ -116,6 +125,15 @@ export default function ProductScreen() {
           </Pressable>
         ))}
         </ScrollView>
+        {reporting && reportOffer && (
+          <PriceReport groupId={group.id} storeId={reportOffer.storeId} shown={reportOffer.price}
+            product={reportOffer.product} onClose={() => setReporting(false)} />
+        )}
+        {!reporting && offers.length > 0 && (
+          <Text onPress={() => setReporting(true)} style={{ color: t.textMuted, fontSize: 12, textAlign: 'center', padding: 10 }}>
+            Kasada farklı mı çıktı? <Text style={{ color: t.tint, fontWeight: '700' }}>Bu fiyat yanlış</Text>
+          </Text>
+        )}
       </Card>
 
       {similar.length > 0 && (

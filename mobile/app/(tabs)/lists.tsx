@@ -6,6 +6,7 @@ import MarketBadge from '@/components/MarketBadge';
 import { Button, Card, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
 import { api, ListSummary, num } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { accountRedirect } from '@/lib/guest';
 import { useCatalog } from '@/lib/catalog';
 
 export default function ListsScreen() {
@@ -28,6 +29,8 @@ export default function ListsScreen() {
   const [code, setCode] = useState('');
   const join = async () => {
     if (!code.trim()) return;
+    const toAccount = accountRedirect(user, 'join');
+    if (toAccount) { router.push(toAccount); return; }
     setBusy(true);
     setError(null);
     try {

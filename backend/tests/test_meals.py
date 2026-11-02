@@ -172,7 +172,8 @@ async def test_weekly_plan_spreads_dishes(client, auth_headers, kitchen):
     # Domates salçası değil, domates seçilir
     assert lines["Domates"]["match"]["name"] == "Domates 1 kg"
     assert D(cost["purchase_total"]) >= D(cost["used_total"]) > 0
-    assert D(cost["per_serving"]) == (D(cost["used_total"]) / 28).quantize(D("0.01"))
+    # used_total yuvarlanmış gösterildiği için kuruş farkı olabilir (rastgele seçilen yemeklere bağlı)
+    assert abs(D(cost["per_serving"]) - D(cost["used_total"]) / 28) <= D("0.01")
 
     summaries = (await client.get("/api/meal-plans", headers=auth_headers)).json()
     assert [s["id"] for s in summaries] == [plan["id"]]

@@ -1,10 +1,13 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Switch, Text, View } from 'react-native';
 
 import FamilySection from '@/components/FamilySection';
 import { Button, Card, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
 import { api, num, SavingsVault } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { accountRedirect } from '@/lib/guest';
+import { disableWeekly, enableWeekly, isWeeklyOn, weeklySupported } from '@/lib/weekly';
 
 export default function ProfileScreen() {
   const t = useTheme();
@@ -15,6 +18,20 @@ export default function ProfileScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [weekly, setWeekly] = useState(false);
+  const [weeklyNote, setWeeklyNote] = useState<string | null>(null);
+  useEffect(() => { void isWeeklyOn().then(setWeekly).catch(() => {}); }, []);
+
+  const toggleWeekly = async (on: boolean) => {
+    setWeeklyNote(null);
+    try {
+      if (on) {
+        const ok = await enableWeekly(null);
+        setWeekly(ok);
+        if (!ok) setWeeklyNote('Bildirim izni verilmedi. Telefon ayarlarından Ucuzu için bildirimi açabilirsin.');
+      } else { await disableWeekly(); setWeekly(false); }
+    } catch (e) { setWeeklyNote((e as Error).message); }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -40,19 +57,38 @@ export default function ProfileScreen() {
       {!user ? <LoginPrompt what="Tasarrufunu ve marketlerini görmek" /> : (
         <>
           <Card style={{ gap: 4 }}>
-            <Text style={{ color: t.text, fontSize: 17, fontWeight: '700' }}>{user.full_name || 'Ucuzu üyesi'}</Text>
-            <Muted>{user.email}</Muted>
+            <Text style={{ color: t.text, fontSize: 17, fontWeight: '700' }}>{user.is_guest ? 'Misafir' : user.full_name || 'Ucuzu üyesi'}</Text>
+            <Muted>{user.is_guest ? 'Hesapsız kullanıyorsun. Planların ve listelerin bu telefonda duruyor.' : user.email}</Muted>
           </Card>
+          {user.is_guest && (
+            <Card style={{ gap: 8, borderColor: t.tint }}>
+              <Text style={{ color: t.text, fontWeight: '700' }}>Ücretsiz hesap aç</Text>
+              <Muted>Planlarını kaydet, listeni paylaş, tasarrufunu her ay gör. Şu anki verilerin olduğu gibi kalır.</Muted>
+              <Button title="Hesap aç" onPress={() => { const to = accountRedirect(user, 'save'); if (to) router.push(to); }} />
+            </Card>
+          )}
           <View style={{ backgroundColor: t.tint, borderRadius: 16, padding: 18, gap: 4 }}>
             <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', opacity: 0.9 }}>TOPLAM TASARRUF</Text>
             <Text style={{ color: '#fff', fontSize: 36, fontWeight: '900' }}>{num(vault?.total_saved).toFixed(2)} ₺</Text>
             <Text style={{ color: '#fff', fontSize: 12, opacity: 0.85 }}>{vault?.record_count ?? 0} alışveriş</Text>
           </View>
-          <FamilySection user={user} />
-          <Button title="Çıkış yap" kind="secondary" onPress={logout} />
+          {weeklySupported && (
+            <Card style={{ gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: t.text, fontWeight: '700' }}>🔔 Haftalık menü bildirimi</Text>
+                  <Muted>{'Her pazar 11:00\'de "Bu haftanın menüsü hazır" der; dokununca planı açar.'}</Muted>
+                </View>
+                <Switch value={weekly} onValueChange={toggleWeekly} />
+              </View>
+              {weeklyNote && <Text style={{ color: t.danger }}>{weeklyNote}</Text>}
+            </Card>
+          )}
+          {!user.is_guest && <FamilySection user={user} />}
+          {!user.is_guest && <Button title="Çıkış yap" kind="secondary" onPress={logout} />}
 
           {!deleting ? (
-            <Text onPress={() => setDeleting(true)} style={{ color: t.danger, textAlign: 'center', padding: 8 }}>Hesabımı sil</Text>
+            <Text onPress={() => setDeleting(true)} style={{ color: t.danger, textAlign: 'center', padding: 8 }}>{user.is_guest ? 'Verilerimi sil' : 'Hesabımı sil'}</Text>
           ) : (
             <Card style={{ gap: 10, borderColor: t.danger }}>
               <Text style={{ color: t.danger, fontWeight: '700' }}>Hesabın kalıcı olarak silinecek</Text>

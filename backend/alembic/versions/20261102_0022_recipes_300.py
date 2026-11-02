@@ -7,8 +7,8 @@ malzemelerden hesaplanır. Veri bu göçe aittir: yayımlandıktan sonra değiş
   (pirinç pilavı, bulgur pilavı...) ve ayran/şalgama yeni ana yemekler eklenir.
 - Mevcut bazı tariflere "ramazan" etiketi verilir.
 
-Revision ID: 0020
-Revises: 0019
+Revision ID: 0022
+Revises: 0021
 Create Date: 2026-11-02 13:30:00
 
 """
@@ -25,8 +25,8 @@ from recipe_data.turk_ana import ANA  # noqa: E402
 from recipe_data.turk_ek import EK  # noqa: E402
 from recipe_data.world import ASYA, ITALYAN, MEKSIKA  # noqa: E402
 
-revision: str = '0020'
-down_revision: str | None = '0019'
+revision: str = '0022'
+down_revision: str | None = '0021'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

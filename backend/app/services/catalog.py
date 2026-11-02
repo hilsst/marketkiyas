@@ -213,11 +213,20 @@ async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None 
             image_url=p.image_url,
             price_history=history[p.id],
             store_prices=store_prices[p.id],
+            price_updated_at=_updated_at(p, store_prices[p.id], history[p.id]),
         )
         for p in products
     ]
     rows.sort(key=lambda r: (r.price is None, r.price or 0, r.id))
     return GroupDetail(**group_summary(group, resolver, campaigns).model_dump(), products=rows)
+
+
+def _updated_at(product: Product, stores: list[ProductStorePrice], history: list[PricePoint]) -> datetime | None:
+    """Şube fiyatı varsa en yeni şube güncellemesi, yoksa ürünün kaynakta son görülmesi ya da son fiyat kaydı."""
+    stamps = [sp.updated_at for sp in stores if sp.updated_at]
+    if stamps:
+        return max(stamps)
+    return product.last_seen_at or (history[-1].recorded_at if history else None)
 
 
 DEAL_WINDOW = timedelta(days=30)

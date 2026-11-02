@@ -24,7 +24,7 @@ CODE_LENGTH = 8
 
 
 def _name(user: User) -> str:
-    return user.full_name or user.email.split("@")[0]
+    return user.full_name or (user.email or "Misafir").split("@")[0]
 
 
 async def _family_of(db: AsyncSession, user: User) -> Family | None:
@@ -57,7 +57,7 @@ def _ensure_room(family: Family) -> None:
 async def my_family(db: AsyncSession, user: User) -> MyFamilyOut:
     family = await _family_of(db, user)
     invites = []
-    if family is None:
+    if family is None and user.email:
         rows = await db.scalars(
             select(FamilyInvite)
             .where(func.lower(FamilyInvite.email) == user.email.lower(), FamilyInvite.accepted_at.is_(None))

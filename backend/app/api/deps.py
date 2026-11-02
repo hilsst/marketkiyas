@@ -35,6 +35,16 @@ async def get_current_user(db: DbSession, token: Annotated[str, Depends(oauth2_s
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
+async def get_account_user(user: CurrentUser) -> User:
+    """Paylaşma ve aile gibi başka kişilere açılan işlemler gerçek hesap ister (misafir olmaz)."""
+    if user.is_guest:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Bunun için ücretsiz hesap açmalısın")
+    return user
+
+
+AccountUser = Annotated[User, Depends(get_account_user)]
+
+
 async def get_optional_user(
     db: DbSession, token: Annotated[str | None, Depends(optional_oauth2_scheme)]
 ) -> User | None:

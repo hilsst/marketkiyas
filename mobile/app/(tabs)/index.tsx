@@ -25,7 +25,7 @@ const QUICK = [
 
 /**
  * Ana sayfa, Kemal'in sırasıyla: arama, bu ayki tasarruf, hızlı erişim, kategoriler, fırsat ürünleri (yatay),
- * aktüel ürünler (yatay), yakındaki marketler. Reklam yerleri: üst barın altı ve kategorilerin bitimi.
+ * aktüel ürünler (yatay), yakındaki marketler. Tek reklam yeri: üst barın altı (ürün listelerinde ayrıca her 8 üründe bir).
  */
 // Karşılama ekranı uygulama her açıldığında bir kez gösterilir
 let welcomed = false;
@@ -141,6 +141,18 @@ export default function HomeScreen() {
         </Pressable>
       )}
 
+      {/* İndirimden menü: haftalık geri dönüş sebebi */}
+      <Pressable onPress={() => router.push('/meals/deals')}>
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Text style={{ fontSize: 28 }}>🏷️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: t.text, fontWeight: '700' }}>İndirimden menü</Text>
+            <Muted>Bu hafta indirimdeki malzemelerle menü kur.</Muted>
+          </View>
+          <Text style={{ color: t.tint, fontWeight: '700' }}>Kur ›</Text>
+        </Card>
+      </Pressable>
+
       {/* 3) Hızlı erişim */}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {QUICK.map(q => (
@@ -168,8 +180,6 @@ export default function HomeScreen() {
           ))}
         </View>
       </View>
-
-      <AdSlot placement="home-categories" />
 
       {/* 5) Fırsat / popüler ürünler (yatay) */}
       {showcase && showcase.items.length > 0 && (

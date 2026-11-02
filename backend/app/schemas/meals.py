@@ -125,6 +125,22 @@ class RecipeDetail(RecipeSummary):
 MAX_DAYS = 14
 
 
+class DealIngredientOut(BaseModel):
+    """İndirimden menü: indirimdeki bir tarif malzemesi ve onun en iyi fırsatı."""
+
+    name: str  # malzeme adı: "Tavuk göğsü"
+    recipe_count: int  # bu malzemeyi kullanan tarif sayısı
+    source: Literal["deal", "aktuel"]  # fırsat (katalog) ya da aktüel broşür
+    product_name: str
+    group_id: int | None  # fırsatsa ürün sayfası
+    market_id: int | None
+    market_slug: str | None  # aktüelse
+    image_url: str | None
+    price: Decimal
+    previous_price: Decimal | None
+    discount_percent: int
+
+
 class MealPlanCreate(BaseModel):
     period: PlanPeriod = PlanPeriod.WEEKLY
     # Plan kaç gün (1-14); boşsa period'dan (günlük 1, haftalık 7)
@@ -137,6 +153,8 @@ class MealPlanCreate(BaseModel):
     low_waste: bool = False  # malzemesi ortak tarifler
     from_deals: bool = False  # indirimden menü: şu an indirimde olan malzemeleri kullanan tarifler öne çıkar
     have: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(default_factory=list, max_length=60)  # dolabımda olanlar (malzeme adları)
+    # İndirimden menü: bu malzemeleri kullanan tarifler öne çıkar (maliyete normal girer)
+    prefer: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(default_factory=list, max_length=60)
     cuisine: str | None = Field(default=None, max_length=32)  # eski istemciler: tek mutfak
     # Bu plan için seçilen mutfaklar (Türk, İtalyan, Uzak Doğu...); her öğün birinden gelir.
     # İkisi de boşsa varsayılan mutfak (Türk).

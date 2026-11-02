@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -15,6 +16,16 @@ def verify_password(password: str, password_hash: str) -> bool:
         return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
     except ValueError:
         return False
+
+
+# bcrypt ~0,3 sn sürer ve işlemciyi tutar; olay döngüsünde çalışırsa o sırada gelen bütün istekler bekler
+# (yük testinde kayıt dalgası, okuma uçlarını saniyelere çıkardı). Uç fonksiyonları bunları kullanır.
+async def hash_password_async(password: str) -> str:
+    return await asyncio.to_thread(hash_password, password)
+
+
+async def verify_password_async(password: str, password_hash: str) -> bool:
+    return await asyncio.to_thread(verify_password, password, password_hash)
 
 
 def create_access_token(subject: str | int, expires_minutes: int | None = None) -> str:

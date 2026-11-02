@@ -746,7 +746,7 @@ async def create_plan(
     diets: list[Diet] | None = None, avoid: list[Allergen] | None = None, rng: random.Random | None = None,
     days: int | None = None, weekdays: list[int] | None = None, budget: Decimal | None = None,
     leftovers: bool = False, low_waste: bool = False, have: list[str] | None = None,
-    from_deals: bool = False,
+    from_deals: bool = False, prefer: list[str] | None = None,
 ) -> tuple[MealPlan, int]:
     """Planı oluşturur; (plan, bütçe için değiştirilen yemek sayısı) döner."""
     rng = rng or random.Random()
@@ -782,12 +782,19 @@ async def create_plan(
         prices = {r.id: await _estimate(db, r, servings, user.id, have_names, cache, categories) for r in recipes}
     await remember_have(db, user, have_names)
     stock = await load_stock(db, user.id)
+    # İndirimden menü: seçilen malzemeler (prefer) dolaptakiler gibi öne çıkar; from_deals ise katalogda indirimde
+    # olan bütün malzemeler küçük bir ağırlıkla (deal_terms) öne çıkar
+    prefer_names = have_set(prefer or [])
+    prefer_terms = {
+        normalize_text(i.search_term) for r in recipes for i in r.ingredients
+        if not i.is_pantry and normalize_text(i.name) in prefer_names
+    }
     deal_terms: set[str] = set()
     if from_deals:
         from app.services import deals_menu  # döngüsel içe aktarmayı önler
 
         deal_terms = await deals_menu.deal_terms(db, user.id, recipes)
-    prefs = _Prefs(recipes, low_waste, have_names, prices, {key for key, _ in stock}, deal_terms)
+    prefs = _Prefs(recipes, low_waste, have_names, prices, {key for key, _ in stock} | prefer_terms, deal_terms)
     by_id = {r.id: r for r in recipes}
 
     plan = MealPlan(

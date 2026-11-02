@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.enums import Unit
 
@@ -53,6 +53,8 @@ class GroupProduct(BaseModel):
     is_available: bool  # kullanıcının şubelerinde (ya da genel olarak) satılıyor mu
     image_url: str | None
     price_history: list[PricePoint]  # sparkline
+    # Gösterilen fiyatın kaynakta en son görüldüğü an ("Fiyat bugün 09:15 güncellendi" etiketi)
+    price_updated_at: datetime | None = None
     store_prices: list[ProductStorePrice] = []  # seçili şubelerin hepsi, ucuzdan pahalıya
 
 
@@ -78,6 +80,22 @@ class DealOut(BaseModel):
     previous_price: Decimal
     discount_percent: int
     is_campaign: bool  # kaynak "kampanyalı" dedi (aktüel/indirim)
+
+
+class PriceReportCreate(BaseModel):
+    """"Bu fiyat yanlış": hangi ürün/şube, kullanıcının gördüğü fiyat (bilmiyorsa boş) ve not."""
+
+    product_id: int
+    store_id: int | None = None
+    reported_price: Decimal | None = Field(default=None, gt=0, le=1_000_000)
+    note: str | None = Field(default=None, max_length=300)
+
+
+class PriceReportOut(BaseModel):
+    id: int
+    shown_price: Decimal | None
+    reported_price: Decimal | None
+    detail: str
 
 
 class BarcodeResult(BaseModel):

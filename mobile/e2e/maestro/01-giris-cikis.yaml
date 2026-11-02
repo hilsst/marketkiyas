@@ -1,0 +1,9 @@
+# Uçtan uca 1: yeni kurulum -> giriş -> çıkış
+appId: app.ucuzu
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/login.yaml
+- assertVisible: "TOPLAM TASARRUF"
+- tapOn: "Çıkış yap"
+- assertVisible: "Giriş yap / Üye ol"

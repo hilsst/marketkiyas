@@ -3,6 +3,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { ActivityIndicator, Text } from 'react-native';
 
 import AdSlot from '@/components/AdSlot';
+import { AD_EVERY, adsEnabled, interleaveAds } from '@/lib/ads';
 import ProductRow from '@/components/ProductRow';
 import { Input, Muted, Screen, useTheme } from '@/components/ui';
 import { api, GroupSummary } from '@/lib/api';
@@ -35,12 +36,12 @@ export default function SearchScreen() {
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
       {results === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
       {q.trim() !== '' && results?.length === 0 && <Muted style={{ textAlign: 'center', marginTop: 24 }}>Sonuç bulunamadı</Muted>}
-      {results?.map((g, i) => (
-        <Fragment key={g.id}>
-          <ProductRow group={g} onPress={() => router.push({ pathname: '/product/[id]', params: params.listId ? { id: String(g.id), listId: params.listId } : { id: String(g.id) } })} />
-          {i % 4 === 3 && <AdSlot placement="list" />}
-        </Fragment>
-      ))}
+      {/* Listeye ürün eklerken (listId) reklam gösterilmez: liste akışı temiz kalır */}
+      {interleaveAds(results ?? [], AD_EVERY, !params.listId && adsEnabled()).map(r => r.kind === 'ad'
+        ? <AdSlot key={r.key} placement="product-list" />
+        : <Fragment key={r.item.id}>
+            <ProductRow group={r.item} onPress={() => router.push({ pathname: '/product/[id]', params: params.listId ? { id: String(r.item.id), listId: params.listId } : { id: String(r.item.id) } })} />
+          </Fragment>)}
     </Screen>
   );
 }

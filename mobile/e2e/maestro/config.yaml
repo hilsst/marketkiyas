@@ -1,0 +1,3 @@
+# Maestro: `maestro test mobile/e2e/maestro` (bkz. ../README.md)
+flows:
+  - "*.yaml"
