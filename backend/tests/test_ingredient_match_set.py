@@ -2,7 +2,11 @@
 
 tests/fixtures/ingredient_match_set.json: her kayıt bir tarif malzemesi (arama ifadesi, elenecek kelimeler) ve
 Şok kataloğundaki gerçek ürün adlarından seçilmiş örnekler; `ok` = bu ürün bu malzeme yerine alınabilir mi.
-Etiketler eşleştirici ayarlanmadan önce, yalnızca ürün adlarına bakılarak verildi.
+Etiketler eşleştirici ayarlanmadan önce, yalnızca ürün adlarına bakılarak verildi. DİKKAT: eşleştirici sonradan
+bu kümedeki hatalara bakılarak ayarlandı; bu yüzden %95 eşiği "ayar kümesi" doğruluğudur, bağımsız bir
+genelleme ölçümü değildir (ayarlamadan önceki ilk ölçüm: ad bazlı %54,5; genel kurallardan sonra dev %91 /
+bekletilen %85). Ürün bazında kabul oranı (recall) ~%91. Gerçek genelleme için ayara dokunulmamış, BİM/A101
+adlarından yeni bir küme eklenmeli.
 
 Bir malzeme şu durumda doğru sayılır: kabul edilen ürünlerin hiçbiri yanlış değil ve (uygun ürün varsa)
 en az biri kabul edildi. Maliyet motoru en ucuz kabul edilen ürünü seçtiği için tek bir yanlış ürün de

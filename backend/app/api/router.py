@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import aktuel, alerts, auth, catalog, family, health, lists, meals, products, savings, stores
+from app.api.routes import aktuel, alerts, auth, catalog, family, health, lists, meals, notifications, products, savings, stores
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(health.router)
@@ -14,3 +14,4 @@ api_router.include_router(alerts.router)
 api_router.include_router(family.router)
 api_router.include_router(aktuel.router)
 api_router.include_router(meals.router)
+api_router.include_router(notifications.router)

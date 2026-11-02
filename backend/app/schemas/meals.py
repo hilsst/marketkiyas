@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -135,6 +135,7 @@ class MealPlanCreate(BaseModel):
     budget: Decimal | None = Field(default=None, gt=0, le=1_000_000)
     leftovers: bool = False  # bir pişir iki ye
     low_waste: bool = False  # malzemesi ortak tarifler
+    from_deals: bool = False  # indirimden menü: şu an indirimde olan malzemeleri kullanan tarifler öne çıkar
     have: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(default_factory=list, max_length=60)  # dolabımda olanlar (malzeme adları)
     cuisine: str | None = Field(default=None, max_length=32)  # eski istemciler: tek mutfak
     # Bu plan için seçilen mutfaklar (Türk, İtalyan, Uzak Doğu...); her öğün birinden gelir.
@@ -191,6 +192,33 @@ class BudgetOut(BaseModel):
     swaps: int  # plan oluşturulurken bütçe için değiştirilen yemek sayısı (yalnız oluştururken)
 
 
+class DealUse(BaseModel):
+    """Şu an indirimde olan bir tarif malzemesi. source=katalog: maliyete yansır; aktuel: market broşürü, ipucu."""
+
+    name: str  # tarifteki malzeme adı
+    product_name: str
+    price: Decimal
+    previous_price: Decimal | None
+    discount_percent: int | None
+    source: Literal["katalog", "aktuel"]
+    market_slug: str | None = None  # aktuel için: bim, sok...
+
+
+class DealIngredient(DealUse):
+    recipe_count: int  # bu malzemeyi kullanan (bulunabilir) tarif sayısı
+
+
+class DealRecipe(BaseModel):
+    recipe: "RecipeSummary"
+    deal_ingredients: list[str]
+
+
+class DealMenuOut(BaseModel):
+    ingredients: list[DealIngredient]
+    recipes: list[DealRecipe]
+    note: str | None = None
+
+
 class MealPlanSummary(BaseModel):
     id: int
     name: str
@@ -209,6 +237,7 @@ class MealPlanSummary(BaseModel):
     budget: Decimal | None
     leftovers: bool
     low_waste: bool
+    from_deals: bool = False
     have: list[str]
     exported_list_id: int | None
     created_at: datetime
@@ -219,6 +248,8 @@ class MealPlanDetail(MealPlanSummary):
     daily_nutrition: Nutrition | None  # kişi başı günlük ortalama, yaklaşık
     cost: CostOut
     budget_status: BudgetOut | None
+    # Plan indirimden kurulduysa: planın malzemelerinden şu an indirimde olanlar
+    deals: list[DealUse] = []
 
 
 class ExportRequest(BaseModel):

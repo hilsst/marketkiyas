@@ -5,6 +5,7 @@ from fastapi import APIRouter, Query, Response, status
 from app.api.deps import CurrentUser, DbSession, OptionalUser
 from app.models import Allergen, CourseType, Diet, MealSlot
 from app.schemas.meals import (
+    DealMenuOut,
     CuisineOut,
     EntryCreate,
     EntryUpdate,
@@ -20,6 +21,7 @@ from app.schemas.meals import (
     RecipeDetail,
     RecipeSummary,
 )
+from app.services import deals_menu
 from app.services import lists as list_svc
 from app.services import meals as svc
 
@@ -90,8 +92,16 @@ async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) ->
         slots=body.meal_slots, courses=body.courses, start=body.start_date, name=body.name,
         diets=body.diets, avoid=body.avoid_allergens, days=body.days, weekdays=body.weekdays,
         budget=body.budget, leftovers=body.leftovers, low_waste=body.low_waste, have=body.have,
+        from_deals=body.from_deals,
     )
     return await svc.to_detail(db, plan, user.id, swaps=swaps)
+
+
+@router.get("/meal-deals", response_model=DealMenuOut)
+async def meal_deals(user: OptionalUser, db: DbSession) -> DealMenuOut:
+    """İndirimden menü: şu an indirimde olan malzemeler ve bunları en çok kullanan tarifler. Plan için
+    POST /meal-plans içinde from_deals=true gönderilir."""
+    return await deals_menu.menu(db, user.id if user else None)
 
 
 @router.get("/meal-plans/{plan_id}", response_model=MealPlanDetail)

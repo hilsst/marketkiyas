@@ -31,5 +31,5 @@ EK = [
     r("sebzeli-tavuk-sote", "Sebzeli Tavuk Wrap", "a", 4, 15, 15,
       "Lavaşa sarılmış sebzeli tavuk.",
       "Tavuğu baharatla pişirin. | Lavaşa tavuk, marul, domates ve yoğurt sosu koyun. | Sarıp tavada ısıtın.",
-      "tortilla 250, tavukgogus 400, marul 100, domates 150, yogurt 80, sarimsak 3, aycicek 20, tuz 3", 80, slots="kahvalti,ogle,aksam"),
+      "tortilla 250, tavukgogus 400, marul 100, domates 150, yogurt 80, sarimsak 3, aycicek 20, tuz 3", 80, slots="ogle,aksam"),
 ]
