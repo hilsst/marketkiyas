@@ -214,7 +214,9 @@ export type FamilyInvite = { id: number; family_name: string; invited_by: string
 export type MyFamily = { family: Family | null; invites: FamilyInvite[] };
 
 /** Sunucu yanıt vermezse (güvenlik duvarı paketi sessizce düşürürse) istek sonsuza dek asılı kalmasın. */
-export const REQUEST_TIMEOUT_MS = 20000;
+export const REQUEST_TIMEOUT_MS = 30000;
+/** Menü kurma gibi ağır işlemler (yavaş bilgisayarda dakikaya yaklaşabilir). */
+export const SLOW_REQUEST_TIMEOUT_MS = 120000;
 /** Açılışta (misafir/oturum denetimi) beklenen en çok süre; aşılırsa uygulama yine de açılır. */
 export const BOOT_TIMEOUT_MS = 6000;
 
@@ -341,7 +343,7 @@ export const api = {
   mealPlans: () => request<MealPlanSummary[]>('GET', '/meal-plans'),
   mealPlan: (id: number, includePantry = false) =>
     request<MealPlanDetail>('GET', '/meal-plans/' + id + qs({ include_pantry: includePantry ? 'true' : null })),
-  createMealPlan: (body: MealPlanCreate) => request<MealPlanDetail>('POST', '/meal-plans', body),
+  createMealPlan: (body: MealPlanCreate) => request<MealPlanDetail>('POST', '/meal-plans', body, SLOW_REQUEST_TIMEOUT_MS),
   updateMealPlan: (id: number, patch: { name?: string; servings?: number }) => request<MealPlanDetail>('PATCH', '/meal-plans/' + id, patch),
   // recipeId boş: "Başka öner"
   changeMealEntry: (planId: number, entryId: number, recipeId?: number | null) =>
