@@ -94,6 +94,31 @@ async def test_purge_only_empty_old_guests(client, db):
     assert len((await db.scalars(select(ShoppingList))).all()) == 1
 
 
+async def test_purge_keeps_guest_with_savings_record(client, db):
+    from app.models import PlanType, SavingsRecord
+
+    auth_routes._guest_starts.clear()
+    _, body = await _guest(client)
+    db.add(SavingsRecord(
+        user_id=body["user"]["id"], list_name="Ev", plan_type=PlanType.OPPORTUNIST,
+        preference_total=D("100.00"), optimized_total=D("88.00"), saved_amount=D("12.00"),
+    ))
+    await db.execute(update(User).values(updated_at=User.updated_at - timedelta(days=40)))
+    await db.commit()
+    assert await purge_empty_guests(db) == 0
+
+
+async def test_forwarded_for_used_when_trusted(client, monkeypatch):
+    monkeypatch.setattr(auth_routes.settings, "trust_forwarded_for", True)
+    monkeypatch.setattr(auth_routes.settings, "guest_per_ip_per_hour", 1)
+    auth_routes._guest_starts.clear()
+    a = {"X-Forwarded-For": "1.1.1.1, 10.0.0.1"}
+    assert (await client.post("/api/auth/guest", headers=a)).status_code == 201
+    assert (await client.post("/api/auth/guest", headers=a)).status_code == 429
+    assert (await client.post("/api/auth/guest", headers={"X-Forwarded-For": "2.2.2.2"})).status_code == 201
+    auth_routes._guest_starts.clear()
+
+
 # --- Fiyat güveni ---------------------------------------------------------------------------
 
 

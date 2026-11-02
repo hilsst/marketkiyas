@@ -4,15 +4,15 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 
 import AdSlot from '@/components/AdSlot';
 import ProductRow from '@/components/ProductRow';
-import { Muted, Screen, useTheme } from '@/components/ui';
+import { Input, Muted, Screen, useTheme } from '@/components/ui';
 import { api, GroupSummary } from '@/lib/api';
+import { interleaveAds } from '@/lib/ads';
 import { useCatalog } from '@/lib/catalog';
 
-const PER_SECTION = 8; // "Tümü"de her alt kategoriden gösterilen ürün
-
 /**
- * Kategori ekranı: üstte alt kategori şeridi (Tümü / Peynir / Yoğurt / Süt…). "Tümü"de her alt kategorinin en
- * temel ürünleri başlıkları altında; bir alt kategori seçilince yalnız onun ürünleri, her 4 üründe bir native reklam.
+ * Kategori ekranı (sade): üstte alt kategori şeridi ve arama kutusu, altında tek düz ürün listesi
+ * (popülerden). Tek istek atar; her 8 üründe bir reklam yeri. Alt kategori başlıkları ve "Tümünü gör"
+ * bölümleri kaldırıldı: bu alanda arama + barkod + ürün sayfası yeter (Faz Planı v2).
  */
 export default function CategoryScreen() {
   const t = useTheme();
@@ -21,25 +21,23 @@ export default function CategoryScreen() {
   const { categoryById, subcategoriesOf } = useCatalog();
   const subcats = useMemo(() => subcategoriesOf(categoryId), [subcategoriesOf, categoryId]);
   const [sub, setSub] = useState<number | null>(null);
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<GroupSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const load = sub == null && subcats.length
-      ? Promise.all(subcats.map(s => api.searchProducts('', categoryId, { sort: 'popular', subcategoryId: s.id, limit: PER_SECTION })))
-          .then(parts => parts.flat())
-      : api.searchProducts('', categoryId, { sort: 'popular', subcategoryId: sub, limit: 60 });
-    load
-      .then(r => { if (!cancelled) { setResults(r); setError(null); } })
-      .catch(e => { if (!cancelled) setError(e.message); });
-    return () => { cancelled = true; };
-  }, [categoryId, sub, subcats]);
+    // Yazarken her tuşta istek atılmasın
+    const timer = setTimeout(() => {
+      api.searchProducts(query.trim(), categoryId, { sort: query.trim() ? 'name' : 'popular', subcategoryId: sub, limit: 60 })
+        .then(r => { if (!cancelled) { setResults(r); setError(null); } })
+        .catch(e => { if (!cancelled) setError(e.message); });
+    }, query ? 300 : 0);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [categoryId, sub, query]);
 
   const open = (g: GroupSummary) => router.push({ pathname: '/product/[id]', params: { id: String(g.id) } });
-  const sections = sub == null && subcats.length
-    ? subcats.map(s => ({ sub: s, groups: (results ?? []).filter(g => g.subcategory_id === s.id) })).filter(s => s.groups.length)
-    : null;
+  const rows = useMemo(() => interleaveAds(results ?? []), [results]);
 
   return (
     <>
@@ -61,25 +59,14 @@ export default function CategoryScreen() {
         </View>
       )}
       <Screen safeTop={false}>
+        <Input placeholder="Bu kategoride ara" value={query} onChangeText={v => { setQuery(v); setResults(null); }}
+          autoCorrect={false} returnKeyType="search" />
         {error && <Text style={{ color: t.danger }}>{error}</Text>}
         {results === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
-        {results?.length === 0 && <Muted style={{ textAlign: 'center', marginTop: 24 }}>Bu bölümde ürün yok</Muted>}
-        {sections
-          ? sections.map(s => (
-              <View key={s.sub.id} style={{ gap: 10 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <Text style={{ color: t.text, fontWeight: '700', fontSize: 16 }}>{s.sub.name}</Text>
-                  <Text onPress={() => { setSub(s.sub.id); setResults(null); }} style={{ color: t.tint, fontWeight: '600' }}>Tümünü gör ›</Text>
-                </View>
-                {s.groups.map(g => <ProductRow key={g.id} group={g} onPress={() => open(g)} />)}
-              </View>
-            ))
-          : results?.map((g, i) => (
-              <Fragment key={g.id}>
-                <ProductRow group={g} onPress={() => open(g)} />
-                {i % 4 === 3 && <AdSlot placement="list" />}
-              </Fragment>
-            ))}
+        {results?.length === 0 && <Muted style={{ textAlign: 'center', marginTop: 24 }}>Ürün bulunamadı</Muted>}
+        {rows.map(r => r.kind === 'ad'
+          ? <AdSlot key={r.key} placement="product-list" />
+          : <Fragment key={r.item.id}><ProductRow group={r.item} onPress={() => open(r.item)} /></Fragment>)}
       </Screen>
     </>
   );

@@ -91,6 +91,8 @@ async def start_guest(request: Request, db: DbSession) -> AuthResponse:
     """Hesapsız başla: e-postasız, şifresiz bir kullanıcı ve uzun süreli anahtar. Plan, liste ve dolap
     misafirde de çalışır; paylaşma ve aile gerçek hesap ister (/auth/upgrade)."""
     ip = request.client.host if request.client else "?"
+    if settings.trust_forwarded_for and (fwd := request.headers.get("x-forwarded-for")):
+        ip = fwd.split(",")[0].strip() or ip
     if not _guest_rate_ok(ip):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Çok fazla deneme, biraz sonra tekrar deneyin")
     user = User(email=None, password_hash=None, is_guest=True)
