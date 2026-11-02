@@ -1,0 +1,3471 @@
+[
+{
+"id": "0018",
+"title": "İlkgün Çilek Reçeli 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Bal ve Reçel",
+"quantity": "1 KG"
+},
+{
+"id": "002W",
+"title": "Tariş Kuru İncir 250 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "250 GR"
+},
+{
+"id": "003O",
+"title": "Baştacı Dana Çemensiz Pastırma 120 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Et, Tavuk ve Balık",
+"main_category": "Şarküteri",
+"quantity": "120 GR"
+},
+{
+"id": "005Q",
+"title": "Simbat İri Kırık Ceviz İçi 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "400 GR"
+},
+{
+"id": "008U",
+"title": "Simbat Hudri Hurma 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "400 GR"
+},
+{
+"id": "00B2",
+"title": "Serel Harnup Pekmezi 800 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "800 GR"
+},
+{
+"id": "00CV",
+"title": "Simbat Kuru Kayısı 250 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "250 GR"
+},
+{
+"id": "00GF",
+"title": "İnci Siyah Zeytin 231-290 Kalibre 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "500 GR"
+},
+{
+"id": "00TT",
+"title": "Centro Fındık Kremalı Gofret 142 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Gofret",
+"quantity": "142 GR"
+},
+{
+"id": "00XQ",
+"title": "Ekmecik Lavaş ve Tortilla 840 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "840 GR"
+},
+{
+"id": "014F",
+"title": "Pul Biber 100 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "100 GR"
+},
+{
+"id": "017J",
+"title": "İnci Baharat Çeşnisiz Yeşil Zeytin 250 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "250 GR"
+},
+{
+"id": "01GN",
+"title": "Dost Çilek Kayısı Şeftali Orman Meyveli Yoğurt 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Yoğurt",
+"quantity": "500 GR"
+},
+{
+"id": "01JV",
+"title": "Ekmecik Galeta Unu 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "400 GR"
+},
+{
+"id": "01MZ",
+"title": "Ekonomik Elma 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "01PT",
+"title": "Buono Badem Keyfi Badem Draje 150 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Çikolata",
+"quantity": "150 GR"
+},
+{
+"id": "01Q1",
+"title": "Cardella Tel Şehriye 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "01QF",
+"title": "Fıçı Elma Sirkesi 750 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ketçap Mayonez Sos ve Sirkeler",
+"quantity": "750 ML"
+},
+{
+"id": "01QX",
+"title": "Gala Elma 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "01RY",
+"title": "Şafak Pudra Şekeri 250 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Şeker ve Tatlandırıcılar",
+"quantity": "250 GR"
+},
+{
+"id": "01SV",
+"title": "Jucy Vital %100 Elma Suyu 1 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Meyve Suyu",
+"quantity": "1 LT"
+},
+{
+"id": "01V4",
+"title": "Destan Kekik 30 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "30 GR"
+},
+{
+"id": "01WB",
+"title": "Destan Hindistan Cevizi 50 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "50 GR"
+},
+{
+"id": "01XV",
+"title": "Dost Muz Aromalı Süt 200 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Süt",
+"quantity": "200 ML"
+},
+{
+"id": "026Q",
+"title": "Ekmecik Mısır Unu 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "500 GR"
+},
+{
+"id": "0272",
+"title": "İnci Siyah Zeytin 321-380 Kalibre 250 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "250 GR"
+},
+{
+"id": "02GF",
+"title": "Dost Şişe Ayran 1.5 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1.5 LT"
+},
+{
+"id": "02MX",
+"title": "Destan Kimyon 75 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "75 GR"
+},
+{
+"id": "02VH",
+"title": "Efsane Buğday Unu 2 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "2 KG"
+},
+{
+"id": "030K",
+"title": "Simbat Kavrulmuş Çiğ Badem İçi 150 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "150 GR"
+},
+{
+"id": "031K",
+"title": "İlkgün Çilek Reçeli 2 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Bal ve Reçel",
+"quantity": "2 KG"
+},
+{
+"id": "0324",
+"title": "Süsse Portakal Jöleli Bisküvi 114 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Bisküvi ve Kraker",
+"quantity": "114 GR"
+},
+{
+"id": "039U",
+"title": "Destan Karabiber 75 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "75 GR"
+},
+{
+"id": "03DO",
+"title": "Simbat Medjoul Hurma 250 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "250 GR"
+},
+{
+"id": "03GN",
+"title": "Waff Star Hindistan Cevizi Kaplamalı Bar 125 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Çikolata",
+"quantity": "125 GR"
+},
+{
+"id": "03H1",
+"title": "Kidy Çilek Limon Böğürtlen Dondurma 70 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "70 ML"
+},
+{
+"id": "03LH",
+"title": "Dudi Kornet Dondurma Çikolata Kaymak 120 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "120 ML"
+},
+{
+"id": "03VX",
+"title": "İnci 2XS Siyah Zeytin 351-380 Kalibre 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "500 GR"
+},
+{
+"id": "04BO",
+"title": "Yurdum Acı Biber Salçası 650 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Salça",
+"quantity": "650 GR"
+},
+{
+"id": "04DP",
+"title": "Serel Üzüm Pekmezi 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "400 GR"
+},
+{
+"id": "04EY",
+"title": "Fair Çilek Vanilya Kakao Dondurma 1.5 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "1.5 LT"
+},
+{
+"id": "04GG",
+"title": "Destan Nane 30 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "30 GR"
+},
+{
+"id": "04IU",
+"title": "Simbat Ceviz İçi 150 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "150 GR"
+},
+{
+"id": "04KD",
+"title": "İnci Kırmızı Biber Dolgulu Yeşil Zeytin 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "400 GR"
+},
+{
+"id": "04YY",
+"title": "Le'Porta Portakal Gazlı İçecek 250 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Gazlı İçecekler",
+"quantity": "250 ML"
+},
+{
+"id": "04ZW",
+"title": "Yurdum Tatlı Biber Salçası 650 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Salça",
+"quantity": "650 GR"
+},
+{
+"id": "052L",
+"title": "Derme Lulu Hurma 300 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "300 GR"
+},
+{
+"id": "05AG",
+"title": "Serel Tahin 600 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "600 GR"
+},
+{
+"id": "05CO",
+"title": "Untad Lavaş Premium Tortilla 8 Adet",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": null
+},
+{
+"id": "05LC",
+"title": "Cardella Arpa Şehriye 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "05LM",
+"title": "İnci Yeşil Kokteyl Kırma Zeytin 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "400 GR"
+},
+{
+"id": "05S0",
+"title": "First Nane Karpuz Sakız 14 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Sakız ve Şekerleme",
+"quantity": "13.5 GR"
+},
+{
+"id": "05T1",
+"title": "Efsane Buğday Unu 5 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "5 KG"
+},
+{
+"id": "05X0",
+"title": "Ekmecik Tereyağlı Yumurtalı Erişte 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "05X9",
+"title": "Serel Çifte Kavrulmuş Tahin 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "1 KG"
+},
+{
+"id": "060W",
+"title": "Le'Porta Portakal Gazlı İçecek 2.5 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Gazlı İçecekler",
+"quantity": "2.5 LT"
+},
+{
+"id": "061R",
+"title": "Tarçın 75 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "75 GR"
+},
+{
+"id": "06FK",
+"title": "Kerem Kaymak 200 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Diğer Süt Ürünleri",
+"quantity": "200 GR"
+},
+{
+"id": "06N5",
+"title": "Dondurulmuş Kıymalı Mini Pide 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "400 GR"
+},
+{
+"id": "06T5",
+"title": "First Duo Nane Meyve Sakız 45 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Sakız ve Şekerleme",
+"quantity": "22.5 GR"
+},
+{
+"id": "06XG",
+"title": "Destan Susam 75 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "75 GR"
+},
+{
+"id": "0765",
+"title": "Yazgan İrmik 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "500 GR"
+},
+{
+"id": "077W",
+"title": "Simbat Kuru Üzüm 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "500 GR"
+},
+{
+"id": "07JR",
+"title": "Yazgan Mısır Nişastası 200 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "200 GR"
+},
+{
+"id": "07RJ",
+"title": "Mutfağım Dondurulmuş Bamya 450 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "450 GR"
+},
+{
+"id": "07Y3",
+"title": "Emin Çemensiz Pastırma 120 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Et, Tavuk ve Balık",
+"main_category": "Şarküteri",
+"quantity": "120 GR"
+},
+{
+"id": "0AXL",
+"title": "Galle Elma Sirkesi 750 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ketçap Mayonez Sos ve Sirkeler",
+"quantity": "750 ML"
+},
+{
+"id": "0D0P",
+"title": "İnci Çubuk Tarçın Baharat 100 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "100 GR"
+},
+{
+"id": "0FWN",
+"title": "Beyaz Lahana 1 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Sebze",
+"quantity": "1 KG"
+},
+{
+"id": "0IZE",
+"title": "Lokman Çilek Reçeli 380 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Bal ve Reçel",
+"quantity": "380 GR"
+},
+{
+"id": "0KDU",
+"title": "Diyar Baharat Karabiber 75 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "75 GR"
+},
+{
+"id": "0KQ1",
+"title": "Öncü Pul Biber 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "500 GR"
+},
+{
+"id": "0LX0",
+"title": "Nimet Su Böreklik Yufka 700 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "700 GR"
+},
+{
+"id": "0MAY",
+"title": "Hun Pekmez 800 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "800 GR"
+},
+{
+"id": "0MD4",
+"title": "Diyar Baharat İsot 100 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "100 GR"
+},
+{
+"id": "0MDL",
+"title": "Freedo Dondurulmuş Fantastico Kaymak 120 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "120 ML"
+},
+{
+"id": "0MIR",
+"title": "Freedo Dolce Badem Dondurma 100 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "100 ML"
+},
+{
+"id": "0MZG",
+"title": "Dudomi Tavuklu Noodle Paket 5x70 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "350 GR"
+},
+{
+"id": "0N06",
+"title": "Gesaş Çilek Reçeli 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Bal ve Reçel",
+"quantity": "1 KG"
+},
+{
+"id": "0N6U",
+"title": "Ülker 9 Kat Fındık Kremalı Gofret 114 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Gofret",
+"quantity": "114 GR"
+},
+{
+"id": "0N8K",
+"title": "Şokoley Kakaolu Fındık Kreması 1 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Sürülebilir Ürünler ve Kahvaltılık Soslar",
+"quantity": "1 KG"
+},
+{
+"id": "0NS1",
+"title": "İçim Tam Yağlı Bardak Ayran 200 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "200 ML"
+},
+{
+"id": "0NXJ",
+"title": "Freedo Dolce Mini Badem Dondurma 6x60 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "360 GR"
+},
+{
+"id": "0ODJ",
+"title": "Kabuklu Ceviz 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "0OE4",
+"title": "Findux Fındık Ezmesi 320 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Sürülebilir Ürünler ve Kahvaltılık Soslar",
+"quantity": "320 GR"
+},
+{
+"id": "0OEG",
+"title": "Kellogg's Granola Çikolata Fındık 250 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Kahvaltılık Gevrek Bar ve Granola",
+"quantity": "250 GR"
+},
+{
+"id": "0OLG",
+"title": "Torku Ayran 2.5 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "2.5 LT"
+},
+{
+"id": "0OXB",
+"title": "Fanta Portakal Gazlı İçecek 2 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Gazlı İçecekler",
+"quantity": "2 LT"
+},
+{
+"id": "0P45",
+"title": "İnci Ihlamur 50 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Çay ve Bitki Çayları",
+"quantity": "50 GR"
+},
+{
+"id": "0P6M",
+"title": "Tandır Ekmeği 1 Adet",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": null
+},
+{
+"id": "0P6Q",
+"title": "Kemal Kükrer Nar Ekşisi 250 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ketçap Mayonez Sos ve Sirkeler",
+"quantity": "250 ML"
+},
+{
+"id": "0PFL",
+"title": "Pidemiss Dondurulmuş Kıymalı Pide 375 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "375 GR"
+},
+{
+"id": "0PJW",
+"title": "Torku Tahin 1 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "1 KG"
+},
+{
+"id": "0PQM",
+"title": "Eti Lifalif İnce Öğütülmüş Yulaf Ezmesi 350 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Kahvaltılık Gevrek Bar ve Granola",
+"quantity": "350 GR"
+},
+{
+"id": "0PUI",
+"title": "Dalin Badem Kolay Tarama Spreyi 200 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Kişisel Bakım",
+"main_category": "Saç Bakım",
+"quantity": "200 ML"
+},
+{
+"id": "0Q0S",
+"title": "Nimet Tandır Lavaş Ekmeği 4'lü 276 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "276 GR"
+},
+{
+"id": "0QBE",
+"title": "Roko Çikolatalı Dondurma 65 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "65 ML"
+},
+{
+"id": "0R0P",
+"title": "Marmarabirlik Kuru Sele 3XS Siyah Zeytin 800 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "800 GR"
+},
+{
+"id": "0R1G",
+"title": "Diyar Nane 30 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "30 GR"
+},
+{
+"id": "0R2B",
+"title": "Diyar Kekik 30 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "30 GR"
+},
+{
+"id": "0RH9",
+"title": "Çerezya Kudüs Hurma 300 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "300 GR"
+},
+{
+"id": "0RI6",
+"title": "Diyar Tarçın 75 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "75 GR"
+},
+{
+"id": "0RSP",
+"title": "Çerezya Kuru Üzüm 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "500 GR"
+},
+{
+"id": "0RYF",
+"title": "Dimes Karpuz Çilek Meyveli İçecek 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Meyve Suyu",
+"quantity": "1 LT"
+},
+{
+"id": "0S8H",
+"title": "Çerezya Tuzlu Fındık 150 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "150 GR"
+},
+{
+"id": "0S9Y",
+"title": "Zeo Kırma Yeşil Zeytin 4xl 400 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "400 GR"
+},
+{
+"id": "0SK0",
+"title": "Zeo Salamura Siyah Zeytin L-M 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "500 GR"
+},
+{
+"id": "0T5X",
+"title": "Uludağ Portakal Gazoz 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Gazlı İçecekler",
+"quantity": "1 LT"
+},
+{
+"id": "0TCA",
+"title": "Nimet Baklavalık Yufka 800 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "800 GR"
+},
+{
+"id": "0TCB",
+"title": "Algida Carte D'or İsviçrecik Karamel Muz Dondurma 850 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "850 ML"
+},
+{
+"id": "0TDY",
+"title": "Hun Harnup Pekmezi 600 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "600 GR"
+},
+{
+"id": "0TLD",
+"title": "Nimet Köy Yufka 450 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "450 GR"
+},
+{
+"id": "0TLT",
+"title": "Oba Arpa Şehriye Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "0UN1",
+"title": "Birşah Ayran 200 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "200 ML"
+},
+{
+"id": "0UTC",
+"title": "Nuh'un Ankara İnce Uzun Makarna 500 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "0UUE",
+"title": "Nimet Bazlama Ekmek 340 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "340 GR"
+},
+{
+"id": "0UVK",
+"title": "Petek Pudra Şekeri 250 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Şeker ve Tatlandırıcılar",
+"quantity": "250 GR"
+},
+{
+"id": "0VAV",
+"title": "Bahçıvan Rende Mozzarella Peyniri 150 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Peynir",
+"quantity": "150 GR"
+},
+{
+"id": "0VE9",
+"title": "Kemal Kükrer %100 Elma Sirkesi 500 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ketçap Mayonez Sos ve Sirkeler",
+"quantity": "500 ML"
+},
+{
+"id": "0VFZ",
+"title": "Diyar Sumak 100 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "100 GR"
+},
+{
+"id": "0VOA",
+"title": "Göbek Marul 1 Adet",
+"stores": [
+"a101"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Sebze",
+"quantity": null
+},
+{
+"id": "0VT4",
+"title": "Balık Dünyası Dondurulmuş Temizlenmiş Hamsi 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Et, Tavuk ve Balık",
+"main_category": "Deniz Ürünleri",
+"quantity": "500 GR"
+},
+{
+"id": "0WC7",
+"title": "Gelenek Un Buğday 2 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "2 KG"
+},
+{
+"id": "0WPG",
+"title": "Burch Yulaf Ezmesi 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Kahvaltılık Gevrek Bar ve Granola",
+"quantity": "500 GR"
+},
+{
+"id": "0WQM",
+"title": "Galle %100 Nar Ekşisi 250 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ketçap Mayonez Sos ve Sirkeler",
+"quantity": "250 ML"
+},
+{
+"id": "0WXL",
+"title": "Nuh'un Ankara Vitaminli Fiyonk Makarna 500 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "0X44",
+"title": "Nimet Lavaş 12'li 840 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "840 GR"
+},
+{
+"id": "0X62",
+"title": "Eti Popkek Muz Kremalı Kek 60 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kek",
+"quantity": "60 GR"
+},
+{
+"id": "0XAV",
+"title": "Nimet Pita Ekmeği 350 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "350 GR"
+},
+{
+"id": "0XDM",
+"title": "Ülker Fındık Kremalı Gofret 220 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Gofret",
+"quantity": "220 GR"
+},
+{
+"id": "0XLX",
+"title": "Nimet Bazlama Ekmek 300 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "300 GR"
+},
+{
+"id": "0XZ1",
+"title": "Muratbey Yarım Yağlı Taze Lor Peyniri 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Peynir",
+"quantity": "500 GR"
+},
+{
+"id": "0Y7V",
+"title": "Vegilet Nane Çilek Damla Sakız Şekerleme 21 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Sakız ve Şekerleme",
+"quantity": "21 GR"
+},
+{
+"id": "0YAJ",
+"title": "Nimet Dürümlük Lavaş 200 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "200 GR"
+},
+{
+"id": "0YGW",
+"title": "Çokça Dondurulmuş Taze Fasulye 450 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "450 GR"
+},
+{
+"id": "0YIS",
+"title": "Doğadan Probiyotikli Yeşil Çay 14 Adet",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Çay ve Bitki Çayları",
+"quantity": "20 GR"
+},
+{
+"id": "0YOL",
+"title": "Çerezya Soyulmuş Badem 150 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "150 GR"
+},
+{
+"id": "0YOO",
+"title": "Torku Çifte Kavrulmuş Tahin 1 Kg",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "1 KG"
+},
+{
+"id": "0YQE",
+"title": "Bendo İrmik 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "500 GR"
+},
+{
+"id": "0YTJ",
+"title": "Nimet Portakal Aromalı Kurabiye 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Bisküvi ve Kraker",
+"quantity": "500 GR"
+},
+{
+"id": "0YUO",
+"title": "Seyidoğlu Tahin 1 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "1 KG"
+},
+{
+"id": "0YWT",
+"title": "Diyar Susam 75 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "75 GR"
+},
+{
+"id": "0YWX",
+"title": "Çokça Acı Biber Salçası 650 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Salça",
+"quantity": "650 GR"
+},
+{
+"id": "0YZE",
+"title": "Birşah Ayran 1.5 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1.5 LT"
+},
+{
+"id": "0Z24",
+"title": "Nuh'un Ankara Vitaminli Yüksük Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "0Z2E",
+"title": "Xroll İncecik Fındık Kremalı Gofret 142 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Gofret",
+"quantity": "142 GR"
+},
+{
+"id": "0Z49",
+"title": "Bendo Tel Şehriye Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "0ZIK",
+"title": "Nimet Yufka 1 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "1 KG"
+},
+{
+"id": "0ZIO",
+"title": "Berona Kalın Kesme Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "0ZNG",
+"title": "Nimet Gözleme 200 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "200 GR"
+},
+{
+"id": "0ZNH",
+"title": "Oba İnce Kesme Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "0ZPG",
+"title": "Diyar Kimyon 75 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "75 GR"
+},
+{
+"id": "0ZQR",
+"title": "Nimet Yufka 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "500 GR"
+},
+{
+"id": "0ZUE",
+"title": "Çerezya Çiğ Fındık 150 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "150 GR"
+},
+{
+"id": "0ZUN",
+"title": "Seyidoğlu Pekmez 1.3 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "1.3 KG"
+},
+{
+"id": "0ZVZ",
+"title": "Nuh'un Ankara Vitaminli Arpa Şehriye Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "102O",
+"title": "Green Life Hindistan Cevizi 120 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "120 GR"
+},
+{
+"id": "10AB",
+"title": "Bendo Arpa Şehriye Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "10BV",
+"title": "Fanta Portakal Gazlı İçecek 2.5 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Gazlı İçecekler",
+"quantity": "2.5 LT"
+},
+{
+"id": "10HD",
+"title": "Kırmızı Lahana 1 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Sebze",
+"quantity": "1 KG"
+},
+{
+"id": "10IR",
+"title": "Portakal 1 Kg",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "10MO",
+"title": "Çokça Tatlı Biber Salçası 650 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Salça",
+"quantity": "650 GR"
+},
+{
+"id": "10SS",
+"title": "Mest Yeşil Çay 20 Adet",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Çay ve Bitki Çayları",
+"quantity": null
+},
+{
+"id": "10UR",
+"title": "Bolmix Çilek Reçeli 1.8 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Bal ve Reçel",
+"quantity": "1.8 KG"
+},
+{
+"id": "10WG",
+"title": "Nimet Bazlama Ekmek 150 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "150 GR"
+},
+{
+"id": "10WI",
+"title": "Kaanlar Gemlik Xl Siyah Zeytin 450 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "450 GR"
+},
+{
+"id": "10YB",
+"title": "Diyar Hindistan Cevizi 50 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "50 GR"
+},
+{
+"id": "113K",
+"title": "Ülker Fındık Dolgulu Truffle Çikolata 355 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Çikolata",
+"quantity": "355 GR"
+},
+{
+"id": "114L",
+"title": "Şokoley Kakaolu Fındık Kreması 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Sürülebilir Ürünler ve Kahvaltılık Soslar",
+"quantity": "500 GR"
+},
+{
+"id": "116C",
+"title": "Çerezya Ceviz İçi 150 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "150 GR"
+},
+{
+"id": "116Y",
+"title": "Dooy Çilek Meyveli İçecek 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Meyve Suyu",
+"quantity": "1 LT"
+},
+{
+"id": "118H",
+"title": "Togo Fındık Aromalı Gofret 30 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Gofret",
+"quantity": "30 GR"
+},
+{
+"id": "11CW",
+"title": "Bendo Burgu Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "11CZ",
+"title": "Hun Tahin 600 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "600 GR"
+},
+{
+"id": "11EY",
+"title": "Öncü Tatlı Biber Salçası 900 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Salça",
+"quantity": "900 GR"
+},
+{
+"id": "11IP",
+"title": "Vivident Nane Aromalı Draje Sakız 22 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Sakız ve Şekerleme",
+"quantity": "22.4 GR"
+},
+{
+"id": "11IX",
+"title": "Danone Muz Aromalı Hazır Puding 210 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Tatlılar",
+"quantity": "210 GR"
+},
+{
+"id": "11JV",
+"title": "Mest Açai Ananas Yeşil Çay 20 Adet",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Çay ve Bitki Çayları",
+"quantity": null
+},
+{
+"id": "11MH",
+"title": "Nimet Üçgen Yufka 360 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "360 GR"
+},
+{
+"id": "11O6",
+"title": "Çerezya Medine Hurması Kuru 250 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "250 GR"
+},
+{
+"id": "11UO",
+"title": "Şahin Dana Çemensiz Pastırma 80 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Et, Tavuk ve Balık",
+"main_category": "Şarküteri",
+"quantity": "80 GR"
+},
+{
+"id": "11UU",
+"title": "Akmina Karpuz Çilek Maden Suyu 6x200 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Maden Suyu",
+"quantity": "1.2 LT"
+},
+{
+"id": "11X3",
+"title": "Togo Portakal Aromalı Gofret 30 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Gofret",
+"quantity": "30 GR"
+},
+{
+"id": "11XU",
+"title": "Bolmix Çilek Reçeli 380 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Bal ve Reçel",
+"quantity": "380 GR"
+},
+{
+"id": "11ZL",
+"title": "Zeo 2XS-3XS Salamura Siyah Zeytin 2 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "2 KG"
+},
+{
+"id": "120I",
+"title": "Granny Smith Elma 1 Kg",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "121A",
+"title": "Torku Kakaolu Helva 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "500 GR"
+},
+{
+"id": "123D",
+"title": "Çerezya Kırık Ceviz 250 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "250 GR"
+},
+{
+"id": "124H",
+"title": "Diyar Pul Biber 100 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "100 GR"
+},
+{
+"id": "124I",
+"title": "Öncü Acı Biber Salçası 900 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Salça",
+"quantity": "900 GR"
+},
+{
+"id": "128A",
+"title": "Berona Kalem Kesme Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "12AT",
+"title": "Çerezya Kuru İncir 250 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "250 GR"
+},
+{
+"id": "12EM",
+"title": "Seyidoğlu Tahin 550 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "550 GR"
+},
+{
+"id": "12F8",
+"title": "Milkten Milkino Muz-Çilek-Orman Meyveli Taze Peynir 6x45 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Diğer Süt Ürünleri",
+"quantity": "270 GR"
+},
+{
+"id": "12IB",
+"title": "Ülker Taco Aromalı Badem Kraker 135 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Bisküvi ve Kraker",
+"quantity": "135 GR"
+},
+{
+"id": "13E7",
+"title": "Delly Muz Orman Meyvesi Çikolata Kaplı Protein Bar 40 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Diğer Ürünler",
+"main_category": "Gıda Takviyeleri",
+"quantity": "40 GR"
+},
+{
+"id": "13IZ",
+"title": "Miskos Sade Antep Fıstıklı Çekme Helva 240 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "240 GR"
+},
+{
+"id": "13K6",
+"title": "Sanita Buğday Nişastası 200 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "200 GR"
+},
+{
+"id": "13KZ",
+"title": "Pek Food Sebzeli Erişte Çeşitleri 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "400 GR"
+},
+{
+"id": "13PO",
+"title": "Mühür Baklavalık Ve Böreklik Yufka 800 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "800 GR"
+},
+{
+"id": "13TG",
+"title": "Unlüx Lavaş Ekmek 30 Cm 720 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "720 GR"
+},
+{
+"id": "13UO",
+"title": "Greenwood Ihlamur Ve Kış Çayı Çeşitleri 1 Adet",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Çay ve Bitki Çayları",
+"quantity": null
+},
+{
+"id": "13V4",
+"title": "Dr. Oetker Pembe Pudra Şekeri 75 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Pasta Malzemeleri",
+"quantity": "75 GR"
+},
+{
+"id": "13WM",
+"title": "Raffaello Hindistan Cevizi Kaplamalı Çikolata 40 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Çikolata",
+"quantity": "40 GR"
+},
+{
+"id": "13ZZ",
+"title": "Patito Dereotu Turşu Aromalı Patates Cipsi 135 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Cips",
+"quantity": "135 GR"
+},
+{
+"id": "141R",
+"title": "Ekmecik Baklavalık Ve Böreklik Yufka 800 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "800 GR"
+},
+{
+"id": "144H",
+"title": "Cardella Erişte 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "149Y",
+"title": "Koska Üzüm Pekmezi 1.3 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "1.3 KG"
+},
+{
+"id": "14AO",
+"title": "İnci Siyah Zeytin 381-460 Kalibre 2 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "2 KG"
+},
+{
+"id": "14D4",
+"title": "Aknaz Yağsız Lor Peyniri 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Peynir",
+"quantity": "1 KG"
+},
+{
+"id": "14DN",
+"title": "Dr. Oetker Krem Şanti 216 Gr + Pudra Şekeri 150 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Pasta Malzemeleri",
+"quantity": "366 GR"
+},
+{
+"id": "14E0",
+"title": "Serel Kulplu Tahin 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "1 KG"
+},
+{
+"id": "14GC",
+"title": "Sinangil Alpa Buğday Unu 10 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "10 KG"
+},
+{
+"id": "14SG",
+"title": "Hanımefendi Fındık Fıstık ve Sütlü Çikolata 300 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Çikolata",
+"quantity": "300 GR"
+},
+{
+"id": "15ZA",
+"title": "Ülker Konçerto Fındık Hindistan Cevizli Sütlü Çikolata 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Çikolata",
+"quantity": "500 GR"
+},
+{
+"id": "161F",
+"title": "İnci Siyah Zeytin Cam 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "1 KG"
+},
+{
+"id": "1622",
+"title": "Fındık Rüyası Kakao Fındık Kreması Tüp 30 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Sürülebilir Ürünler ve Kahvaltılık Soslar",
+"quantity": "30 GR"
+},
+{
+"id": "1624",
+"title": "Lor Peyniri 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Peynir",
+"quantity": "500 GR"
+},
+{
+"id": "1688",
+"title": "Nimet Buğday Unu 2 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "2 KG"
+},
+{
+"id": "169Y",
+"title": "Fair Gold Maraş Kaymak Antep Dondurma 1 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "1 LT"
+},
+{
+"id": "16UO",
+"title": "Çerezya Kurumeyve Kuru Kayısı 250 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "250 GR"
+},
+{
+"id": "17K7",
+"title": "Nimet Buğday Unu 5 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "5 KG"
+},
+{
+"id": "17ZE",
+"title": "Torku Ayran 1 Lt",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1 LT"
+},
+{
+"id": "180I",
+"title": "Whiskas Sığır Etli Kuru Kedi Maması 1.4 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Diğer Ürünler",
+"main_category": "Pet Shop",
+"quantity": "1.4 KG"
+},
+{
+"id": "182H",
+"title": "Pınar Kefir 1 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1 LT"
+},
+{
+"id": "18JH",
+"title": "Sriracha Yoğurt Nane Glutensiz Nohut Cipsi 50 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Cips",
+"quantity": "50 GR"
+},
+{
+"id": "18L8",
+"title": "Özde Buğday Unu 5 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "5 KG"
+},
+{
+"id": "1972",
+"title": "Şitoğlu %100 Nar Ekşisi Cam Sürahi 340 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ketçap Mayonez Sos ve Sirkeler",
+"quantity": "340 GR"
+},
+{
+"id": "19G0",
+"title": "Burch İnce Öğütülmüş Yulaf Ezmesi 350 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Kahvaltılık Gevrek Bar ve Granola",
+"quantity": "350 GR"
+},
+{
+"id": "1B87",
+"title": "Algida Magnum Mini Badem/Double Karadut 7 Adet",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": null
+},
+{
+"id": "1BB5",
+"title": "Balık Dünyası Dondurulmuş Somon %10 Glaze 440 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Et, Tavuk ve Balık",
+"main_category": "Deniz Ürünleri",
+"quantity": "440 GR"
+},
+{
+"id": "1BD9",
+"title": "Metin Cevizli Yaz Helvası 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "500 GR"
+},
+{
+"id": "1BKQ",
+"title": "Mentos Pure Yeşil Nane Draje Sakız 30 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Sakız ve Şekerleme",
+"quantity": "30 GR"
+},
+{
+"id": "1BOH",
+"title": "Kekspır Çilek Dolgulu Kek 45 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kek",
+"quantity": "45 GR"
+},
+{
+"id": "1C5W",
+"title": "Aktürk Fındık Kremalı Gofret 475 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Gofret",
+"quantity": "475 GR"
+},
+{
+"id": "1DQW",
+"title": "Kekspir Çilek Soslu Waffle Kek 45 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kek",
+"quantity": "45 GR"
+},
+{
+"id": "1DRA",
+"title": "Nissin Yakisoba Japon Soslu Noodle 83 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "83 GR"
+},
+{
+"id": "1DSF",
+"title": "Nissin Yakisoba Chili Soslu Noodle 84 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "84 GR"
+},
+{
+"id": "1EGB",
+"title": "Marmarabirlik 3XS-4XS Siyah Zeytin 800 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "800 GR"
+},
+{
+"id": "1ET6",
+"title": "Dorbi Buğday Nişastası 200 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "200 GR"
+},
+{
+"id": "1F2M",
+"title": "Berona Deniz Kabuğu Makarna 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "1F4P",
+"title": "Iff's Dondurulmuş Limon/Portakal Nane Özüt 200 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "200 ML"
+},
+{
+"id": "1FRK",
+"title": "Dost Naneli Ayran 300 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "300 ML"
+},
+{
+"id": "1FRZ",
+"title": "Nimet Mısır Unu 400 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "400 GR"
+},
+{
+"id": "1FZ5",
+"title": "Yörsan %1.8 Yağlı Ayran 2 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "2 LT"
+},
+{
+"id": "1G7S",
+"title": "Keyifçe Kabuklu Ceviz 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "500 GR"
+},
+{
+"id": "1GEA",
+"title": "Üstad %100 Organik Elma Suyu 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Meyve Suyu",
+"quantity": "1 LT"
+},
+{
+"id": "1GIF",
+"title": "Nissin Yakisoba Köri Soslu Noodle 85 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "85 GR"
+},
+{
+"id": "1GJZ",
+"title": "Binvezir Şişe Ayran 1.5 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1.5 LT"
+},
+{
+"id": "1GK2",
+"title": "Herby Sade/Çilek Matcha 25 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Çay ve Bitki Çayları",
+"quantity": "25 GR"
+},
+{
+"id": "1H78",
+"title": "Dondurulmuş Norveç Somon Dilim 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Et, Tavuk ve Balık",
+"main_category": "Deniz Ürünleri",
+"quantity": "500 GR"
+},
+{
+"id": "1H8V",
+"title": "Cem Siyah Zeytin 351-410 Adet/Kg 2 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Zeytin",
+"quantity": "2 KG"
+},
+{
+"id": "1HB9",
+"title": "Seyidoğlu Üzüm Pekmezi 700 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "700 GR"
+},
+{
+"id": "1HNE",
+"title": "Protein Ocean Hindistan Cevizi Aromalı Protein Bar 50 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Diğer Ürünler",
+"main_category": "Gıda Takviyeleri",
+"quantity": "50 GR"
+},
+{
+"id": "1HTY",
+"title": "Dudomi Peynirli Jalapeno Noodle 80 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "80 GR"
+},
+{
+"id": "1HZO",
+"title": "Bounty Hindistan Cevizi Dolgulu Çikolatalı Bar 57 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Çikolata",
+"quantity": "57 GR"
+},
+{
+"id": "1IBK",
+"title": "Indomie Tavuk Köri Tavuk Noodle 75 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "75 GR"
+},
+{
+"id": "1JKT",
+"title": "Nudo Egg Noodle 350 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "350 GR"
+},
+{
+"id": "1JPF",
+"title": "Indomie Sebze Spesiyal Hazır Noodle 75 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "75 GR"
+},
+{
+"id": "1JQ3",
+"title": "Nuh'un Ankara İrmik 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "500 GR"
+},
+{
+"id": "1KH7",
+"title": "Tadelle Fındık Dolgulu Beyaz Çikolata 30 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Çikolata",
+"quantity": "30 GR"
+},
+{
+"id": "1KVM",
+"title": "Indomie Special Paket Noodle 75 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "75 GR"
+},
+{
+"id": "1LBW",
+"title": "Dondurulmuş Dilimli Somon 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Et, Tavuk ve Balık",
+"main_category": "Deniz Ürünleri",
+"quantity": "500 GR"
+},
+{
+"id": "1MNR",
+"title": "Sek Naneli Ayran 300 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "300 ML"
+},
+{
+"id": "1NAF",
+"title": "Magnum Mini Cookie Badem Dondurma 338 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "338 ML"
+},
+{
+"id": "1NCS",
+"title": "Pastavilla Kalem Burgu Makarna 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "1NKN",
+"title": "Magnum Mini Dondurma Klasik Badem Beyaz 330 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "330 ML"
+},
+{
+"id": "1O49",
+"title": "Magnum Mini Classic Badem Beyaz Dondurma 6x55 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "330 ML"
+},
+{
+"id": "1P5K",
+"title": "Pastavilla Junior Sevimli Rakamlar 350 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "350 GR"
+},
+{
+"id": "1P6X",
+"title": "Sütaş Hüptrik Çilek 3x35 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Yoğurt",
+"quantity": "105 GR"
+},
+{
+"id": "1PE8",
+"title": "Doğadan Yeşil Çay Dökme 50 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Çay ve Bitki Çayları",
+"quantity": "50 GR"
+},
+{
+"id": "1PJY",
+"title": "İthal Muz 1 Kg",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "1PV7",
+"title": "Starking Elma 1 Kg",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "1Q0S",
+"title": "Seyidoğlu Cevizli Helva 350 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "350 GR"
+},
+{
+"id": "1Q7H",
+"title": "Sütaş Ayran 300 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "300 ML"
+},
+{
+"id": "1QJK",
+"title": "Pakmaya Instant Maya 9x10 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Pasta Malzemeleri",
+"quantity": "90 GR"
+},
+{
+"id": "1RJL",
+"title": "Yörsan Susurluk Ayran 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1 LT"
+},
+{
+"id": "1ROE",
+"title": "Tofita Portakal Yumuşak Şeker 47 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Sakız ve Şekerleme",
+"quantity": "47 GR"
+},
+{
+"id": "1S0Y",
+"title": "Magnum Mini Badem 6x55 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "330 ML"
+},
+{
+"id": "1S2B",
+"title": "Uzungil Nane Aromalı Akide Şekeri 180 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Sakız ve Şekerleme",
+"quantity": "180 GR"
+},
+{
+"id": "1SBJ",
+"title": "Eker Ayran 1.5 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1.5 LT"
+},
+{
+"id": "1SHI",
+"title": "Sütaş Ayran Şişe 250 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "250 ML"
+},
+{
+"id": "1TN9",
+"title": "First 60 Dakika Keskin Nane Sakız 27 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Sakız ve Şekerleme",
+"quantity": "27 GR"
+},
+{
+"id": "1USL",
+"title": "Indomie Köri Çeşnili Noodle 5x75 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "375 GR"
+},
+{
+"id": "1UTD",
+"title": "Indomie Sebzeli Noodle 75 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "75 GR"
+},
+{
+"id": "1UUW",
+"title": "Dimes Portakal İçeceği 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Meyve Suyu",
+"quantity": "1 LT"
+},
+{
+"id": "1VYK",
+"title": "Indomie Dana Eti Çeşnili Bardak Noodle 60 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "60 GR"
+},
+{
+"id": "1WUF",
+"title": "Fanta Portakal 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Gazlı İçecekler",
+"quantity": "1 LT"
+},
+{
+"id": "1X2R",
+"title": "Yörükoğlu %1.8 Yağlı Ayran 2 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "2 LT"
+},
+{
+"id": "1XCS",
+"title": "Aly Taco Kabuğu 90 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "90 GR"
+},
+{
+"id": "1XEI",
+"title": "Sek Naneli Bardak Ayran 300 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "300 ML"
+},
+{
+"id": "1XZC",
+"title": "Carte d'Or İsviçre Çikolata Karamel Çikolata Parçacıklı Muz Dondurma 1.105 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Dondurmalar",
+"quantity": "1.105 LT"
+},
+{
+"id": "1Y2D",
+"title": "Keyifçe Kabuklu Ceviz 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "1Y2I",
+"title": "Altınkılıç Sade Kefir 250 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "250 ML"
+},
+{
+"id": "1Y3Q",
+"title": "Yerli Muz 1 Kg",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "1YIN",
+"title": "Nutella Kakaolu Fındık Kreması 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Sürülebilir Ürünler ve Kahvaltılık Soslar",
+"quantity": "1 KG"
+},
+{
+"id": "1YKR",
+"title": "Avokado 1 Adet",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": null
+},
+{
+"id": "1YLD",
+"title": "Kefirim Çilekli Kefir 1 Lt",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1 LT"
+},
+{
+"id": "1YOC",
+"title": "Dudomi Bardak Noodle 60 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "60 GR"
+},
+{
+"id": "1YPV",
+"title": "Golden Elma 1 Kg",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Meyve ve Sebze",
+"main_category": "Meyve",
+"quantity": "1 KG"
+},
+{
+"id": "1YQ4",
+"title": "Eti Popkek Mini Muz Kremalı 10x18 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kek",
+"quantity": "180 GR"
+},
+{
+"id": "1YQJ",
+"title": "Filiz Fiyonk Makarna 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "1YQU",
+"title": "Indomie Tavuk Noodle 70 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "70 GR"
+},
+{
+"id": "1YRZ",
+"title": "Nuh'un Ankara Vitaminli Arpa Şehriye 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "1YS6",
+"title": "Söke Tam Buğday Lavaş 20 Cm 360 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "360 GR"
+},
+{
+"id": "1YXF",
+"title": "Eti Lifalif Yulaf Ezmesi 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Kahvaltılık Gevrek Bar ve Granola",
+"quantity": "500 GR"
+},
+{
+"id": "1Z1Y",
+"title": "Filiz Arpa Şehriye 500 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "1ZGV",
+"title": "Indomie Tavuk Çeşnili Noodle 5x70 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "350 GR"
+},
+{
+"id": "1ZIK",
+"title": "Mutlu Midye Makarna 500 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "1ZS2",
+"title": "Uno Tam Buğday Lavaş 5li 325 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "325 GR"
+},
+{
+"id": "1ZSU",
+"title": "Sakıpağa Rulo Kaymak 150 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Diğer Süt Ürünleri",
+"quantity": "150 GR"
+},
+{
+"id": "1ZTS",
+"title": "Eti Hoşbeş Muz Kremalı Gofret 120 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Gofret",
+"quantity": "120 GR"
+},
+{
+"id": "207R",
+"title": "Filiz Boncuk Makarna 500 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "20EG",
+"title": "Avşar Yeşil Elma Aromalı Gazlı İçecek 6x200 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Maden Suyu",
+"quantity": "1.2 LT"
+},
+{
+"id": "20EH",
+"title": "Doğadan Yeşil Çay Mango & Lime 18 Adet",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Çay ve Bitki Çayları",
+"quantity": null
+},
+{
+"id": "20EJ",
+"title": "Altınkılıç Sade Kefir 1 Lt",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1 LT"
+},
+{
+"id": "20J5",
+"title": "Filiz İnce Uzun Makarna 500 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Mantı Makarna ve Erişte",
+"quantity": "500 GR"
+},
+{
+"id": "20NS",
+"title": "Milka Sürülebilir Fındık Ezmesi 350 Gr",
+"stores": [
+"a101",
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Sürülebilir Ürünler ve Kahvaltılık Soslar",
+"quantity": "350 GR"
+},
+{
+"id": "20OE",
+"title": "Seyidoğlu Bademli Helva 350 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "350 GR"
+},
+{
+"id": "20OL",
+"title": "Kalecik Buğday Unu 10 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "10 KG"
+},
+{
+"id": "20T8",
+"title": "Indomie Sebze Çeşnili Bardak Noodle 60 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "60 GR"
+},
+{
+"id": "20TD",
+"title": "Söke Glutensiz Un 250 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "250 GR"
+},
+{
+"id": "20YK",
+"title": "Üstad Kara Maya Ayran Cam Şişe 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "1 LT"
+},
+{
+"id": "21AN",
+"title": "Indomie Tavuklu Paket Noodle 350 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "350 GR"
+},
+{
+"id": "21AR",
+"title": "Herbalwind Keten Tohumu Yağı 250 Ml",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Sıvı Yağlar",
+"quantity": "250 ML"
+},
+{
+"id": "21AW",
+"title": "Sek Yarım Yağlı Ayran 200 Ml",
+"stores": [
+"bim"
+],
+"menu_category": "İçecek",
+"main_category": "Ayran ve Kefir",
+"quantity": "200 ML"
+},
+{
+"id": "21HE",
+"title": "Dudomi Körili Paket Noodle 350 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Hazır Yemekler",
+"quantity": "350 GR"
+},
+{
+"id": "21IL",
+"title": "Togo Elma-Çilek-Muz Meyveli İçecek 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Meyve Suyu",
+"quantity": "1 LT"
+},
+{
+"id": "21P5",
+"title": "Kınık Portakal Aromalı Gazoz 1.2 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Gazlı İçecekler",
+"quantity": "1.2 LT"
+},
+{
+"id": "21PO",
+"title": "Seyidoğlu Vişne Çilek Ahududu Reçeli 1 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Bal ve Reçel",
+"quantity": "1 KG"
+},
+{
+"id": "21X4",
+"title": "Togo Elma-Çilek-Böğürtlen Meyveli İçecek 1 Lt",
+"stores": [
+"a101"
+],
+"menu_category": "İçecek",
+"main_category": "Meyve Suyu",
+"quantity": "1 LT"
+},
+{
+"id": "21XK",
+"title": "Üstad Dana Füme Kuru Et 80 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Et, Tavuk ve Balık",
+"main_category": "Şarküteri",
+"quantity": "80 GR"
+},
+{
+"id": "22VJ",
+"title": "Seyidoğlu Dut Pekmezi 700 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "700 GR"
+},
+{
+"id": "260M",
+"title": "Destan Sumak 100 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Tuz Baharat ve Harçlar",
+"quantity": "100 GR"
+},
+{
+"id": "269L",
+"title": "Lokman Geleneksel Çilek Reçeli 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Bal ve Reçel",
+"quantity": "1 KG"
+},
+{
+"id": "269U",
+"title": "Metin Bidon Tahin 1 Kg",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "1 KG"
+},
+{
+"id": "3WAQ",
+"title": "Uno Geleneksel Lavaş 390 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": null
+},
+{
+"id": "3WBG",
+"title": "Lokman Üzüm Pekmezi 500 Gr + Tahin 400 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Helva Tahin ve Pekmez",
+"quantity": "900 GR"
+},
+{
+"id": "3WBL",
+"title": "Ülker Haylayf Hindistan Cevizi Kremalı Sandviç Bisküvi 3x84 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Bisküvi ve Kraker",
+"quantity": "252 GR"
+},
+{
+"id": "3WBQ",
+"title": "Yulaf Ezmesi 500 Gr/İnce Öğütülmüş 350 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Süt Ürünleri ve Kahvaltılık",
+"main_category": "Kahvaltılık Gevrek Bar ve Granola",
+"quantity": "850 GR"
+},
+{
+"id": "3WJF",
+"title": "Söke Buğday Unu 2 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "2 KG"
+},
+{
+"id": "3WKE",
+"title": "Hanımeller Elma Tarçınlı Kurabiye 141.5 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Bisküvi ve Kraker",
+"quantity": "142 GR"
+},
+{
+"id": "3WKR",
+"title": "Yerli File Ceviz 500 Gr",
+"stores": [
+"a101"
+],
+"menu_category": "Atıştırmalık ve Tatlı",
+"main_category": "Kuruyemiş ve Kuru Meyve",
+"quantity": "500 GR"
+},
+{
+"id": "3WMF",
+"title": "Sinangil Buğday Unu 5 Kg",
+"stores": [
+"a101"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Un ve İrmik",
+"quantity": "5 KG"
+},
+{
+"id": "3WOT",
+"title": "Fit Ekmek Lavaş Ekmek Çeşitleri 300 Gr",
+"stores": [
+"bim"
+],
+"menu_category": "Temel Gıda",
+"main_category": "Ekmek ve Unlu Mamüller",
+"quantity": "300 GR"
+}
+]
