@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     # Google ile giriş: kabul edilen OAuth istemci kimlikleri (Android, iOS, web), virgülle ayrılmış
     google_client_ids: str = ""
 
+    # Haftalık menü bildirimi push gönderimi (Expo). Kapalıyken bildirim yalnız uygulama içinde görünür.
+    expo_push_enabled: bool = False
+    expo_push_url: str = "https://exp.host/--/api/v2/push/send"
+
     @model_validator(mode="after")
     def _require_real_secret_in_prod(self) -> "Settings":
         if self.environment == "production" and self.jwt_secret_key.startswith("dev-only"):

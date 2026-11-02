@@ -90,7 +90,7 @@ class Recipe(Base):
         Enum(CourseType, native_enum=False, length=16, values_callable=enum_values)
     )
     # İçecekler için: hangi ana yemeklerle uyumlu (slug, virgülle); boş = hepsiyle
-    pairs_with: Mapped[str | None] = mapped_column(String(255))
+    pairs_with: Mapped[str | None] = mapped_column(String(2000))
     # Hangi öğünlerde önerilebilir: "ogle,aksam"
     meal_slots: Mapped[str] = mapped_column(String(64))
     servings: Mapped[int] = mapped_column(Integer)  # tarifteki miktarlar kaç kişilik
@@ -116,6 +116,8 @@ class Recipe(Base):
     # Uygulamadaki marketlerde bulunamayan malzemeler (virgülle). Boş = hepsi bulundu, NULL = henüz
     # kontrol edilmedi. Eksiği olan tarif planlarda ve tarif listesinde gösterilmez (meals.refresh_availability).
     missing_ingredients: Mapped[str | None] = mapped_column(String(512))
+    # Özel dönemler (virgülle): "ramazan" = iftar/sahur menülerinde önerilir
+    tags: Mapped[str] = mapped_column(String(64), default="", server_default="")
 
     cuisine: Mapped[Cuisine] = relationship(back_populates="recipes")
     ingredients: Mapped[list["RecipeIngredient"]] = relationship(
@@ -222,6 +224,8 @@ class MealPlan(TimestampMixin, Base):
     leftovers: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     # Az israf: malzemesi ortak tarifler öne çıkar ki alınan paketler boşa gitmesin
     low_waste: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # İndirimden menü: şu an indirimde olan malzemeleri kullanan tarifler öne çıkar
+    from_deals: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     # "Dolabımda ne var": evde olan malzemeler ("|" ile, tarifteki adlarıyla). Maliyete ve listeye girmez.
     have_items: Mapped[str] = mapped_column(Text, default="", server_default="")
     # Listeye aktarılınca: plan dolaptan ne kullandı (JSON: [{"key","unit","quantity","name"}]).
