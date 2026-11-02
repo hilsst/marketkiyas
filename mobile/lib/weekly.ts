@@ -3,6 +3,7 @@
  * gerekmez); her pazar 11:00'de tekrarlanır. Metin sabit gittiği için son planın tutarı her plan
  * kaydında ve uygulama açılışında yeniden kurulur (reschedule).
  */
+import { requireOptionalNativeModule } from 'expo';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
@@ -23,8 +24,15 @@ export function weeklyContent(total?: number | null) {
   };
 }
 
-// Expo Go'da expo-notifications'ın yerel modülleri eksik ("Cannot find native module"): orada özellik kapalı kalır
-export const weeklySupported = Platform.OS !== 'web' && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+// Expo Go'da expo-notifications'ın yerel parçası eksik olabilir ("Cannot find native module"): paketi yüklemeden
+// önce Android'de o parçanın var olup olmadığına bakılır; yoksa özellik kapalı kalır.
+function notificationsAvailable(): boolean {
+  if (Platform.OS === 'web') return false;
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return false;
+  if (Platform.OS !== 'android') return true;
+  try { return requireOptionalNativeModule('ExpoTopicSubscriptionModule') != null; } catch { return false; }
+}
+export const weeklySupported = notificationsAvailable();
 
 export async function isWeeklyOn(): Promise<boolean> {
   return (await loadFlag(WEEKLY_FLAG)) === '1';
