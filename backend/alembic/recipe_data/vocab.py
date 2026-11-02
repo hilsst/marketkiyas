@@ -25,11 +25,11 @@ sivribiber;Sivri biber;sivri biber;tursu,toz;S;;plant;27,1,6,0
 kapya;Kapya biber;kapya biber|kirmizi biber|renkli biber;pul,toz,salca,tursu,kozlenmis,konserve,sos;S;;plant;31,1,6,0
 dolmabiber;Dolmalık biber;dolmalik biber|dolma biber;tursu,toz,salca,konserve;S;;plant;27,1,6,0
 havuc;Havuç;havuc;suyu,rendesi,tursu;S;;plant;41,1,10,0
-kabak;Kabak;kabak;bal,cekirdek,tatlisi;S;;plant;17,1,3,0
-balkabagi;Bal kabağı;bal kabagi|balkabagi;cekirdek,tatlisi;S;;plant;45,1,11,0
+kabak;Kabak;kabak;bal,cekirde,tatlisi;S;;plant;17,1,3,0
+balkabagi;Bal kabağı;bal kabagi|balkabagi;cekirde,tatlisi;S;;plant;45,1,11,0
 patates;Patates;patates;cips,kizartma,dondurulmus,pure;S;;plant;77,2,17,0
 tatlipatates;Tatlı patates;tatli patates;;S;;plant;86,2,20,0
-patlican;Patlıcan;patlican;salata,kozlenmis,konserve,tursu;S;;plant;25,1,6,0
+patlican;Patlıcan;patlican;salata,kozlenmis,konserve,tursu,kuru,kizartma;S;;plant;25,1,6,0
 mantar;Mantar;mantar;konserve,tursu,sos,corba;S;;plant;22,3,3,0
 ispanak;Ispanak;ispanak;dondurulmus,konserve;S;;plant;23,3,4,0
 marul;Marul;marul|kivircik|aysberg;tohum;S;;plant;15,1,3,0
@@ -58,10 +58,10 @@ feslegen;Fesleğen;feslegen;sos,pesto;S,T;;plant;23,3,3,1
 zencefil;Zencefil;zencefil;cay,sakiz,gazoz,sekerleme;S,T;;plant;80,2,18,1
 nane;Nane;nane;sekeri,sakiz,cay;S,T;;plant;44,3,8,1;P
 pancar;Pancar;pancar;seker,tursu;S;;plant;43,2,10,0
-asmayapragi;Asma yaprağı;asma yapragi|yaprak sarma;;T,S;;plant;93,5,17,2
+asmayapragi;Asma yaprağı;asma yapragi|salamura yaprak;;T,S;;plant;93,5,17,2
 misir;Mısır;misir konservesi|konserve misir|tatli misir|misir;cips,patlak,patlamis,unu,nisasta,gevrek,yag,irmik;T,S;;plant;86,3,19,1
 kayisi;Kuru kayısı;kuru kayisi;;A,T;;plant;241,3,63,1
-hurma;Hurma;hurma;;A,T,S;;plant;282,2,75,0
+hurma;Hurma;hurma;trabzon;A,T,S;;plant;282,2,75,0
 uzum;Kuru üzüm;kuru uzum|sultaniye;;A,T;;plant;299,3,79,0
 incir;Kuru incir;kuru incir;;A,T;;plant;249,3,64,1
 ceviz;Ceviz içi;ceviz ici|ceviz;yagi,kabuklu;A,T,S;kuruyemis;plant;654,15,14,65
@@ -74,7 +74,7 @@ kirmizimercimek;Kırmızı mercimek;kirmizi mercimek;;T;;plant;352,24,60,1
 yesilmercimek;Yeşil mercimek;yesil mercimek;;T;;plant;352,24,60,1
 kurufasulye;Kuru fasulye;kuru fasulye;konserve,haslanmis;T;;plant;333,23,60,1
 barbunya;Barbunya;kirmizi fasulye|barbunya;tursu,pilaki;T,S;;plant;333,23,60,1
-un;Buğday unu;bugday unu;;T;gluten;plant;364,10,76,1
+un;Buğday unu;bugday unu|un;kurabiye,manti,makarna,helva,biskuvi,galeta,misir,pirinc,nohut,cavdar,patlagi,elegi;T;gluten;plant;364,10,76,1
 misirunu;Mısır unu;misir unu;;T;;plant;361,7,77,4
 irmik;İrmik;irmik;tatlisi,helva;T;gluten;plant;360,13,73,1
 nisasta;Mısır nişastası;misir nisastasi|nisasta;;T;;plant;381,0,91,0
@@ -137,7 +137,7 @@ kiyma;Dana kıyma;dana kiyma|kiyma;tavuk,hindi,kuzu;E;;meat;250,17,0,20
 kusbasi;Dana kuşbaşı;dana kusbasi|kusbasi;tavuk,hindi,kuzu;E;;meat;190,26,0,9
 kuzukusbasi;Kuzu kuşbaşı;kuzu kusbasi;;E;;meat;240,25,0,16
 kuzuincik;Kuzu incik;kuzu incik;;E;;meat;250,24,0,17
-tavukgogus;Tavuk göğüs;tavuk gogus|pilic gogus;fume,jambon,salam,doner,pane,haslanmis;E;;meat;165,31,0,4
+tavukgogus;Tavuk göğüs;tavuk gogus|pilic gogus|pilic bonfile|tavuk bonfile|pilic fileto;fume,jambon,salam,doner,pane,haslanmis;E;;meat;165,31,0,4
 tavukbut;Tavuk but;tavuk but|pilic but;pane,haslanmis,fume;E;;meat;209,26,0,11
 sucuk;Sucuk;sucuk;tost,pizza,cips;E,M;;meat;450,20,3,40
 pastirma;Pastırma;pastirma;;E,M;;meat;240,30,1,13

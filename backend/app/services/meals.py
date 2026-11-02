@@ -67,7 +67,7 @@ from app.schemas.meals import (
 from app.schemas.products import GroupSummary
 from app.services import lists as list_svc
 from app.services.catalog import search_groups
-from app.services.ingredient_match import name_matches
+from app.services.ingredient_match import grocery_like, name_matches, unit_compatible
 from app.services.normalize import normalize_text
 
 log = logging.getLogger("marketkiyas.meals")
@@ -370,7 +370,10 @@ async def _groups_for(
         return cache[key]
     groups = [
         g for g in await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id)
-        if _category_ok(g, need, categories) and name_matches(term, g.name, need.excludes)
+        if _category_ok(g, need, categories)
+        and grocery_like(g.name, g.quantity, g.category_id is not None)
+        and unit_compatible(need.unit, g.unit)
+        and name_matches(term, g.name, need.excludes)
     ]
     if cache is not None:
         cache[key] = groups

@@ -44,6 +44,18 @@ RAMAZAN_EXISTING = [
     'mercimek-koftesi', 'kuru-fasulye', 'etli-nohut', 'manti', 'menemen', 'piyaz', 'kisir', 'coban-salatasi',
     'ayran', 'cevizli-yogurt', 'salgam',
 ]
+# ("tavuk baget" aramasında ekmek baget'i bulunuyordu; "tavuk göğüs" Şok'ta "pilic bonfile" diye satılıyor...)
+TERM_FIXES = [
+    ('tavuk baget|pilic baget|baget', 'tavuk baget|pilic baget'),
+    ('tavuk gogus|pilic gogus', 'tavuk gogus|pilic gogus|pilic bonfile|tavuk bonfile|pilic fileto'),
+    ('bugday unu', 'bugday unu|un'),
+]
+EXCLUDE_FIXES = [
+    ('patlican', 'salata,kozlenmis,konserve,tursu,kuru,kizartma'),
+    ('kabak', 'bal,cekirde,tatlisi'),
+    ('bal kabagi|balkabagi', 'cekirde,tatlisi'),
+    ('bugday unu|un', 'kurabiye,manti,makarna,helva,biskuvi,galeta,misir,pirinc,nohut,cavdar,patlagi,elegi'),
+]
 INGREDIENT_COLS = (
     'recipe_id', 'position', 'name', 'amount_text', 'quantity', 'unit', 'search_term', 'exclude_terms',
     'categories', 'is_pantry',
@@ -95,6 +107,16 @@ def upgrade() -> None:
         if slug in existing_pairs:
             conn.execute(sa.text('UPDATE recipes SET pairs_with = :p WHERE slug = :s'), {'p': paired(group), 's': slug})
     conn.execute(sa.text("UPDATE recipes SET tags = 'ramazan' WHERE slug = ANY(:s)"), {'s': RAMAZAN_EXISTING})
+
+    # 200 malzemelik eşleştirme örnek kümesinin gösterdiği arama ifadesi düzeltmeleri (var olan tariflerde de)
+    for old, new in TERM_FIXES:
+        conn.execute(sa.text(
+            'UPDATE recipe_ingredients SET search_term = :new WHERE search_term = :old'
+        ), {'old': old, 'new': new})
+    for term, excludes in EXCLUDE_FIXES:
+        conn.execute(sa.text(
+            'UPDATE recipe_ingredients SET exclude_terms = :x WHERE search_term = :t'
+        ), {'t': term, 'x': excludes})
 
 
 def downgrade() -> None:
