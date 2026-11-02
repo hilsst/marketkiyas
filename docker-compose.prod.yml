@@ -1,0 +1,131 @@
+# Üretim (VPS) yığını. Kurulum: DEPLOY.md
+#   cp deploy/.env.prod.example .env && nano .env
+#   docker compose -f docker-compose.prod.yml up -d --build
+x-backend: &backend
+  build: ./backend
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    ENVIRONMENT: production
+    DATABASE_URL: postgresql+asyncpg://marketkiyas:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}@db:5432/marketkiyas
+  logging: &logging
+    driver: json-file
+    options: {max-size: "10m", max-file: "5"}
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: marketkiyas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}
+      POSTGRES_DB: marketkiyas
+    # Port dışarıya AÇILMAZ; yalnız compose ağından erişilir
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketkiyas -d marketkiyas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  # Şema güncellemesi tek yerde, tek seferlik. Diğer servisler bitmesini bekler.
+  migrate:
+    <<: *backend
+    restart: "no"
+    depends_on:
+      db: {condition: service_healthy}
+    entrypoint: []
+    command: ["alembic", "upgrade", "head"]
+
+  api:
+    <<: *backend
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://marketkiyas:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}@db:5432/marketkiyas
+      TRUST_FORWARDED_FOR: "true"  # Caddy arkasında istemci IP'si X-Forwarded-For'dan okunur
+    entrypoint: []
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000",
+              "--workers", "${API_WORKERS:-2}", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health', timeout=4).status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Seçili şubelerin fiyatları (6 saatte bir)
+  worker:
+    <<: *backend
+    depends_on:
+      api: {condition: service_healthy}
+    entrypoint: []
+    command: ["python", "-m", "app.cli", "sync-selected", "--every-hours", "6"]
+
+  # BİM ve Şok aktüel (12 saatte bir)
+  aktuel:
+    <<: *backend
+    depends_on:
+      api: {condition: service_healthy}
+    entrypoint: []
+    command: ["python", "-m", "app.cli", "aktuel", "--every-hours", "12"]
+
+  # Haftalık menü bildirimi. Push için .env'de EXPO_PUSH_ENABLED=true
+  weekly-menus:
+    <<: *backend
+    depends_on:
+      api: {condition: service_healthy}
+    entrypoint: []
+    command: ["python", "-m", "app.cli", "weekly-menus", "--every-minutes", "30"]
+
+  # Eski misafir hesaplarını temizler (günde bir)
+  purge-guests:
+    <<: *backend
+    depends_on:
+      api: {condition: service_healthy}
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["while true; do python -m app.cli purge-guests; sleep 86400; done"]
+
+  # Günlük pg_dump, 14 gün saklanır (./backups klasörüne). Geri yükleme: DEPLOY.md
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db: {condition: service_healthy}
+    environment:
+      PGHOST: db
+      PGUSER: marketkiyas
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}
+      PGDATABASE: marketkiyas
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./deploy/backup/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    logging: *logging
+
+  # HTTPS (Let's Encrypt otomatik). DOMAIN .env'de
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      api: {condition: service_healthy}
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN gerekli}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging: *logging
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
