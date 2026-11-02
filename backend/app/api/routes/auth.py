@@ -8,7 +8,11 @@ from sqlalchemy import func, select, update
 
 from app.api.deps import CurrentUser, DbSession
 from app.core.config import settings
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import (
+    create_access_token,
+    hash_password_async,
+    verify_password_async,
+)
 from app.models import PasswordReset, User
 from app.schemas.auth import (
     AuthResponse,
@@ -45,7 +49,7 @@ async def _authenticate(db: DbSession, email: str, password: str) -> User:
     if (
         user is None
         or user.password_hash is None  # Google/Apple ile açılmış hesap
-        or not verify_password(password, user.password_hash)
+        or not await verify_password_async(password, user.password_hash)
         or not user.is_active
     ):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "E-posta veya şifre hatalı")
@@ -58,7 +62,7 @@ async def register(body: RegisterRequest, db: DbSession) -> AuthResponse:
     if await db.scalar(select(User.id).where(func.lower(User.email) == email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "Bu e-posta ile kayıtlı bir hesap var")
 
-    user = User(email=email, password_hash=hash_password(body.password), full_name=body.full_name)
+    user = User(email=email, password_hash=await hash_password_async(body.password), full_name=body.full_name)
     db.add(user)
     await db.commit()
     await db.refresh(user)
@@ -90,7 +94,7 @@ async def me(user: CurrentUser) -> User:
 async def delete_account(body: DeleteAccountRequest, user: CurrentUser, db: DbSession) -> None:
     """Hesabı ve ona bağlı her şeyi (listeler, tasarruf kasası, alarmlar, şubeler) kalıcı siler.
     Mağazalar uygulama içinden hesap silmeyi zorunlu tutar. Şifreli hesapta şifre istenir."""
-    if user.password_hash is not None and not verify_password(body.password or "", user.password_hash):
+    if user.password_hash is not None and not await verify_password_async(body.password or "", user.password_hash):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Şifre hatalı")
     await db.delete(user)
     await db.commit()
@@ -115,7 +119,7 @@ async def request_password_reset(body: PasswordResetRequest, db: DbSession) -> d
                 .values(used_at=now)
             )
             code = f"{secrets.randbelow(1_000_000):06d}"
-            db.add(PasswordReset(user_id=user.id, code_hash=hash_password(code), expires_at=now + RESET_CODE_TTL))
+            db.add(PasswordReset(user_id=user.id, code_hash=await hash_password_async(code), expires_at=now + RESET_CODE_TTL))
             await db.commit()
             await send_mail(
                 user.email,
@@ -141,12 +145,12 @@ async def confirm_password_reset(body: PasswordResetConfirm, db: DbSession) -> A
     )
     if reset is None or reset.attempts >= RESET_MAX_ATTEMPTS:
         raise invalid
-    if not verify_password(body.code, reset.code_hash):
+    if not await verify_password_async(body.code, reset.code_hash):
         reset.attempts += 1
         await db.commit()
         raise invalid
     reset.used_at = now
-    user.password_hash = hash_password(body.new_password)
+    user.password_hash = await hash_password_async(body.new_password)
     await db.commit()
     return _auth_response(user)
 

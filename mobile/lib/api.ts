@@ -8,6 +8,8 @@
  */
 import Constants from 'expo-constants';
 
+import { getDeviceId } from '@/lib/device';
+
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${devHost}:3000/api`;
 
@@ -212,6 +214,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         Accept: 'application/json',
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(getDeviceId() ? { 'X-Device-Id': getDeviceId() as string } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
