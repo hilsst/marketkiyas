@@ -365,7 +365,7 @@ async def _groups_for(
 ) -> list[GroupSummary]:
     """Arama ifadesine uyan, malzeme olabilecek ürün grupları. cache: aynı istekte (ör. bütçeye uydururken
     planın maliyeti defalarca hesaplanır) aynı arama tekrar yapılmasın."""
-    key = (term, need.excludes, need.categories, user_id)
+    key = (term, need.unit, need.excludes, need.categories, user_id)
     if cache is not None and key in cache:
         return cache[key]
     found = cache.get(("raw", term, user_id)) if cache is not None else None

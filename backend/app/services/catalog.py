@@ -180,7 +180,7 @@ async def search_groups_many(
     summaries = {i: group_summary(g, resolver, campaigns) for i, g in groups.items()}
     result: dict[str, list[GroupSummary]] = {}
     for q, ids in ids_by_query.items():
-        found = [summaries[i] for i in ids]
+        found = [summaries[i] for i in ids if i in summaries]  # arada silinen grup atlanır
         if resolver.uses_stores:
             found = [s for s in found if s.min_price is not None]
         result[q] = found[:limit]
