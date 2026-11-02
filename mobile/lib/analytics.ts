@@ -82,7 +82,7 @@ export const flushEvents = shared.flush;
 
 /** Açılışta bir kez: cihaz kimliğini hazırlar, app_open yazar. */
 export async function startAnalytics(): Promise<void> {
-  await initDeviceId();
+  await initDeviceId().catch(() => undefined);
   track('app_open');
   void shared.flush();
   // Uygulama arka plana geçerken bekleyen olaylar gitsin

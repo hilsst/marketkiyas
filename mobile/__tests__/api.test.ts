@@ -59,3 +59,18 @@ test('boyut ve fiyat yardımcıları', () => {
 test('cihaz kimliği sunucunun kabul ettiği biçimde', () => {
   for (let i = 0; i < 50; i++) expect(newDeviceId()).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 });
+
+describe('request timeout (phone cannot reach the PC)', () => {
+  afterEach(() => jest.useRealTimers());
+
+  it('gives up on a hanging server instead of waiting forever', async () => {
+    jest.useFakeTimers();
+    global.fetch = jest.fn((_url: RequestInfo | URL, init?: RequestInit) => new Promise((_res, rej) => {
+      init?.signal?.addEventListener('abort', () => rej(new Error('aborted')));
+    })) as unknown as typeof fetch;
+    const p = api.guest(6000);
+    const assertion = expect(p).rejects.toMatchObject({ status: 0 });
+    await jest.advanceTimersByTimeAsync(6001);
+    await assertion;
+  });
+});
