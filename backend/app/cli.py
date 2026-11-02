@@ -138,6 +138,17 @@ async def _seed_demo(args: argparse.Namespace) -> None:
     log.info("demo verisi: %s (giriş: %s / %s)", stats, DEMO_EMAIL, DEMO_PASSWORD)
 
 
+async def _analytics(args: argparse.Namespace) -> None:
+    from datetime import datetime, timedelta, timezone
+
+    from app.services.analytics import build_report, format_report
+
+    until = datetime.now(timezone.utc)
+    async with SessionLocal() as db:
+        report = await build_report(db, until - timedelta(days=args.days), until)
+    print(format_report(report))
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(prog="python -m app.cli")
@@ -181,6 +192,10 @@ def main() -> None:
 
     p = sub.add_parser("seed-demo", help="demo kataloğunu ve örnek listeleri yükle (gerçek fiyat değil)")
     p.set_defaults(func=_seed_demo)
+
+    p = sub.add_parser("analytics", help="huni (plan -> liste -> alışveriş) ve 4. hafta geri dönüş raporu")
+    p.add_argument("--days", type=int, default=28, help="son kaç gün")
+    p.set_defaults(func=_analytics)
 
     args = parser.parse_args()
     asyncio.run(args.func(args))

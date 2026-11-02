@@ -1,6 +1,7 @@
 # Alembic autogenerate'in tüm tabloları görmesi için hepsini burada içe aktar.
 from app.db.base import Base
 from app.models.aktuel import AktuelItem
+from app.models.analytics import AnalyticsEvent
 from app.models.alerts import PriceAlert
 from app.models.catalog import Category, Market, PriceHistory, Product
 from app.models.enums import ListStatus, PlanType, Unit
@@ -27,6 +28,7 @@ from app.models.user import PasswordReset, User
 
 __all__ = [
     "AktuelItem",
+    "AnalyticsEvent",
     "Base",
     "Category",
     "CourseType",
