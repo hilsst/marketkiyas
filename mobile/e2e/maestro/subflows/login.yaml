@@ -1,0 +1,20 @@
+# Demo hesabıyla giriş (backend: python -m app.cli seed-demo). Giriş ekranını açmış olmak gerekmez:
+# Profil sekmesinden "Giriş yap / Üye ol" ile açılır. Karşılama ekranı açıksa önce kapatılır.
+appId: app.ucuzu
+---
+- runFlow:
+    when:
+      visible: "Bugün ne yapmak istersin?"
+    commands:
+      - tapOn: "Alışveriş"
+- tapOn: "Profil"
+- tapOn: "Giriş yap / Üye ol"
+- tapOn: "E-posta"
+- inputText: "demo@marketkiyas.app"
+- tapOn: "Şifre (en az 8 karakter)"
+- inputText: "demo1234"
+- hideKeyboard
+- tapOn:
+    text: "Giriş yap"
+    index: 1
+- assertVisible: "demo@marketkiyas.app"

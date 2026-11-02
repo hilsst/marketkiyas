@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     # Google ile giriş: kabul edilen OAuth istemci kimlikleri (Android, iOS, web), virgülle ayrılmış
     google_client_ids: str = ""
 
+    # Analitik raporu (GET /api/analytics/report, X-Analytics-Token başlığı). Boşsa rapor ucu kapalı;
+    # rapor her zaman `python -m app.cli analytics` ile de alınabilir
+    analytics_token: str = ""
+
     @model_validator(mode="after")
     def _require_real_secret_in_prod(self) -> "Settings":
         if self.environment == "production" and self.jwt_secret_key.startswith("dev-only"):

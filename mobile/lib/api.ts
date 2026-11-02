@@ -8,6 +8,8 @@
  */
 import Constants from 'expo-constants';
 
+import { getDeviceId, initDeviceId } from '@/lib/device';
+
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${devHost}:3000/api`;
 
@@ -213,6 +215,8 @@ export type MyFamily = { family: Family | null; invites: FamilyInvite[] };
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   let res: Response;
+  // Açılıştaki ilk istekler de cihaz kimliğini taşısın (aynı kişi iki kişi sayılmasın); sonra anında döner
+  await initDeviceId().catch(() => undefined);
   try {
     res = await fetch(API_URL + path, {
       method,
@@ -220,6 +224,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         Accept: 'application/json',
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(getDeviceId() ? { 'X-Device-Id': getDeviceId() as string } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });

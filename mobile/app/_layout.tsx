@@ -1,10 +1,11 @@
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { screenName, startAnalytics, track } from '@/lib/analytics';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { CatalogProvider } from '@/lib/catalog';
 import { listenWeeklyTaps } from '@/lib/weekly';
@@ -48,6 +49,10 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { ready } = useAuth();
+  const pathname = usePathname();
+
+  useEffect(() => { void startAnalytics(); }, []);
+  useEffect(() => { if (ready) track('screen_view', { screen: screenName(pathname) }); }, [ready, pathname]);
 
   // Kayıtlı oturum okunana kadar açılış ekranı kalır; böylece giriş ekranı bir an yanıp sönmez
   useEffect(() => {
