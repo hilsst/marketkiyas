@@ -1,0 +1,10 @@
+# Temiz kurulum: uygulama ilk açılışta kendi misafir hesabını açar (giriş/üye ol ekranı yok), karşılama ekranı gelir.
+# Açılış en fazla ~6 sn sunucu bekler (BOOT_TIMEOUT_MS); sunucu geç kalırsa misafir arka planda yeniden denenir
+# (lib/auth.tsx, en fazla ~2 dk), bu yüzden misafirin hazır olduğunu bekleyen adım ayrı: wait-guest.yaml.
+appId: app.ucuzu
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Bugün ne yapmak istersin?"
+    timeout: 60000

@@ -1,9 +1,14 @@
-# Uçtan uca 1: yeni kurulum -> giriş -> çıkış
+# Uçtan uca 1: yeni kurulum (misafir) -> var olan hesaba giriş -> çıkış (yeni misafir açılır)
 appId: app.ucuzu
 ---
-- launchApp:
-    clearState: true
+- runFlow: subflows/start-guest.yaml
 - runFlow: subflows/login.yaml
 - assertVisible: "TOPLAM TASARRUF"
+- assertNotVisible: "Misafir"
 - tapOn: "Çıkış yap"
-- assertVisible: "Giriş yap / Üye ol"
+# Çıkışta uygulama yeni bir misafir açar: giriş ekranı değil, misafir kartı görünür
+- extendedWaitUntil:
+    visible: "Misafir"
+    timeout: 60000
+- assertNotVisible: "Çıkış yap"
+- assertNotVisible: "Giriş yap / Üye ol"

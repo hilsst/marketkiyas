@@ -1,0 +1,11 @@
+# Misafirden hesaba geçiş: açık olan "Giriş yap" ekranı (upgrade=1, "Üye ol" sekmesi açık gelir) benzersiz bir
+# e-postayla doldurulur. Veriler aynı hesapta kalır. Çağıran akış bu ekranı kendisi açmış olmalı.
+appId: app.ucuzu
+---
+- evalScript: ${output.email = 'e2e' + Date.now() + '@marketkiyas.app'}
+- assertVisible: "Ad soyad \\(isteğe bağlı\\)"
+- tapOn: "E-posta"
+- inputText: ${output.email}
+- tapOn: "Şifre (en az 8 karakter)"
+- inputText: "e2e-sifre-1234"
+- pressKey: Enter

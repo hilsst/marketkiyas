@@ -1,0 +1,8 @@
+# Karşılama ekranı kapatılmış, sekmeler açık olmalı. Profil'de "Misafir" kartı görününceye kadar bekler:
+# misafir hesabı sunucuda açılmış demektir (arka plan yeniden denemesi dahil, en kötü ~2 dk).
+appId: app.ucuzu
+---
+- tapOn: "Profil"
+- extendedWaitUntil:
+    visible: "Misafir"
+    timeout: 120000
