@@ -21,6 +21,7 @@ from app.models.meals import (
     RecipeLike,
 )
 from app.models.matching import GroupMember, ProductGroup
+from app.models.notifications import Notification, NotificationSettings, PushToken
 from app.models.reports import PriceReport
 from app.models.savings import SavingsRecord
 from app.models.stores import Store, StorePrice, UserStore
@@ -37,6 +38,9 @@ __all__ = [
     "MealPlan",
     "MealPlanEntry",
     "MealSlot",
+    "Notification",
+    "NotificationSettings",
+    "PushToken",
     "PantryItem",
     "PlanPeriod",
     "Recipe",

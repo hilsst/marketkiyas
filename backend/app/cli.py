@@ -6,6 +6,7 @@
     python -m app.cli sync-selected --every-hours 6             # sürekli çalışan worker
     python -m app.cli scrape --market sok --limit 100           # market sitesinden (Şok, A101)
     python -m app.cli aktuel --every-hours 12                   # BİM/Şok aktüel broşür ürünleri
+    python -m app.cli weekly-menus --every-minutes 30           # haftalık menü bildirimi işi
     python -m app.cli seed-demo                                 # demo kataloğu + demo@marketkiyas.app
     python -m app.cli recipes-check                             # malzemesi marketlerde olmayan tarifleri gizle
 """
@@ -129,6 +130,20 @@ async def _aktuel(args: argparse.Namespace) -> None:
         await asyncio.sleep(args.every_hours * 3600)
 
 
+async def _weekly_menus(args: argparse.Namespace) -> None:
+    from app.services.notifications import send_weekly_menus
+
+    while True:
+        try:
+            async with SessionLocal() as db:
+                log.info("haftalık menüler: %s", await send_weekly_menus(db))
+        except Exception:
+            log.exception("haftalık menü işi başarısız")
+        if not args.every_minutes:
+            return
+        await asyncio.sleep(args.every_minutes * 60)
+
+
 async def _seed_demo(args: argparse.Namespace) -> None:
     from app.services.demo_seed import DEMO_EMAIL, DEMO_PASSWORD, seed_demo
 
@@ -199,6 +214,10 @@ def main() -> None:
 
     p = sub.add_parser("recipes-check", help="malzemesi marketlerde bulunmayan tarifleri gizle (ve bulunanları aç)")
     p.set_defaults(func=_recipes_check)
+
+    p = sub.add_parser("weekly-menus", help="zamanı gelen kullanıcılara haftalık menü bildirimi hazırla")
+    p.add_argument("--every-minutes", type=float, default=0, help="0 = bir kez çalış (ör. 30 ile sürekli)")
+    p.set_defaults(func=_weekly_menus)
 
     p = sub.add_parser("seed-demo", help="demo kataloğunu ve örnek listeleri yükle (gerçek fiyat değil)")
     p.set_defaults(func=_seed_demo)

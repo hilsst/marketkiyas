@@ -67,7 +67,7 @@ from app.schemas.meals import (
 from app.schemas.products import GroupSummary
 from app.services import lists as list_svc
 from app.services.catalog import search_groups, search_groups_many
-from app.services.ingredient_match import name_matches
+from app.services.ingredient_match import grocery_like, name_matches, unit_compatible
 from app.services.normalize import normalize_text
 
 log = logging.getLogger("marketkiyas.meals")
@@ -373,7 +373,10 @@ async def _groups_for(
         found = await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id)
     groups = [
         g for g in found
-        if _category_ok(g, need, categories) and name_matches(term, g.name, need.excludes)
+        if _category_ok(g, need, categories)
+        and grocery_like(g.name, g.quantity, g.category_id is not None)
+        and unit_compatible(need.unit, g.unit)
+        and name_matches(term, g.name, need.excludes)
     ]
     if cache is not None:
         cache[key] = groups
@@ -699,7 +702,7 @@ class _Prefs:
 
     def __init__(
         self, recipes: list[Recipe], low_waste: bool, have: set[str], prices: dict[int, Decimal] | None,
-        stock_terms: set[str] | None = None,
+        stock_terms: set[str] | None = None, deal_terms: set[str] | None = None,
     ):
         self.terms = {r.id: _terms(r) for r in recipes}
         # Dolapta olanlar: kullanıcının seçtikleri + önceki alışverişlerden artanlar
@@ -707,13 +710,14 @@ class _Prefs:
             normalize_text(i.search_term) for r in recipes for i in r.ingredients
             if not i.is_pantry and normalize_text(i.name) in have
         } | (stock_terms or set())
+        self.deal_terms = deal_terms or set()
         self.low_waste = low_waste
         self.prices = prices
         self.bought: Counter = Counter()
 
     @property
     def active(self) -> bool:
-        return self.low_waste or bool(self.have_terms) or self.prices is not None
+        return self.low_waste or bool(self.have_terms) or bool(self.deal_terms) or self.prices is not None
 
     def add(self, recipe: Recipe) -> None:
         self.bought.update(self.terms.get(recipe.id, set()))
@@ -725,6 +729,8 @@ class _Prefs:
             b += 0.3 * sum(1 for t in terms if self.bought[t])
         if self.have_terms:
             b += 0.45 * len(terms & self.have_terms)
+        if self.deal_terms:
+            b += 0.5 * len(terms & self.deal_terms)
         if self.prices:
             costs = [self.prices.get(r.id, Decimal(0)) for r in pool]
             low, high = min(costs), max(costs)
@@ -759,7 +765,7 @@ async def create_plan(
     diets: list[Diet] | None = None, avoid: list[Allergen] | None = None, rng: random.Random | None = None,
     days: int | None = None, weekdays: list[int] | None = None, budget: Decimal | None = None,
     leftovers: bool = False, low_waste: bool = False, have: list[str] | None = None,
-    prefer: list[str] | None = None,
+    from_deals: bool = False, prefer: list[str] | None = None,
 ) -> tuple[MealPlan, int]:
     """Planı oluşturur; (plan, bütçe için değiştirilen yemek sayısı) döner."""
     rng = rng or random.Random()
@@ -795,13 +801,19 @@ async def create_plan(
         prices = {r.id: await _estimate(db, r, servings, user.id, have_names, cache, categories) for r in recipes}
     await remember_have(db, user, have_names)
     stock = await load_stock(db, user.id)
-    # İndirimden menü: indirimdeki malzemeleri kullanan tarifler dolaptakiler gibi öne çıkar
+    # İndirimden menü: seçilen malzemeler (prefer) dolaptakiler gibi öne çıkar; from_deals ise katalogda indirimde
+    # olan bütün malzemeler küçük bir ağırlıkla (deal_terms) öne çıkar
     prefer_names = have_set(prefer or [])
     prefer_terms = {
         normalize_text(i.search_term) for r in recipes for i in r.ingredients
         if not i.is_pantry and normalize_text(i.name) in prefer_names
     }
-    prefs = _Prefs(recipes, low_waste, have_names, prices, {key for key, _ in stock} | prefer_terms)
+    deal_terms: set[str] = set()
+    if from_deals:
+        from app.services import deals_menu  # döngüsel içe aktarmayı önler
+
+        deal_terms = await deals_menu.deal_terms(db, user.id, recipes)
+    prefs = _Prefs(recipes, low_waste, have_names, prices, {key for key, _ in stock} | prefer_terms, deal_terms)
     by_id = {r.id: r for r in recipes}
 
     plan = MealPlan(
@@ -813,6 +825,7 @@ async def create_plan(
         budget=budget,
         leftovers=leftovers,
         low_waste=low_waste,
+        from_deals=from_deals,
         have_items="|".join(have),
         cuisine_id=cuisines[0].id,
         cuisines=",".join(c.slug for c in cuisines),
@@ -1299,6 +1312,7 @@ def to_summary(plan: MealPlan) -> MealPlanSummary:
         budget=plan.budget,
         leftovers=plan.leftovers,
         low_waste=plan.low_waste,
+        from_deals=plan.from_deals,
         have=plan.have_list,
         exported_list_id=plan.exported_list_id,
         created_at=plan.created_at,
@@ -1330,8 +1344,14 @@ async def to_detail(
         budget = BudgetOut(
             budget=plan.budget, total=cost.purchase_total, within=cost.purchase_total <= plan.budget, swaps=swaps
         )
+    deals: list = []
+    if plan.from_deals:
+        from app.services import deals_menu
+
+        deals = await deals_menu.uses_in_plan(db, plan, user_id, cost)
     return MealPlanDetail(
         **to_summary(plan).model_dump(),
+        deals=deals,
         entries=[
             MealPlanEntryOut(
                 id=e.id,
