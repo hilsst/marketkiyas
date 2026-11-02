@@ -533,3 +533,29 @@ async def test_likes_rank_recipes(client, auth_headers):
     assert (await client.delete(url, headers=auth_headers)).status_code == 204
     after = (await _recipes(client))["kisir"]
     assert after["like_count"] == 1 and after["liked"] is False
+
+
+async def test_search_groups_many_matches_single_searches(db, kitchen):
+    """Plan okuma yolu aramaları toplu yapar; sonuç tek tek aramayla birebir aynı olmalı."""
+    from app.services.catalog import search_groups, search_groups_many
+
+    terms = ["mercimek", "sogan", "olmayan urun", "mercimek"]
+    many = await search_groups_many(db, terms, 50, None)
+    assert set(many) == {"mercimek", "sogan", "olmayan urun"}
+    for term, groups in many.items():
+        single = await search_groups(db, term, None, 50)
+        assert [g.model_dump() for g in groups] == [g.model_dump() for g in single]
+    assert many["olmayan urun"] == []
+
+
+async def test_shared_cache_keeps_units_apart(db, kitchen):
+    """Aynı arama ifadesi farklı birimlerle istenirse ortak önbellek yanlış birimin sonucunu vermemeli."""
+    from decimal import Decimal
+    from app.services import meals as svc
+
+    categories = await svc._category_ids(db)
+    cache: dict = {}
+    ml = svc._Need("mercimek", Unit.ML, "kirmizi mercimek", (), (), False, Decimal(200))
+    g = svc._Need("mercimek", Unit.G, "kirmizi mercimek", (), (), False, Decimal(200))
+    assert await svc._match(db, ml, None, categories, cache) is None
+    assert await svc._match(db, g, None, categories, cache) is not None

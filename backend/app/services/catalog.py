@@ -147,6 +147,46 @@ async def search_groups(
     return summaries[:limit]
 
 
+async def search_groups_many(
+    db: AsyncSession, queries: Sequence[str], limit: int, user_id: int | None = None
+) -> dict[str, list[GroupSummary]]:
+    """Her q için search_groups(q, None, limit, user_id) ile aynı sonuç, ama üyeler, şube fiyatları ve kampanya
+    fiyatları tüm aramalar için tek seferde yüklenir (arama başına 5 yerine toplam ~5 sorgu + arama başına 1)."""
+    ids_by_query: dict[str, list[int]] = {}
+    for q in dict.fromkeys(queries):
+        needle = normalize_name(q)
+        similarity = func.word_similarity(needle, ProductGroup.normalized_name)
+        stmt = (
+            select(ProductGroup.id)
+            .where(or_(ProductGroup.normalized_name.contains(needle), similarity >= SEARCH_SIMILARITY_THRESHOLD))
+            .order_by(
+                similarity.desc(),
+                func.similarity(ProductGroup.normalized_name, needle).desc(),
+                ProductGroup.name,
+            )
+            .limit(limit * 3 if user_id else limit)
+        )
+        ids_by_query[q] = list(await db.scalars(stmt))
+    all_ids = {i for ids in ids_by_query.values() for i in ids}
+    if not all_ids:
+        return {q: [] for q in ids_by_query}
+    groups = {
+        g.id: g
+        for g in await db.scalars(select(ProductGroup).where(ProductGroup.id.in_(all_ids)).options(_with_members()))
+    }
+    product_ids = [m.product_id for g in groups.values() for m in g.members]
+    resolver = await build_resolver(db, user_id, product_ids)
+    campaigns = await campaign_prices(db, product_ids)
+    summaries = {i: group_summary(g, resolver, campaigns) for i, g in groups.items()}
+    result: dict[str, list[GroupSummary]] = {}
+    for q, ids in ids_by_query.items():
+        found = [summaries[i] for i in ids if i in summaries]  # arada silinen grup atlanır
+        if resolver.uses_stores:
+            found = [s for s in found if s.min_price is not None]
+        result[q] = found[:limit]
+    return result
+
+
 async def get_group_detail(db: AsyncSession, group_id: int, user_id: int | None = None) -> GroupDetail | None:
     group = await db.scalar(
         select(ProductGroup).where(ProductGroup.id == group_id).options(_with_members())

@@ -17,7 +17,7 @@ ortam değişkenleriyle değişir. CI: `.github/workflows/load.yml` (elle, `targ
 
 | Kullanıcı | Sonuç |
 |---|---|
-| 50 | Okuma uçları p95 5–20 ms; **`GET /meal-plans/{id}` p95 440 ms** (kapı kalır) |
+| 50 | Okuma uçları p95 5–20 ms; `GET /meal-plans/{id}` p95 **440 ms → 200 ms** (aşağıdaki 2. bulgu düzeltildi; kapı geçer) |
 | 200 | CPU doymuş: okuma p95 2–4 sn, hata yok |
 | 1.000 | CPU doymuş: p95 10–30 sn, %17 hata |
 
@@ -29,7 +29,9 @@ Bulgular:
 1. **bcrypt olay döngüsünü tıkıyordu** (düzeltildi): `/auth/register` ve `/auth/login` şifreyi eşzamanlı
    hesaplıyordu; kayıt dalgasında diğer bütün istekler saniyelerce bekliyordu (50 kullanıcıda `/markets` p95 1,2 sn).
    Artık iş parçacığı havuzunda çalışıyor (`hash_password_async`).
-2. **`GET /meal-plans/{id}` yavaş** (açık): plan her açılışta güncel fiyatlarla yeniden maliyetlendiriliyor;
-   50 kullanıcıda bile 440 ms. Çözüm yemek planı kodunda (önbellek ya da maliyeti toplu sorgu), bu işin dışında.
+2. **`GET /meal-plans/{id}` yavaş** (düzeltildi): plan her açılışta güncel fiyatlarla yeniden maliyetlendiriliyor ve
+   her malzeme için ayrı arama (5 sorgu) yapılıyordu (7 yemeklik planda 48 sorgu). Aramalar artık tek seferde
+   (`search_groups_many`): aynı plan 21 sorgu, p95 440 → 200 ms. Kalan maliyet malzeme başına 1 kimlik sorgusu;
+   daha fazlası için önbellek ya da hesaplanan maliyeti saklamak gerekir.
 3. Plan oluşturma ve listeye aktarma (`POST /meal-plans`, `/to-list`) 50 kullanıcıda p95 ~0,5 sn; kapı dışı ama
    haftalık ana akış olduğu için izlenmeli.
