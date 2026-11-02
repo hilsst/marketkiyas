@@ -138,6 +138,16 @@ async def _seed_demo(args: argparse.Namespace) -> None:
     log.info("demo verisi: %s (giriş: %s / %s)", stats, DEMO_EMAIL, DEMO_PASSWORD)
 
 
+async def _purge_guests(args: argparse.Namespace) -> None:
+    from datetime import timedelta
+
+    from app.services.guests import purge_empty_guests
+
+    async with SessionLocal() as db:
+        n = await purge_empty_guests(db, timedelta(days=args.days))
+    log.info("%d boş misafir hesabı silindi", n)
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(prog="python -m app.cli")
@@ -181,6 +191,10 @@ def main() -> None:
 
     p = sub.add_parser("seed-demo", help="demo kataloğunu ve örnek listeleri yükle (gerçek fiyat değil)")
     p.set_defaults(func=_seed_demo)
+
+    p = sub.add_parser("purge-guests", help="hiç verisi olmayan eski misafir hesaplarını sil")
+    p.add_argument("--days", type=int, default=30)
+    p.set_defaults(func=_purge_guests)
 
     args = parser.parse_args()
     asyncio.run(args.func(args))

@@ -740,6 +740,7 @@ async def create_plan(
     diets: list[Diet] | None = None, avoid: list[Allergen] | None = None, rng: random.Random | None = None,
     days: int | None = None, weekdays: list[int] | None = None, budget: Decimal | None = None,
     leftovers: bool = False, low_waste: bool = False, have: list[str] | None = None,
+    prefer: list[str] | None = None,
 ) -> tuple[MealPlan, int]:
     """Planı oluşturur; (plan, bütçe için değiştirilen yemek sayısı) döner."""
     rng = rng or random.Random()
@@ -775,7 +776,13 @@ async def create_plan(
         prices = {r.id: await _estimate(db, r, servings, user.id, have_names, cache, categories) for r in recipes}
     await remember_have(db, user, have_names)
     stock = await load_stock(db, user.id)
-    prefs = _Prefs(recipes, low_waste, have_names, prices, {key for key, _ in stock})
+    # İndirimden menü: indirimdeki malzemeleri kullanan tarifler dolaptakiler gibi öne çıkar
+    prefer_names = have_set(prefer or [])
+    prefer_terms = {
+        normalize_text(i.search_term) for r in recipes for i in r.ingredients
+        if not i.is_pantry and normalize_text(i.name) in prefer_names
+    }
+    prefs = _Prefs(recipes, low_waste, have_names, prices, {key for key, _ in stock} | prefer_terms)
     by_id = {r.id: r for r in recipes}
 
     plan = MealPlan(

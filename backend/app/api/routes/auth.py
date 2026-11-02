@@ -1,10 +1,13 @@
 import secrets
+import time
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func, select, update
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import CurrentUser, DbSession
 from app.core.config import settings
@@ -19,6 +22,7 @@ from app.schemas.auth import (
     RegisterRequest,
     SocialLoginRequest,
     TokenResponse,
+    UpgradeRequest,
     UserOut,
 )
 from app.services import social
@@ -33,11 +37,28 @@ RESET_MAX_PER_WINDOW = 3  # bir saatte gönderilen kod (e-posta bombardımanına
 
 
 def _auth_response(user: User) -> AuthResponse:
+    minutes = settings.guest_token_expire_minutes if user.is_guest else settings.access_token_expire_minutes
     return AuthResponse(
-        access_token=create_access_token(user.id),
-        expires_in=settings.access_token_expire_minutes * 60,
+        access_token=create_access_token(user.id, minutes),
+        expires_in=minutes * 60,
         user=UserOut.model_validate(user),
     )
+
+
+# Misafir oturumu açma sınırı (adres başına, son bir saat). Tek sunucu sürecinde yeterli; birden çok
+# sürece geçince (Faz 5) Redis'e taşınır.
+_guest_starts: dict[str, deque[float]] = defaultdict(deque)
+
+
+def _guest_rate_ok(ip: str, now: float | None = None) -> bool:
+    now = time.monotonic() if now is None else now
+    q = _guest_starts[ip]
+    while q and now - q[0] > 3600:
+        q.popleft()
+    if len(q) >= settings.guest_per_ip_per_hour:
+        return False
+    q.append(now)
+    return True
 
 
 async def _authenticate(db: DbSession, email: str, password: str) -> User:
@@ -61,6 +82,43 @@ async def register(body: RegisterRequest, db: DbSession) -> AuthResponse:
     user = User(email=email, password_hash=hash_password(body.password), full_name=body.full_name)
     db.add(user)
     await db.commit()
+    await db.refresh(user)
+    return _auth_response(user)
+
+
+@router.post("/guest", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+async def start_guest(request: Request, db: DbSession) -> AuthResponse:
+    """Hesapsız başla: e-postasız, şifresiz bir kullanıcı ve uzun süreli anahtar. Plan, liste ve dolap
+    misafirde de çalışır; paylaşma ve aile gerçek hesap ister (/auth/upgrade)."""
+    ip = request.client.host if request.client else "?"
+    if not _guest_rate_ok(ip):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Çok fazla deneme, biraz sonra tekrar deneyin")
+    user = User(email=None, password_hash=None, is_guest=True)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return _auth_response(user)
+
+
+@router.post("/upgrade", response_model=AuthResponse)
+async def upgrade_guest(body: UpgradeRequest, user: CurrentUser, db: DbSession) -> AuthResponse:
+    """Misafiri e-posta ve şifreyle gerçek hesaba çevirir; planları, listeleri, dolabı olduğu gibi kalır."""
+    if not user.is_guest:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Zaten bir hesabın var")
+    email = body.email.lower()
+    if await db.scalar(select(User.id).where(func.lower(User.email) == email)):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Bu e-posta ile kayıtlı bir hesap var; giriş yap seçeneğini kullan"
+        )
+    user.email = email
+    user.password_hash = hash_password(body.password)
+    user.full_name = body.full_name or user.full_name
+    user.is_guest = False
+    try:
+        await db.commit()
+    except IntegrityError:  # aynı anda aynı e-postayla açılan başka hesap
+        await db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Bu e-posta ile kayıtlı bir hesap var") from None
     await db.refresh(user)
     return _auth_response(user)
 

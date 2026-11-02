@@ -90,6 +90,7 @@ async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) ->
         slots=body.meal_slots, courses=body.courses, start=body.start_date, name=body.name,
         diets=body.diets, avoid=body.avoid_allergens, days=body.days, weekdays=body.weekdays,
         budget=body.budget, leftovers=body.leftovers, low_waste=body.low_waste, have=body.have,
+        prefer=body.prefer,
     )
     return await svc.to_detail(db, plan, user.id, swaps=swaps)
 
