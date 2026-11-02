@@ -559,3 +559,45 @@ async def test_shared_cache_keeps_units_apart(db, kitchen):
     g = svc._Need("mercimek", Unit.G, "kirmizi mercimek", (), (), False, Decimal(200))
     assert await svc._match(db, ml, None, categories, cache) is None
     assert await svc._match(db, g, None, categories, cache) is not None
+
+
+async def test_search_groups_many_matches_single_searches_with_selected_stores(db):
+    """Şube seçmiş kullanıcıda: limit*3 aday çekilir, şubede fiyatı olmayanlar elenir, liste limit'e kesilir.
+    Toplu arama bunu tek tek aramayla birebir aynı yapmalı."""
+    from app.models import Store, StorePrice, User
+    from app.models.stores import UserStore
+    from app.services.catalog import search_groups, search_groups_many
+
+    markets = {m.slug: m.id for m in (await db.scalars(select(Market))).all()}
+    user = User(email="stores@test.app", password_hash="x")
+    store = Store(market_id=markets["bim"], external_id="depot-1", name="BİM Test Şube")
+    db.add_all([user, store])
+    await db.flush()
+    db.add(UserStore(user_id=user.id, store_id=store.id))
+
+    # 6 "yogurt" grubu; yalnız çift numaralıların şubede fiyatı var. İlk adaylar fiyatsız kalsın diye
+    # ada göre sıralanan adlarda fiyatlı olanlar sonda.
+    names = [f"Yogurt {c} 500 g" for c in "ABCDEF"]
+    for i, name in enumerate(names):
+        g = ProductGroup(name=name, normalized_name=normalize_name(name), unit=Unit.G, quantity=500)
+        db.add(g)
+        await db.flush()
+        p = Product(
+            market_id=markets["bim"], external_id=f"y{i}", name=name,
+            normalized_name=normalize_name(name), current_price=D("50.00"),
+        )
+        db.add(p)
+        await db.flush()
+        db.add(GroupMember(group_id=g.id, product_id=p.id))
+        if i % 2 == 1:
+            db.add(StorePrice(product_id=p.id, store_id=store.id, price=D(f"{40 + i}.00")))
+    await db.flush()
+
+    for limit in (1, 2, 50):
+        many = await search_groups_many(db, ["yogurt", "olmayan urun"], limit, user.id)
+        single = await search_groups(db, "yogurt", None, limit, user_id=user.id)
+        assert [g.model_dump() for g in many["yogurt"]] == [g.model_dump() for g in single]
+        assert many["olmayan urun"] == []
+        # şube süzgeci gerçekten çalıştı: yalnız fiyatı olan 3 grup, hepsi şube fiyatıyla
+        assert len(single) == min(limit, 3)
+        assert all(g.min_price is not None and g.min_price >= D("41.00") for g in single)
