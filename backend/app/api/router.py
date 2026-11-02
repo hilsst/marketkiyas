@@ -11,6 +11,7 @@ from app.api.routes import (
     health,
     lists,
     meals,
+    notifications,
     products,
     savings,
     stores,
@@ -30,3 +31,4 @@ api_router.include_router(aktuel.router)
 api_router.include_router(meals.router)
 api_router.include_router(deal_menu.router)
 api_router.include_router(analytics.router)
+api_router.include_router(notifications.router)

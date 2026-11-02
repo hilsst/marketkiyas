@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     # Google ile giriş: kabul edilen OAuth istemci kimlikleri (Android, iOS, web), virgülle ayrılmış
     google_client_ids: str = ""
 
+    # Haftalık menü bildirimi push gönderimi (Expo). Kapalıyken bildirim yalnız uygulama içinde görünür.
+    expo_push_enabled: bool = False
+    expo_push_url: str = "https://exp.host/--/api/v2/push/send"
+
     # Analitik raporu (GET /api/analytics/report, X-Analytics-Token başlığı). Boşsa rapor ucu kapalı;
     # rapor her zaman `python -m app.cli analytics` ile de alınabilir
     analytics_token: str = ""

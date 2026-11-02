@@ -86,7 +86,12 @@ async def test_breakfast_comes_from_cuisines_that_have_one(client, auth_headers)
     })).json()
     mains = [e["recipe"]["slug"] for e in plan["entries"] if e["course"] == "ana"]
     assert len(mains) == 7
-    assert set(mains) <= {"sebzeli-frittata", "huevos-rancheros", "peynirli-quesadilla"}
+    breakfast_mains = {
+        r["slug"] for c in ("italyan", "meksika")
+        for r in (await client.get("/api/recipes", params={"cuisine": c, "slot": "kahvalti", "course": "ana"})).json()
+    }
+    assert {"sebzeli-frittata", "huevos-rancheros", "peynirli-quesadilla"} <= breakfast_mains
+    assert set(mains) <= breakfast_mains
 
 
 async def test_suggest_another_keeps_meal_cuisine(client, auth_headers):
@@ -110,12 +115,15 @@ async def test_unknown_cuisine_in_list(client, auth_headers):
 
 async def test_recipes_with_missing_ingredients_are_hidden(client, auth_headers, db):
     # Katalog boşken (ilk kurulum) hiçbir tarif gizlenmez
-    assert await refresh_availability(db) == {"recipes": 84, "hidden": 0}
-    assert len((await client.get("/api/recipes", params={"cuisine": "italyan"})).json()) == 15
+    total = len((await client.get("/api/recipes")).json())
+    assert total >= 300
+    assert await refresh_availability(db) == {"recipes": total, "hidden": 0}
+    all_italian = len((await client.get("/api/recipes", params={"cuisine": "italyan"})).json())
+    assert all_italian >= 30
 
     await _add_products(db, POMODORO)
     stats = await refresh_availability(db)
-    assert stats["recipes"] == 84 and stats["hidden"] > 70
+    assert stats["recipes"] == total and stats["hidden"] > total * 0.8
 
     italian = {r["slug"] for r in (await client.get("/api/recipes", params={"cuisine": "italyan"})).json()}
     assert "spagetti-pomodoro" in italian
