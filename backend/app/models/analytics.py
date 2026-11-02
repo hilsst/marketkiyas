@@ -12,7 +12,7 @@ class AnalyticsEvent(Base):
     """Huni ölçümü için tek bir olay (ör. plan_created, plan_to_list, shopping_completed).
 
     Kişi, cihaza özgü rastgele bir kimlikle (device_id) izlenir; misafir de sayılır. Hesap açılınca
-    aynı cihazın olayları user_id de taşır. Hesap silinirse user_id boşalır, olay sayısı kalır."""
+    aynı cihazın olayları user_id de taşır. Hesap silinince kişinin olayları ve cihazındaki olaylar da silinir (services/analytics.erase_user_events)."""
 
     __tablename__ = "analytics_events"
 

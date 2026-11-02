@@ -31,7 +31,7 @@ class AppUser(HttpUser):
 
     def on_start(self) -> None:
         self.device = str(uuid.uuid4())
-        self.h = {"X-Device-Id": self.device}
+        self.h = {"X-Device-Id": self.device, "X-Load-Test": "1"}  # sunucu analitiğe yazmaz
         self.group_ids: list[int] = []
         self.plan_id: int | None = None
         self.list_id: int | None = None

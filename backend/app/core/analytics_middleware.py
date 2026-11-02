@@ -33,6 +33,8 @@ class AnalyticsMiddleware:
         if not status or status[0] != expected:
             return
         headers = Headers(scope=scope)
+        if headers.get("x-load-test"):
+            return  # yük testi canlı huniyi bozmasın
         try:
             await analytics.record_server_event(
                 name,

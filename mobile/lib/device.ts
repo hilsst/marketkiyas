@@ -2,7 +2,8 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 // Cihaza özgü rastgele kimlik: analitikte misafir de bir kişi sayılır. Kişisel veri taşımaz;
-// uygulama silinince yenilenir. Oturum anahtarından ayrı tutulur (çıkış yapınca silinmez).
+// Oturum anahtarından ayrı tutulur (çıkış yapınca silinmez); iOS'ta Anahtar Zinciri uygulama silinse de
+// kalabilir. Hesap silinince sunucu bu cihazın olaylarını siler. Kişisel veri içermez.
 const KEY = 'ucuzu.device_id';
 
 let cached: string | null = null;

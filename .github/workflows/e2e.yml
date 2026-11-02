@@ -55,6 +55,8 @@ jobs:
         run: |
           npm ci
           npx expo prebuild --platform android --no-install
+          # Release derlemesi düz HTTP'yi engeller; yalnız bu test APK'sı emülatördeki sunucuya http ile bağlanır
+          sed -i 's/<application /<application android:usesCleartextTraffic="true" /' android/app/src/main/AndroidManifest.xml
           (cd android && ./gradlew assembleRelease -x lint --no-daemon)
       - name: Maestro kur
         run: |

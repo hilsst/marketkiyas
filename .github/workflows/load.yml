@@ -1,6 +1,8 @@
 # Yük testi (Faz 1 kapısı: 1.000 eşzamanlı kullanıcıda okuma uçları p95 < 300 ms).
 # GitHub'ın 4 çekirdekli koşucusunda sunucu, veritabanı ve Locust aynı makinede çalışır; bu yüzden 1.000
 # kullanıcılık sonuç kapı için güvenilir değildir. Kapı ölçümü hedef sunucuya karşı yapılır (target_url verilirse).
+# Locust her isteğe X-Load-Test başlığı koyar; sunucu bu istekleri analitiğe yazmaz. Yine de gerçek bir
+# sunucuya karşı çalıştırınca binlerce deneme hesabı açılır: yalnız hazırlık (staging) ortamına yönelt.
 # Haftalık çalışan küçük sürüm (50 kullanıcı) gerilemeleri yakalamak içindir.
 name: load
 
@@ -17,6 +19,7 @@ on:
 jobs:
   locust:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine

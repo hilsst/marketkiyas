@@ -128,6 +128,15 @@ async def record_client_events(
     return len(rows)
 
 
+async def erase_user_events(db: AsyncSession, user_id: int) -> None:
+    """Hesap silinince (KVKK) kişinin olayları ve aynı cihazlardaki misafir olayları da silinir;
+    cihaz kimliği başka bir olay üzerinden kişiye bağlanamaz kalır."""
+    await db.execute(text(
+        "DELETE FROM analytics_events WHERE user_id = :u OR device_id IN "
+        "(SELECT device_id FROM analytics_events WHERE user_id = :u AND device_id IS NOT NULL)"
+    ), {"u": user_id})
+
+
 # ---------- Rapor ----------
 
 def _actor(alias: str = "") -> str:
@@ -187,43 +196,44 @@ async def build_report(db: AsyncSession, since: datetime, until: datetime, now: 
         "GROUP BY name ORDER BY name"
     ), window)).all())
 
-    # Sıralı huni: her kişi için her adımın ilk zamanı; adım ancak bir önceki adımdan sonra yapıldıysa sayılır
-    firsts: dict[str, dict[str, datetime]] = {}
+    # Sıralı huni: her kişi için her adım, bir önceki adımın zamanından SONRAki ilk gerçekleşmesiyle sayılır
+    # (kişi huniden önce başka bir listeyle alışveriş yapmış olsa da düşmez).
+    rows: dict[str, dict[str, list[datetime]]] = {}
     for actor, name, at in (await db.execute(text(
-        f"SELECT {_ACTOR} AS actor, name, min(occurred_at) FROM analytics_events "
+        f"SELECT {_ACTOR} AS actor, name, occurred_at FROM analytics_events "
         "WHERE occurred_at >= :since AND occurred_at < :until AND name = ANY(:steps) "
-        "AND (device_id IS NOT NULL OR user_id IS NOT NULL) GROUP BY actor, name"
+        "AND (device_id IS NOT NULL OR user_id IS NOT NULL) ORDER BY occurred_at"
     ), {**window, "steps": list(FUNNEL_STEPS)})).all():
-        firsts.setdefault(actor, {})[name] = at
+        rows.setdefault(actor, {}).setdefault(name, []).append(at)
 
     funnel: list[FunnelStep] = []
-    reached = list(firsts.items())
-    prev_times: dict[str, datetime] = {}
+    reached: dict[str, datetime | None] = {actor: None for actor in rows}  # None = adım sınırı yok (ilk adım)
     first_count: int | None = None
     prev_count: int | None = None
     for i, step in enumerate(FUNNEL_STEPS):
-        nxt = []
-        times = {}
-        for actor, steps in reached:
-            at = steps.get(step)
-            if at is None or (i > 0 and at < prev_times[actor]):
-                continue
-            nxt.append((actor, steps))
-            times[actor] = at
+        nxt: dict[str, datetime | None] = {}
+        for actor, after in reached.items():
+            at = next((t for t in rows[actor].get(step, ()) if after is None or t >= after), None)
+            if at is not None:
+                nxt[actor] = at
         n = len(nxt)
         if first_count is None:
             first_count = n
         funnel.append(FunnelStep(step, n, _rate(n, prev_count) if i else None, _rate(n, first_count) if i else None))
-        reached, prev_times, prev_count = nxt, times, n
+        reached, prev_count = nxt, n
 
-    # Kohort: ilk olayı pencerede olan kişiler
-    cohort_sql = (
-        f"WITH firsts AS (SELECT {_ACTOR} AS actor, min(occurred_at) AS first_at FROM analytics_events "
-        "WHERE device_id IS NOT NULL OR user_id IS NOT NULL GROUP BY actor), "
-        "cohort AS (SELECT actor, first_at FROM firsts WHERE first_at >= :since AND first_at < :until) "
-    )
+    # Kohortlar: ilk olayı, geri dönüş/kapı süresi kadar ÖNCEKİ pencerede olan kişiler. Böylece "son 28 gün"
+    # raporunda 4. hafta oranı, 28-56 gün önce gelenlerin davranışını gösterir (pencere içindekiler henüz
+    # 28 günü doldurmamıştır). Yalnız süresi dolmuş kişiler sayılır.
+    def cohort_sql(days: int) -> str:
+        return (
+            f"WITH firsts AS (SELECT {_ACTOR} AS actor, min(occurred_at) AS first_at FROM analytics_events "
+            "WHERE device_id IS NOT NULL OR user_id IS NOT NULL GROUP BY actor), "
+            f"cohort AS (SELECT actor, first_at FROM firsts WHERE first_at >= CAST(:since AS timestamptz) - interval '{days} days' "
+            f"AND first_at < CAST(:until AS timestamptz) - interval '{days} days') "
+        )
     w4 = (await db.execute(text(
-        cohort_sql +
+        cohort_sql(28) +
         "SELECT count(*) FILTER (WHERE c.first_at + interval '28 days' <= :now), "
         "count(*) FILTER (WHERE c.first_at + interval '28 days' <= :now AND EXISTS ("
         f"  SELECT 1 FROM analytics_events e WHERE {_actor('e.')} = c.actor "
@@ -232,7 +242,7 @@ async def build_report(db: AsyncSession, since: datetime, until: datetime, now: 
     ), {**window, "now": now})).one()
 
     gate = (await db.execute(text(
-        cohort_sql +
+        cohort_sql(14) +
         ", per AS (SELECT c.actor, "
         "  count(DISTINCT date_trunc('week', e.occurred_at)) FILTER (WHERE e.name = 'plan_created') AS plan_weeks, "
         "  bool_or(e.name = 'plan_to_list') AS moved "
@@ -245,7 +255,7 @@ async def build_report(db: AsyncSession, since: datetime, until: datetime, now: 
 
     notes = []
     if w4[0] == 0:
-        notes.append("4. hafta oranı için ilk görülmesinin üzerinden 28 gün geçmiş kişi yok.")
+        notes.append("4. hafta oranı için ilk görülmesinin üzerinden 28 gün geçmiş kişi yok (kohort: dönemden 28 gün önce gelenler).")
     return Report(
         since=since, until=until, active_actors=active, event_counts=counts, funnel=funnel,
         week4_eligible=w4[0], week4_returned=w4[1], week4_rate=_rate(w4[1], w4[0]),

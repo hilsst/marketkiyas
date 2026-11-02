@@ -25,7 +25,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserOut,
 )
-from app.services import social
+from app.services import analytics, social
 from app.services.mail import send_mail
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -96,6 +96,7 @@ async def delete_account(body: DeleteAccountRequest, user: CurrentUser, db: DbSe
     Mağazalar uygulama içinden hesap silmeyi zorunlu tutar. Şifreli hesapta şifre istenir."""
     if user.password_hash is not None and not await verify_password_async(body.password or "", user.password_hash):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Şifre hatalı")
+    await analytics.erase_user_events(db, user.id)
     await db.delete(user)
     await db.commit()
 

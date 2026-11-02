@@ -16,10 +16,14 @@ router = APIRouter(tags=["analytics"])
 async def ingest_events(
     body: EventBatch, db: DbSession, user: OptionalUser,
     x_device_id: Annotated[str | None, Header()] = None,
+    x_load_test: Annotated[str | None, Header()] = None,
 ) -> EventBatchOut:
     """Uygulamanın topladığı olaylar (açılış, ekran görüntüleme…), en çok 50'lik paketler halinde.
-    Misafir de gönderebilir; kişi cihaz kimliğiyle tanınır."""
-    device_id = svc.clean_device_id(body.device_id or x_device_id)
+    Misafir de gönderebilir; kişi cihaz kimliğiyle tanınır. X-Load-Test başlığı olan (yük testi) istekler
+    kaydedilmez, canlı huni sayıları bozulmasın."""
+    if x_load_test:
+        return EventBatchOut(accepted=0)
+    device_id = svc.clean_device_id(body.device_id) or svc.clean_device_id(x_device_id)
     if device_id is None and user is None:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Cihaz kimliği gerekli")
     accepted = await svc.record_client_events(

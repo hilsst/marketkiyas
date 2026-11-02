@@ -130,9 +130,32 @@ async def test_report_endpoint_requires_token(client, monkeypatch):
     assert [s["name"] for s in r.json()["funnel"]] == list(analytics.FUNNEL_STEPS)
 
 
-async def test_deleted_account_keeps_counts(client, db, auth_headers):
+async def test_deleted_account_erases_events(client, db, auth_headers):
     h = {**auth_headers, "X-Device-Id": DEVICE}
     await client.post("/api/events", headers=h, json={"events": [{"name": "app_open"}]})
+    await client.post("/api/events", headers={"X-Device-Id": DEVICE}, json={"events": [{"name": "screen_view"}]})
+    await client.post("/api/events", headers={"X-Device-Id": "other-device-1234"}, json={"events": [{"name": "app_open"}]})
     assert (await client.request("DELETE", "/api/auth/me", headers=h, json={"password": "gizli-sifre-123"})).status_code == 204
     events = await _events(db)
-    assert len(events) == 1 and events[0].user_id is None and events[0].device_id == DEVICE
+    assert [e.device_id for e in events] == ["other-device-1234"]
+
+
+async def test_load_test_header_is_not_recorded(client, db):
+    h = {"X-Device-Id": DEVICE, "X-Load-Test": "1"}
+    assert (await client.post("/api/events", headers=h, json={"events": [{"name": "app_open"}]})).json() == {"accepted": 0}
+    reg = await client.post("/api/auth/register", headers=h, json={"email": "y@example.com", "password": "gizli-sifre-123"})
+    h["Authorization"] = f"Bearer {reg.json()['access_token']}"
+    await client.post("/api/meal-plans", headers=h, json={"period": "daily"})
+    assert await _events(db) == []
+
+
+async def test_funnel_counts_step_after_earlier_unrelated_activity(db):
+    now = datetime(2026, 12, 31, tzinfo=timezone.utc)
+    t = now - timedelta(days=10)
+    # Önce plansız bir listeyle alışveriş, sonra asıl huni
+    for name, h in [("shopping_started", 0), ("shopping_completed", 1), ("plan_created", 5),
+                    ("plan_to_list", 6), ("shopping_started", 7), ("shopping_completed", 8)]:
+        await _add(db, "device-eeee", name, t + timedelta(hours=h))
+    await db.commit()
+    r = await analytics.build_report(db, now - timedelta(days=30), now, now=now)
+    assert [s.actors for s in r.funnel] == [1, 1, 1, 1]

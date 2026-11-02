@@ -4,6 +4,8 @@
  * Olaylar bellekte birikir, 20 olunca ya da 10 sn sonra POST /api/events ile toplu gider; gönderilemezse
  * sonraki seferde yeniden denenir (en çok 200 olay tutulur). Kişisel veri (e-posta, ad) gönderilmez.
  */
+import { AppState } from 'react-native';
+
 import { API_URL } from '@/lib/api';
 import { getDeviceId, initDeviceId } from '@/lib/device';
 
@@ -37,10 +39,13 @@ export function createAnalytics(deps: AnalyticsDeps) {
       try {
         while (queue.length) {
           const id = getDeviceId();
-          if (!id) return; // kimlik daha okunmadı; sonra denenir
-          const chunk = queue.slice(0, MAX_SEND);
-          if (!(await deps.send(id, chunk))) { schedule(); return; }
-          queue = queue.slice(chunk.length);
+          if (!id) { schedule(); return; } // kimlik daha okunmadı; sonra denenir
+          const chunk = queue.splice(0, MAX_SEND); // gönderim sürerken kuyruk kırpılsa da doğru olaylar çıkar
+          if (!(await deps.send(id, chunk))) {
+            queue = [...chunk, ...queue].slice(-MAX_QUEUE);
+            schedule();
+            return;
+          }
         }
       } finally { flushing = null; }
     })();
@@ -80,6 +85,8 @@ export async function startAnalytics(): Promise<void> {
   await initDeviceId();
   track('app_open');
   void shared.flush();
+  // Uygulama arka plana geçerken bekleyen olaylar gitsin
+  AppState.addEventListener('change', state => { if (state === 'background') void shared.flush(); });
 }
 
 /** "/meals/12" -> "/meals/[id]": ekran adı kimlik taşımasın, aynı ekran tek satırda toplansın. */
