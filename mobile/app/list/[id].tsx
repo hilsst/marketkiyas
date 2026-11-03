@@ -5,7 +5,8 @@ import { ActivityIndicator, Alert, Platform, Pressable, Share, Text, View } from
 import Celebration from '@/components/Celebration';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
-import { Button, Card, Muted, Screen, useTheme } from '@/components/ui';
+import Icon from '@/components/Icon';
+import { Button, Card, Muted, Screen, Segmented, useTheme } from '@/components/ui';
 import { api, CompleteResponse, ItemPatch, ListDetail, ListItem, num, OptimizeResult, Plan, PlanType } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
@@ -16,7 +17,7 @@ const SYNC_MS = 8000; // ortak listede diğer üyelerin değişiklikleri bu aral
 const MODES: { key: PlanType; label: string }[] = [
   { key: 'single_market', label: 'Tek Market' },
   { key: 'combination', label: 'Kombinasyon' },
-  { key: 'opportunist', label: 'Fırsatçı 🚀' },
+  { key: 'opportunist', label: 'Fırsatçı' },
 ];
 
 /** Geri alınamaz işlemler için onay (web önizlemesinde Alert yok, confirm kullanılır) */
@@ -143,8 +144,8 @@ export default function ListScreen() {
     return (
       <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: t.border, opacity: it.is_checked ? 0.5 : 1 }}>
         <Pressable onPress={() => update(it.id, { is_checked: !it.is_checked })} hitSlop={8} accessibilityRole="checkbox" accessibilityState={{ checked: it.is_checked }}
-          style={{ width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: t.tint, backgroundColor: it.is_checked ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-          {it.is_checked && <Text style={{ color: '#fff', fontWeight: '900' }}>✓</Text>}
+          style={{ width: 26, height: 26, borderRadius: 9, borderWidth: 2, borderColor: it.is_checked ? t.tint : t.border, backgroundColor: it.is_checked ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+          {it.is_checked && <Icon name="check" size={16} color="#fff" />}
         </Pressable>
         <ProductImage uri={it.image_url} icon={categoryIcon(it.category_id)} size={40} />
         <View style={{ flex: 1 }}>
@@ -163,13 +164,13 @@ export default function ListScreen() {
         ) : (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Pressable onPress={() => (qty > 1 ? update(it.id, { quantity: qty - 1 }) : remove(it.id))} hitSlop={6}
-              style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: qty > 1 ? t.border : '#fee2e2', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: qty > 1 ? t.text : '#dc2626', fontWeight: '800' }}>{qty > 1 ? '−' : '🗑'}</Text>
+              style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: qty > 1 ? t.background : '#fee2e2', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={qty > 1 ? 'minus' : 'trash-2'} size={15} color={qty > 1 ? t.text : '#dc2626'} />
             </Pressable>
             <Text style={{ color: t.text, fontWeight: '700', minWidth: 18, textAlign: 'center' }}>{qty}</Text>
             <Pressable onPress={() => qty < 99 && update(it.id, { quantity: qty + 1 })} hitSlop={6}
-              style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: t.text, fontWeight: '800' }}>+</Text>
+              style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: t.background, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="plus" size={15} color={t.text} />
             </Pressable>
           </View>
         )}
@@ -213,13 +214,7 @@ export default function ListScreen() {
         </Card>
       )}
 
-      {!completed && <View style={{ flexDirection: 'row', backgroundColor: t.border, borderRadius: 12, padding: 4 }}>
-        {(['items', 'optimize'] as Tab[]).map(k => (
-          <Pressable key={k} onPress={() => setTab(k)} style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center', backgroundColor: tab === k ? t.card : 'transparent' }}>
-            <Text style={{ color: tab === k ? t.tint : t.textMuted, fontWeight: '700' }}>{k === 'items' ? 'Ürünler' : 'Planlar'}</Text>
-          </Pressable>
-        ))}
-      </View>}
+      {!completed && <Segmented value={tab} onChange={setTab} options={[{ key: 'items', label: 'Ürünler' }, { key: 'optimize', label: 'Planlar' }]} />}
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
 
       {completed && (
@@ -283,50 +278,49 @@ export default function ListScreen() {
 
       {!completed && tab === 'optimize' && (
         <>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {MODES.map(m => (
-              <Pressable key={m.key} onPress={() => setMode(m.key)} style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center',
-                borderWidth: 1, borderColor: mode === m.key ? t.tint : t.border, backgroundColor: mode === m.key ? t.tint : t.card }}>
-                <Text style={{ color: mode === m.key ? '#fff' : t.text, fontWeight: '600', fontSize: 13 }}>{m.label}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <Segmented value={mode} onChange={setMode} options={MODES} />
           {!opt && <ActivityIndicator color={t.tint} />}
           {opt && (
-            <Card style={{ gap: 10 }}>
-              <Muted>{mode === 'single_market' ? 'Tek markette, seçimlerinle' : mode === 'combination' ? 'Seçtiğin markalarla, en ucuz marketlerden' : 'Marka fark etmeden, her ürünün en ucuzu'}</Muted>
-              <Text style={{ color: t.text, fontSize: 30, fontWeight: '900' }}>{plan ? `${num(plan.total).toFixed(2)} ₺` : '—'}</Text>
+            <>
+              <View style={{ borderRadius: 22, padding: 20, gap: 4, backgroundColor: mode === 'opportunist' ? t.accent : t.tint }}>
+                <Text style={{ color: '#fff', fontSize: 13, opacity: 0.92 }}>{mode === 'single_market' ? 'Tek markette, seçimlerinle' : mode === 'combination' ? 'Seçtiğin markalarla, en ucuz marketlerden' : 'Marka fark etmeden, her ürünün en ucuzu'}</Text>
+                <Text style={{ color: '#fff', fontSize: 38, fontWeight: '800', letterSpacing: -1 }}>{plan ? `${num(plan.total).toFixed(2)} ₺` : '—'}</Text>
+                {mode === 'opportunist' && num(opt.savings.weekly) > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginTop: 4 }}>
+                    <Icon name="trending-up" size={16} color="#fff" />
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Seçimlerine göre {num(opt.savings.weekly).toFixed(2)} ₺ daha ucuz (yılda ~{num(opt.savings.yearly).toFixed(0)} ₺)</Text>
+                  </View>
+                )}
+              </View>
               {mode === 'single_market' && !opt.single_market.available && (
-                <Text style={{ color: '#c2410c' }}>⚠️ {opt.single_market.warning || 'Hiçbir market listedeki tüm ürünleri satmıyor.'}</Text>
-              )}
-              {mode === 'opportunist' && num(opt.savings.weekly) > 0 && (
-                <Text style={{ color: t.tint, fontWeight: '700' }}>Seçimlerine göre {num(opt.savings.weekly).toFixed(2)} ₺ daha ucuz (yılda ~{num(opt.savings.yearly).toFixed(0)} ₺)</Text>
+                <Text style={{ color: t.accentText, backgroundColor: t.accentSoft, borderRadius: 14, padding: 12 }}>⚠️ {opt.single_market.warning || 'Hiçbir market listedeki tüm ürünleri satmıyor.'}</Text>
               )}
               {plan?.by_market.map(b => (
-                <View key={b.market_id} style={{ gap: 4, borderTopWidth: 1, borderTopColor: t.border, paddingTop: 8 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <MarketBadge id={b.market_id} size={22} />
-                    <Text style={{ color: t.text, fontWeight: '700', flex: 1 }}>{marketById(b.market_id)?.name}</Text>
-                    <Text style={{ color: t.text, fontWeight: '800' }}>{num(b.total).toFixed(2)} ₺</Text>
+                <Card key={b.market_id} style={{ gap: 4, padding: 14 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <MarketBadge id={b.market_id} size={26} />
+                    <Text style={{ color: t.text, fontWeight: '800', fontSize: 16, flex: 1 }}>{marketById(b.market_id)?.name}</Text>
+                    <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>{num(b.total).toFixed(2)} ₺</Text>
                   </View>
                   {plan.lines.filter(l => b.item_ids.includes(l.item_id)).map(l => (
-                    <View key={l.item_id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                    <View key={l.item_id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, borderTopWidth: 1, borderTopColor: t.border, paddingVertical: 8 }}>
                       <Muted style={{ flex: 1 }}>{l.group_name} ({l.substituted ? l.product_name : l.brand || l.product_name}){l.substituted ? ' · benzeri alındı' : ''}</Muted>
-                      <Muted>{num(l.line_total).toFixed(2)} ₺</Muted>
+                      <Text style={{ color: t.text, fontWeight: '700', fontSize: 13 }}>{num(l.line_total).toFixed(2)} ₺</Text>
                     </View>
                   ))}
-                </View>
+                </Card>
               ))}
               {mode === 'single_market' && (
-                <View style={{ gap: 2, borderTopWidth: 1, borderTopColor: t.border, paddingTop: 8 }}>
+                <Card style={{ gap: 2, padding: 14 }}>
+                  <Muted style={{ fontWeight: '700' }}>MARKETLERE GÖRE</Muted>
                   {opt.single_market.markets.filter(m => m.found > 0).map(m => (
-                    <Muted key={m.market_id}>
+                    <Muted key={m.market_id} style={{ paddingVertical: 3 }}>
                       {marketById(m.market_id)?.name}: {num(m.total).toFixed(2)} ₺{m.substituted ? ` · ${m.substituted} farklı marka` : ''}{m.missing ? ` · ${m.missing} ürün yok` : ''}
                     </Muted>
                   ))}
-                </View>
+                </Card>
               )}
-            </Card>
+            </>
           )}
           <Button title="🛒 Bu planı alışveriş listeme uygula" onPress={apply} disabled={applyDisabled} />
           {blocked && <Muted style={{ textAlign: 'center' }}>{blocked}</Muted>}
