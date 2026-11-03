@@ -130,6 +130,7 @@ class DealIngredientOut(BaseModel):
 
     name: str  # malzeme adı: "Tavuk göğsü"
     recipe_count: int  # bu malzemeyi kullanan tarif sayısı
+    recipe_names: list[str] = []  # en fazla 2 örnek tarif adı
     source: Literal["deal", "aktuel"]  # fırsat (katalog) ya da aktüel broşür
     product_name: str
     group_id: int | None  # fırsatsa ürün sayfası

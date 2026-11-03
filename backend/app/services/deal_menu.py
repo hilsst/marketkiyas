@@ -29,21 +29,24 @@ class _Ingredient:
     term: str
     excludes: tuple[str, ...]
     recipes: set[int] = field(default_factory=set)
+    recipe_names: list[str] = field(default_factory=list)
 
 
 async def _ingredients(db: AsyncSession) -> list[_Ingredient]:
     rows = await db.execute(
-        select(RecipeIngredient.name, RecipeIngredient.search_term, RecipeIngredient.exclude_terms, Recipe.id)
+        select(RecipeIngredient.name, RecipeIngredient.search_term, RecipeIngredient.exclude_terms, Recipe.id, Recipe.name)
         .join(Recipe, Recipe.id == RecipeIngredient.recipe_id)
         .where(Recipe.is_active.is_(True), RecipeIngredient.is_pantry.is_(False))
     )
     by_key: dict[str, _Ingredient] = {}
-    for name, term, excludes, recipe_id in rows:
+    for name, term, excludes, recipe_id, recipe_name in rows:
         key = normalize_text(name)
         ing = by_key.get(key)
         if ing is None:
             ex = tuple(normalize_text(e) for e in (excludes or "").split(",") if e.strip())
             ing = by_key[key] = _Ingredient(name=name, term=term, excludes=ex)
+        if recipe_id not in ing.recipes and len(ing.recipe_names) < 2:
+            ing.recipe_names.append(recipe_name)
         ing.recipes.add(recipe_id)
     return list(by_key.values())
 
@@ -71,7 +74,7 @@ async def deal_ingredients(db: AsyncSession, user_id: int | None) -> list[DealIn
         for d in deals:
             if name_matches(ing.term, d.group_name, ing.excludes):
                 cand = DealIngredientOut(
-                    name=ing.name, recipe_count=len(ing.recipes), source="deal", product_name=d.group_name,
+                    name=ing.name, recipe_count=len(ing.recipes), recipe_names=ing.recipe_names, source="deal", product_name=d.group_name,
                     group_id=d.group_id, market_id=d.market_id, market_slug=None, image_url=d.image_url,
                     price=d.price, previous_price=d.previous_price, discount_percent=d.discount_percent,
                 )
@@ -80,13 +83,19 @@ async def deal_ingredients(db: AsyncSession, user_id: int | None) -> list[DealIn
         for a in aktuel:
             if name_matches(ing.term, a.title, ing.excludes):
                 cand = DealIngredientOut(
-                    name=ing.name, recipe_count=len(ing.recipes), source="aktuel", product_name=a.title,
+                    name=ing.name, recipe_count=len(ing.recipes), recipe_names=ing.recipe_names, source="aktuel", product_name=a.title,
                     group_id=None, market_id=None, market_slug=a.market_slug, image_url=a.image_url,
                     price=a.price, previous_price=a.old_price, discount_percent=_percent(a.price, a.old_price),
                 )
                 if best is None or cand.discount_percent > best.discount_percent:
                     best = cand
-        if best is not None:
+        # İndirimi bilinmeyen ve tek tarifte geçen malzeme listeyi kalabalıklaştırır
+        if best is not None and (best.discount_percent > 0 or best.recipe_count >= 2):
             out.append(best)
-    out.sort(key=lambda d: (-d.discount_percent, -d.recipe_count, d.name))
+    # Önce gerçek indirimler (tasarruf TL'si, sonra oran), sonra indirim oranı bilinmeyenler
+    out.sort(key=lambda d: (
+        d.discount_percent == 0,
+        -(float(d.previous_price - d.price) if d.previous_price and d.previous_price > d.price else 0.0),
+        -d.discount_percent, -d.recipe_count, d.name,
+    ))
     return out
