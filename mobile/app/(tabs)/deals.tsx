@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
-import { Card, Muted, Screen, Title, useTheme } from '@/components/ui';
+import { Card, EmptyState, Muted, Screen, Title, useTheme } from '@/components/ui';
 import { api, Deal, formatSize, num } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
@@ -38,7 +38,7 @@ export default function DealsScreen() {
 
   return (
     <Screen>
-      <Title>🏷️ Fırsatlar</Title>
+      <Title>Fırsatlar</Title>
       <Muted>{user ? 'Seçtiğin marketlerde' : 'Marketlerde'} son 30 güne göre ucuzlayan ve kampanyadaki ürünler.</Muted>
 
       <Pressable onPress={() => router.push('/aktuel')}>
@@ -70,11 +70,7 @@ export default function DealsScreen() {
       {error && <Card><Text style={{ color: t.danger }}>Fırsatlar yüklenemedi: {error}</Text></Card>}
       {deals === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
       {deals?.length === 0 && (
-        <Card style={{ alignItems: 'center', gap: 6, padding: 24 }}>
-          <Text style={{ fontSize: 30 }}>🏷️</Text>
-          <Text style={{ color: t.text }}>Şu an indirimde ürün yok</Text>
-          <Muted>Fiyatlar her güncellendiğinde bu sayfa yenilenir.</Muted>
-        </Card>
+        <EmptyState icon="tag" title="Şu an indirimde ürün yok" text="Fiyatlar her güncellendiğinde bu sayfa yenilenir." />
       )}
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>

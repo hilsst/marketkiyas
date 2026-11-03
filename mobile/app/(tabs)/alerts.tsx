@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
-import { Card, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
+import { Card, EmptyState, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
 import { api, formatSize, num, PriceAlert } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
@@ -40,18 +40,15 @@ export default function AlertsScreen() {
 
   return (
     <Screen>
-      <Title>🔔 Alarmlar</Title>
+      <Title>Fiyat alarmları</Title>
       {!user ? <LoginPrompt what="Ürün takip etmek" /> : (
         <>
           <Muted>Takip ettiğin ürünlerin fiyatı düşünce burada görünür. Ürün sayfasındaki 🔔 Takip et ile ekleyebilirsin.</Muted>
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
           {alerts === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
           {alerts?.length === 0 && (
-            <Card style={{ alignItems: 'center', gap: 6, padding: 24 }}>
-              <Text style={{ fontSize: 30 }}>🔔</Text>
-              <Text style={{ color: t.text }}>Henüz takip ettiğin ürün yok</Text>
-              <Muted style={{ textAlign: 'center' }}>Bir ürünü açıp 🔔 Takip et&apos;e dokun.</Muted>
-            </Card>
+            <EmptyState icon="bell" title="Henüz takip ettiğin ürün yok" text="Bir ürünü açıp Takip et'e dokun; fiyatı düşünce burada görürsün."
+              primary={{ title: 'Ürün ara', onPress: () => router.push('/search') }} />
           )}
           {alerts?.map(a => {
             const current = a.current_price != null ? num(a.current_price) : null;

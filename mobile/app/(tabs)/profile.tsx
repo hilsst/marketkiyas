@@ -53,7 +53,7 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <Title>👤 Profil</Title>
+      <Title>Hesabım</Title>
       {!user ? <LoginPrompt what="Tasarrufunu ve marketlerini görmek" /> : (
         <>
           <Card style={{ gap: 4 }}>
