@@ -19,23 +19,29 @@ export default function ProductRow({ group, prices, onPress }: {
   return (
     <Pressable onPress={onPress} accessibilityRole="button"
       style={({ pressed }) => ({
-        flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1,
-        backgroundColor: t.card, borderColor: t.border, opacity: pressed ? 0.7 : 1,
+        flexDirection: 'row', gap: 12, alignItems: 'center', padding: 12, borderRadius: 20,
+        backgroundColor: t.card, opacity: pressed ? 0.75 : 1,
+        shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 2,
       })}>
-      <ProductImage uri={group.image_url} icon={categoryIcon(group.category_id)} />
+      <ProductImage uri={group.image_url} icon={categoryIcon(group.category_id)} size={64} />
       <View style={{ flex: 1, gap: 3 }}>
-        <Text style={{ color: t.text, fontWeight: '600', fontSize: 15 }} numberOfLines={2}>{group.name}</Text>
+        <Text style={{ color: t.text, fontWeight: '700', fontSize: 15 }} numberOfLines={2}>{group.name}</Text>
         <Muted>{[formatSize(group.quantity, group.unit), shown.length + ' market'].filter(Boolean).join(' · ')}</Muted>
         {cheapest && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <MarketBadge id={cheapest.market_id} size={20} />
-            <Muted>{marketById(cheapest.market_id)?.name}</Muted>
-            <Text style={{ color: t.tint, fontWeight: '800' }}>{num(cheapest.min_price).toFixed(2)} ₺</Text>
-            {cheapest.regular_price && <Text style={{ fontSize: 10, color: '#c2410c', fontWeight: '700' }}>İNDİRİM</Text>}
+            <Muted style={{ fontSize: 12 }}>{marketById(cheapest.market_id)?.name} · en ucuz</Muted>
           </View>
         )}
       </View>
-      <Text style={{ color: t.textMuted, fontSize: 18 }}>›</Text>
+      {cheapest && (
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+          <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 18, fontVariant: ['tabular-nums'] }}>{num(cheapest.min_price).toFixed(2)} ₺</Text>
+          {cheapest.regular_price && (
+            <Text style={{ fontSize: 10, color: '#fff', backgroundColor: t.accent, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>İNDİRİM</Text>
+          )}
+        </View>
+      )}
     </Pressable>
   );
 }
