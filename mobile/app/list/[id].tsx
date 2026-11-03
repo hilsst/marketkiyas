@@ -69,7 +69,8 @@ export default function ListScreen() {
   }, [reoptimize]);
   const openTab = (k: Tab) => { setTab(k); if (k === 'optimize' && loc !== 'ready' && loc !== 'asking') void askLocation(); };
   const load = useCallback(() => {
-    api.list(listId).then(setDetail).catch(() => setDetail(null));
+    // Alışveriş modundaki liste şube mesafelerini de gösterir: konum yalnız bir kez, izin yoksa sessizce atlanır
+    api.list(listId).then(d => { setDetail(d); if (d.applied_plan != null) void getCoords().then(r => setMyPos(r.coords)); }).catch(() => setDetail(null));
     api.myStores().then(setStores).catch(() => {});
     reoptimize();
   }, [listId, reoptimize]);
@@ -202,9 +203,8 @@ export default function ListScreen() {
 
   /** Planın o marketten alacağı şubeler: ad, konuma göre mesafe (konum izni varsa) ve haritada aç */
   const here = myPos;
-  const storeInfo = (pl: Plan, itemIds: number[]) => {
-    const ids = [...new Set(pl.lines.filter(l => itemIds.includes(l.item_id) && l.store_id != null).map(l => l.store_id as number))];
-    return ids.map(id => stores.find(s => s.id === id)).filter((s): s is Store => s != null).map(s => {
+  const storeInfo = (ids: number[]) => {
+    return [...new Set(ids)].map(id => stores.find(s => s.id === id)).filter((s): s is Store => s != null).map(s => {
       const at = s.latitude != null && s.longitude != null ? { lat: num(s.latitude), lon: num(s.longitude) } : null;
       const km = here && at ? distanceKm(here, at) : null;
       return (
@@ -317,6 +317,7 @@ export default function ListScreen() {
                   <Text style={{ color: t.text, fontWeight: '800', flex: 1 }}>{marketById(g.market_id)?.name}</Text>
                   <Text style={{ color: t.text, fontWeight: '800' }}>{sum.toFixed(2)} ₺</Text>
                 </View>
+                <View style={{ paddingHorizontal: 12 }}>{storeInfo(items.map(i => i.assigned?.store_id).filter((x): x is number => x != null))}</View>
                 {items.map(i => row(i, true))}
               </Card>
             );
@@ -388,7 +389,7 @@ export default function ListScreen() {
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 16, flex: 1 }}>{marketById(b.market_id)?.name}</Text>
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>{num(b.total).toFixed(2)} ₺</Text>
                   </View>
-                  {storeInfo(plan, b.item_ids)}
+                  {storeInfo(plan.lines.filter(l => b.item_ids.includes(l.item_id) && l.store_id != null).map(l => l.store_id as number))}
                   {plan.lines.filter(l => b.item_ids.includes(l.item_id)).map(l => (
                     <View key={l.item_id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, borderTopWidth: 1, borderTopColor: t.border, paddingVertical: 8 }}>
                       <Muted style={{ flex: 1 }}>{l.group_name} ({l.substituted ? l.product_name : l.brand || l.product_name}){l.substituted ? ' · benzeri alındı' : ''}</Muted>
