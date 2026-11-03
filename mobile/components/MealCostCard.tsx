@@ -11,15 +11,15 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
   const t = useTheme();
   return (
     <Card style={{ gap: 12 }}>
-      <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>{title}</Text>
+      <Text style={{ color: t.text, fontWeight: '800', fontSize: 18, letterSpacing: -0.3 }}>{title}</Text>
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <View style={{ flex: 1, backgroundColor: t.tint, borderRadius: 14, padding: 12, gap: 2 }}>
+        <View style={{ flex: 1, backgroundColor: t.tint, borderRadius: 18, padding: 14, gap: 2 }}>
           <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>ALIŞVERİŞ TUTARI</Text>
-          <Text style={{ color: '#fff', fontSize: 24, fontWeight: '900' }}>{tl(cost.purchase_total)}</Text>
+          <Text style={{ color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>{tl(cost.purchase_total)}</Text>
         </View>
-        <View style={{ flex: 1, borderRadius: 14, padding: 12, gap: 2, borderWidth: 1, borderColor: t.border }}>
+        <View style={{ flex: 1, borderRadius: 18, padding: 14, gap: 2, backgroundColor: t.background }}>
           <Text style={{ color: t.textMuted, fontSize: 11, fontWeight: '700' }}>KİŞİ BAŞI ÖĞÜN</Text>
-          <Text style={{ color: t.text, fontSize: 24, fontWeight: '900' }}>{cost.per_serving ? tl(cost.per_serving) : '—'}</Text>
+          <Text style={{ color: t.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>{cost.per_serving ? tl(cost.per_serving) : '—'}</Text>
         </View>
       </View>
       <Muted>
