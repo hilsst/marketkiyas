@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import ExportSuccessSheet from '@/components/ExportSuccessSheet';
 import ListPicker from '@/components/ListPicker';
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
@@ -13,7 +14,7 @@ import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { ACCOUNT_REASON_TEXT, accountRedirect } from '@/lib/guest';
 import { rescheduleWeekly } from '@/lib/weekly';
-import { ALLERGEN_LABELS, api, COURSE_LABELS, formatSize, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealSlot, SLOT_COURSES } from '@/lib/api';
+import { ALLERGEN_LABELS, api, COURSE_LABELS, formatSize, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealPlanExport, MealSlot, SLOT_COURSES } from '@/lib/api';
 
 const ORDINALS = ['Birinci', 'İkinci', 'Üçüncü', 'Dördüncü', 'Beşinci', 'Altıncı', 'Yedinci', 'Sekizinci', 'Dokuzuncu', 'Onuncu',
   'On birinci', 'On ikinci', 'On üçüncü', 'On dördüncü'];
@@ -33,6 +34,7 @@ export default function MealPlanScreen() {
   const [changing, setChanging] = useState<string | null>(null);
   const [picker, setPicker] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [result, setResult] = useState<MealPlanExport | null>(null);
 
   const load = useCallback(() => api.mealPlan(planId, includePantry)
     .then(p => { setPlan(p); setError(null); })
@@ -70,15 +72,7 @@ export default function MealPlanScreen() {
     try {
       const out = await api.exportMealPlan(planId, { list_id: listId, include_pantry: includePantry });
       setPicker(false);
-      const open = () => router.push({ pathname: '/list/[id]', params: { id: String(out.list.id) } });
-      const notes = [`${out.added} ürün eklendi.`];
-      if (out.skipped.length) notes.push(`Marketlerinizde bulunamadığı için eklenmedi: ${out.skipped.join(', ')}.`);
-      if (out.stored?.length) {
-        notes.push(`Paketlerden artacaklar dolabına kaydedildi, sonraki planlar önce bunları kullanır: ${out.stored.map(s => `${s.name} ${formatSize(s.quantity, s.unit)}`).join(', ')}.`);
-      }
-      if (out.skipped.length || out.stored?.length) {
-        Alert.alert('Listeye aktarıldı', notes.join('\n\n'), [{ text: 'Listeyi aç', onPress: open }]);
-      } else open();
+      setResult(out);
       load();
     } finally { setExporting(false); }
   };
@@ -218,6 +212,8 @@ export default function MealPlanScreen() {
         <Button title="Alışveriş listesine aktar" onPress={() => setPicker(true)} busy={exporting} />
         <Button title="Yeni liste olarak aktar" kind="secondary" onPress={() => exportTo(null).catch(e => setError(e.message))} busy={exporting} />
       </ActionBar>
+      <ExportSuccessSheet result={result} onClose={() => setResult(null)}
+        onOpen={() => { const id = result!.list.id; setResult(null); router.push({ pathname: '/list/[id]', params: { id: String(id) } }); }} />
       <ListPicker visible={picker} onClose={() => setPicker(false)} onPick={id => exportTo(id)} />
     </SafeAreaView>
   );
