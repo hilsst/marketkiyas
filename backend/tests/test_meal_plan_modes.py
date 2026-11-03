@@ -30,11 +30,11 @@ async def test_custom_length_ignores_weekdays(client, auth_headers):
     one = await _create(client, auth_headers, days=1, weekdays=[6], meal_slots=["aksam"], courses=["ana"], start_date="2026-11-02")
     assert one["days"] == 1 and len(one["entries"]) == 1
 
-    # Plana ekleme: son gün (index 2) eklenir, planın dışındaki gün (index 3) reddedilir
+    # Plana ekleme: son güne (index 2) salata eklenir, planın dışındaki gün (index 3) reddedilir
     add = f"/api/meal-plans/{plan['id']}/entries"
-    assert (await client.post(add, headers=auth_headers, json={"day_index": 3, "slot": "aksam", "course": "ana"})).status_code == 422
-    r = await client.post(add, headers=auth_headers, json={"day_index": 2, "slot": "aksam", "course": "ana"})
-    assert r.status_code == 201 and any(e["day_index"] == 2 for e in r.json()["entries"])
+    assert (await client.post(add, headers=auth_headers, json={"day_index": 3, "slot": "aksam", "course": "salata"})).status_code == 422
+    r = await client.post(add, headers=auth_headers, json={"day_index": 2, "slot": "aksam", "course": "salata"})
+    assert r.status_code == 201 and any(e["day_index"] == 2 and e["course"] == "salata" for e in r.json()["entries"])
 
     assert (await client.post("/api/meal-plans", headers=auth_headers, json={"days": 15})).status_code == 422
     # Eski istemci: period yeterli
