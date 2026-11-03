@@ -122,7 +122,7 @@ export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPr
   );
 }
 
-/** Üçlü/ikili sekme çubuğu (Ürünler | Planlar, Tek market | Kombinasyon | Fırsatçı) */
+/** Üçlü/ikili sekme çubuğu (Ürünler | Fiyatlar, Tek market | Kombinasyon | Fırsatçı) */
 export function Segmented<K extends string>({ options, value, onChange }: {
   options: { key: K; label: string }[]; value: K; onChange: (k: K) => void;
 }) {
