@@ -84,7 +84,7 @@ async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) ->
     """1-14 günlük plan (günlük, haftalık ya da ör. maaş gününe kadar 10 gün): seçilen mutfaklardan
     çeşitli yemekler öğünlere dağıtılır; her öğün tek mutfaktan gelir.
 
-    weekdays: yalnız bu günlerde yemek (hafta içi). budget: alışveriş tutarı hedefi. leftovers: bir pişir
+    weekdays: kullanılmaz (eski istemciler için kabul edilir, yok sayılır). budget: alışveriş tutarı hedefi. leftovers: bir pişir
     iki ye. low_waste: malzemesi ortak tarifler. have: dolapta olanlar (maliyete girmez, öne çıkar)."""
     plan, swaps = await svc.create_plan(
         db, user, period=body.period, cuisine_slugs=body.cuisines or ([body.cuisine] if body.cuisine else []),

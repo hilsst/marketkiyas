@@ -775,9 +775,9 @@ async def create_plan(
     courses = sorted(set(courses), key=COURSE_ORDER.__getitem__)
     diets = sorted(set(diets or []), key=list(Diet).index)
     avoid = sorted(set(avoid or []), key=list(Allergen).index)
-    weekdays = sorted(set(weekdays or []))
-    if len(weekdays) == 7:
-        weekdays = []
+    # Gün süzgeci kaldırıldı: plan her zaman istenen gün sayısı kadar sürer ("kaç günlük" cevabı kesindir).
+    # Eski istemciler weekdays gönderse de yok sayılır.
+    weekdays = []
     have = list(dict.fromkeys(h.strip() for h in (have or []) if h.strip()))
     recipes = await _cuisine_recipes(db, cuisines, diets, avoid)
     menu = {slot: [c for c in slot_courses(slot, courses) if _pool(recipes, slot, c)] for slot in slots}
