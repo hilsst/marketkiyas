@@ -179,22 +179,6 @@ export default function HomeScreen() {
         </View>
       </Pressable>
 
-      {/* 4) Kategoriler */}
-      <View style={{ gap: 12 }}>
-        <SectionHeader title="Kategoriler" />
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {categories.map(c => (
-            <Pressable key={c.id} onPress={() => router.push({ pathname: '/category/[id]', params: { id: String(c.id) } })}
-              style={{ width: '23%', flexGrow: 1 }}>
-              <Card style={{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, gap: 6 }}>
-                <FoodIcon name={categoryGlyph(c.slug)} size={28} />
-                <Text style={{ color: t.text, fontSize: 11, textAlign: 'center' }} numberOfLines={2}>{c.name}</Text>
-              </Card>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
       {/* 5) Fırsat / popüler ürünler (yatay) */}
       {showcase && showcase.items.length > 0 && (
         <View style={{ gap: 10 }}>
@@ -224,6 +208,22 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
       )}
+
+      {/* 4) Kategoriler */}
+      <View style={{ gap: 12 }}>
+        <SectionHeader title="Kategoriler" />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {categories.map(c => (
+            <Pressable key={c.id} onPress={() => router.push({ pathname: '/category/[id]', params: { id: String(c.id) } })}
+              style={{ width: '23%', flexGrow: 1 }}>
+              <Card style={{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, gap: 6 }}>
+                <FoodIcon name={categoryGlyph(c.slug)} size={28} />
+                <Text style={{ color: t.text, fontSize: 11, textAlign: 'center' }} numberOfLines={2}>{c.name}</Text>
+              </Card>
+            </Pressable>
+          ))}
+        </View>
+      </View>
 
       {/* 6) Marketlerin aktüelleri (yatay) */}
       {aktuel.length > 0 && (
