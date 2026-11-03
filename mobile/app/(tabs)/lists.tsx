@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import MarketBadge from '@/components/MarketBadge';
-import { Button, Card, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
+import { Button, Card, EmptyState, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
 import { api, ListSummary, num } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { accountRedirect } from '@/lib/guest';
@@ -53,7 +53,7 @@ export default function ListsScreen() {
 
   return (
     <Screen>
-      <Title>📋 Listeler</Title>
+      <Title>Listelerim</Title>
       {!user ? <LoginPrompt what="Alışveriş listesi oluşturmak" /> : (
         <>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -77,7 +77,10 @@ export default function ListsScreen() {
           )}
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
           {lists === null && !error && <ActivityIndicator color={t.tint} />}
-          {lists?.length === 0 && <Muted style={{ textAlign: 'center' }}>Henüz listen yok. Yukarıdan ilk listeni oluştur.</Muted>}
+          {lists?.length === 0 && (
+            <EmptyState icon="shopping-cart" title="Listen henüz boş" text="Bir menü planla, malzemeler otomatik gelsin; ya da yukarıdan ilk listeni oluştur."
+              primary={{ title: 'Menü planla', onPress: () => router.push('/meals') }} secondary={{ title: 'Ürün ara', onPress: () => router.push('/search') }} />
+          )}
           {lists?.map(l => (
             <Pressable key={l.id} onPress={() => router.push({ pathname: '/list/[id]', params: { id: String(l.id) } })}>
               <Card style={{ gap: 6 }}>
