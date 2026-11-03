@@ -6,6 +6,7 @@ import Celebration from '@/components/Celebration';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import Icon from '@/components/Icon';
+import ItemPicker from '@/components/ItemPicker';
 import { ActionBar, Button, Card, Muted, Screen, Segmented, useTheme } from '@/components/ui';
 import { api, CompleteResponse, ItemPatch, ListDetail, ListItem, num, OptimizeResult, Plan, PlanType } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -47,6 +48,7 @@ export default function ListScreen() {
   const [tab, setTab] = useState<Tab>('items');
   const [mode, setMode] = useState<PlanType>('single_market');
   const [error, setError] = useState<string | null>(null);
+  const [pickItem, setPickItem] = useState<ListItem | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [celebration, setCelebration] = useState<CompleteResponse | null>(null);
   const seq = useRef(0);
@@ -161,7 +163,8 @@ export default function ListScreen() {
           {it.is_checked && <Icon name="check" size={16} color="#fff" />}
         </Pressable>
         <ProductImage uri={it.image_url} icon={categoryIcon(it.category_id)} size={40} />
-        <View style={{ flex: 1 }}>
+        <Pressable disabled={inShopping} onPress={() => setPickItem(it)} accessibilityRole="button" accessibilityLabel={`${it.group_name} için market ve marka seç`}
+          style={{ flex: 1 }}>
           <Text style={{ color: t.text, fontWeight: '600', textDecorationLine: it.is_checked ? 'line-through' : 'none' }} numberOfLines={2}>{it.group_name}</Text>
           {it.added_by_id != null && it.added_by_id !== user?.id && it.added_by_name && (
             <Text style={{ color: '#0284c7', fontSize: 11, fontWeight: '600' }}>{it.added_by_name} ekledi</Text>
@@ -169,9 +172,11 @@ export default function ListScreen() {
           {inShopping ? (
             <Muted>{[it.assigned?.brand || it.assigned?.product_name, it.assigned?.store_name].filter(Boolean).join(' · ')} × {qty}</Muted>
           ) : (
-            <Muted>{locked ? `Seçili: ${line?.brand || it.preferred_brand || 'seçili ürün'}` : 'Farketmez (en ucuzu)'}{line ? ` · ${num(line.unit_price).toFixed(2)} ₺` : ''}</Muted>
+            <Text style={{ color: locked ? t.tintDark : t.textMuted, fontSize: 13, fontWeight: locked ? '700' : '400' }}>
+              {locked ? `Seçili: ${line?.brand || it.preferred_brand || 'seçili ürün'}` : 'Farketmez (en ucuzu)'}{line ? ` · ${num(line.unit_price).toFixed(2)} ₺` : ''}  ›
+            </Text>
           )}
-        </View>
+        </Pressable>
         {inShopping ? (
           <Text style={{ color: t.text, fontWeight: '800' }}>{(num(it.assigned?.unit_price) * qty).toFixed(2)} ₺</Text>
         ) : (
@@ -382,6 +387,8 @@ export default function ListScreen() {
           )}
         </>
       )}
+      <ItemPicker item={pickItem ? (itemById.get(pickItem.id) ?? null) : null} onClose={() => setPickItem(null)}
+        onPick={patch => { const id = pickItem?.id; setPickItem(null); if (id != null) void update(id, patch); }} />
     </Screen>
   );
 }
