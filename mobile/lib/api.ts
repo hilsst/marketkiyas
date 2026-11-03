@@ -178,7 +178,7 @@ export interface MealPlanCreate {
 }
 /** İndirimden menü: indirimdeki bir tarif malzemesi ve en iyi fırsatı */
 export interface DealIngredient {
-  name: string; recipe_count: number; source: 'deal' | 'aktuel'; product_name: string; group_id: number | null;
+  name: string; recipe_count: number; recipe_names: string[]; source: 'deal' | 'aktuel'; product_name: string; group_id: number | null;
   market_id: number | null; market_slug: string | null; image_url: string | null; price: Money; previous_price: Money | null;
   discount_percent: number;
 }

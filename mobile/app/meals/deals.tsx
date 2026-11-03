@@ -10,7 +10,7 @@ import { api, DealIngredient, num } from '@/lib/api';
 
 /**
  * İndirimden menü: şu an indirimdeki tarif malzemeleri (fırsatlar + aktüel). Seçilen malzemeyi kullanan
- * tarifler haftalık planda öne çıkar ("tavuk indirimde, tavuklu hafta"). Hepsi seçili gelir; kapatılabilir.
+ * tarifler haftalık planda öne çıkar ("tavuk indirimde, tavuklu hafta"). Gerçek indirimliler (en fazla 8) seçili gelir; kapatılabilir.
  */
 export default function DealMenuScreen() {
   const t = useTheme();
@@ -21,7 +21,7 @@ export default function DealMenuScreen() {
 
   useEffect(() => {
     api.dealIngredients()
-      .then(d => { setItems(d); setPicked(new Set(d.slice(0, 8).map(i => i.name))); })
+      .then(d => { setItems(d); setPicked(new Set(d.filter(i => i.discount_percent > 0).slice(0, 8).map(i => i.name))); })
       .catch(e => { setItems([]); setError((e as Error).message); });
   }, []);
 
@@ -56,16 +56,21 @@ export default function DealMenuScreen() {
       {items?.length === 0 && !error && (
         <Card><Muted>Şu an tariflerde kullanılan indirimli malzeme bulunamadı. Normal planı kurabilirsin.</Muted></Card>
       )}
-      {items?.map(i => {
+      {items?.map((i, idx) => {
+        const real = i.discount_percent > 0;
+        const header = idx === 0 || real !== (items[idx - 1].discount_percent > 0)
+          ? (real ? 'GERÇEK İNDİRİM · en çok tasarruf üstte' : 'BROŞÜRDE · indirim oranı bilinmiyor') : null;
         const on = picked.has(i.name);
         return (
-          <Pressable key={i.name} onPress={() => toggle(i.name)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+          <View key={i.name} style={{ gap: 8 }}>
+          {header && <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '800', marginTop: 8 }}>{header}</Text>}
+          <Pressable onPress={() => toggle(i.name)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, borderWidth: 1,
               borderColor: on ? t.tint : t.border, backgroundColor: on ? t.tint + '18' : t.card }}>
             <ProductImage uri={i.image_url} icon="tag" size={48} />
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ color: t.text, fontWeight: '700' }}>{i.name}</Text>
-              <Muted>{i.product_name} · {i.recipe_count} tarif</Muted>
+              <Muted>{i.product_name} · {i.recipe_count} tarif{i.recipe_names?.length ? `: ${i.recipe_names.join(', ')}${i.recipe_count > i.recipe_names.length ? '…' : ''}` : ''}</Muted>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {i.market_id != null && <MarketBadge id={i.market_id} size={18} />}
                 {i.market_slug && <MarketBadge slug={i.market_slug} size={18} />}
@@ -78,6 +83,7 @@ export default function DealMenuScreen() {
             </View>
             <Icon name={on ? 'check-square' : 'square'} size={24} color={on ? t.tint : t.textMuted} />
           </Pressable>
+          </View>
         );
       })}
       {items?.length === 0 && error && <Text style={{ color: t.danger }}>{error}</Text>}
