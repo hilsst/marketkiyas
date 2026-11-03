@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Fragment, useEffect, useState } from 'react';
-import { ActivityIndicator, Text } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import AdSlot from '@/components/AdSlot';
 import { AD_EVERY, adsEnabled, interleaveAds } from '@/lib/ads';
 import ProductRow from '@/components/ProductRow';
-import { Input, Muted, Screen, useTheme } from '@/components/ui';
+import Icon from '@/components/Icon';
+import { EmptyState, Muted, Screen, useTheme } from '@/components/ui';
 import { api, GroupSummary } from '@/lib/api';
 
 /** Ürün araması. Ana sayfadaki arama çubuğu buraya açılır. */
@@ -31,11 +32,20 @@ export default function SearchScreen() {
 
   return (
     <Screen safeTop={false}>
-      <Input placeholder="🔍  Ürün ara (örn. süt, ekmek, deterjan)" value={q} onChangeText={setQ}
-        autoFocus returnKeyType="search" autoCorrect={false} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.card, borderRadius: 16, paddingHorizontal: 14,
+        shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
+        <Icon name="search" size={20} color={t.textMuted} />
+        <TextInput placeholder="Ürün ara (örn. süt, ekmek, deterjan)" placeholderTextColor={t.textMuted} value={q} onChangeText={setQ}
+          autoFocus returnKeyType="search" autoCorrect={false} style={{ flex: 1, color: t.text, fontSize: 16, paddingVertical: 14 }} />
+        {q !== '' && (
+          <Pressable onPress={() => setQ('')} hitSlop={10} accessibilityLabel="Aramayı temizle"><Icon name="x-circle" size={20} color={t.textMuted} /></Pressable>
+        )}
+      </View>
+      {q.trim() !== '' && results && results.length > 0 && <Muted>{results.length} ürün</Muted>}
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
-      {results === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
-      {q.trim() !== '' && results?.length === 0 && <Muted style={{ textAlign: 'center', marginTop: 24 }}>Sonuç bulunamadı</Muted>}
+      {results === null && q.trim() !== '' && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
+      {q.trim() === '' && <EmptyState icon="search" title="Ne arıyorsun?" text="Ürün adını yaz, yakınındaki marketlerin fiyatlarını karşılaştıralım." />}
+      {q.trim() !== '' && results?.length === 0 && <EmptyState icon="search" title="Sonuç bulunamadı" text="Farklı bir yazım ya da daha kısa bir kelime dene." />}
       {/* Listeye ürün eklerken (listId) reklam gösterilmez: liste akışı temiz kalır */}
       {interleaveAds(results ?? [], AD_EVERY, !params.listId && adsEnabled()).map(r => r.kind === 'ad'
         ? <AdSlot key={r.key} placement="product-list" />
