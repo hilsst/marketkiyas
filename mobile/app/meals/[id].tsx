@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ListPicker from '@/components/ListPicker';
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
-import { Button, Card, Muted, useTheme } from '@/components/ui';
+import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { ACCOUNT_REASON_TEXT, accountRedirect } from '@/lib/guest';
 import { rescheduleWeekly } from '@/lib/weekly';
@@ -95,7 +95,7 @@ export default function MealPlanScreen() {
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
       <Stack.Screen options={{ title: plan.name }} />
-      <ScrollView>
+      <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 16, gap: 16 }}>
           {user?.is_guest && (
             <Pressable onPress={() => { const to = accountRedirect(user, 'plan'); if (to) router.push(to); }}>
@@ -201,8 +201,6 @@ export default function MealPlanScreen() {
 
           <MealCostCard cost={plan.cost} />
 
-          <Button title="Alışveriş listesine aktar" onPress={() => setPicker(true)} busy={exporting} />
-          <Button title="Yeni liste olarak aktar" kind="secondary" onPress={() => exportTo(null).catch(e => setError(e.message))} busy={exporting} />
           {plan.exported_list_id != null && (
             <Text style={{ color: t.tint, textAlign: 'center', fontWeight: '600' }}
               onPress={() => router.push({ pathname: '/list/[id]', params: { id: String(plan.exported_list_id) } })}>
@@ -212,6 +210,10 @@ export default function MealPlanScreen() {
           <Text style={{ color: t.danger, textAlign: 'center', marginTop: 8 }} onPress={remove}>Planı sil</Text>
         </View>
       </ScrollView>
+      <ActionBar>
+        <Button title="Alışveriş listesine aktar" onPress={() => setPicker(true)} busy={exporting} />
+        <Button title="Yeni liste olarak aktar" kind="secondary" onPress={() => exportTo(null).catch(e => setError(e.message))} busy={exporting} />
+      </ActionBar>
       <ListPicker visible={picker} onClose={() => setPicker(false)} onPick={id => exportTo(id)} />
     </SafeAreaView>
   );

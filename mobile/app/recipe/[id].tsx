@@ -7,7 +7,7 @@ import { courseGlyph } from '@/lib/icons';
 import FoodIcon from '@/components/FoodIcon';
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
-import { Button, Card, Muted, useTheme } from '@/components/ui';
+import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
 import { ALLERGEN_LABELS, api, DIET_LABELS, MEAL_SLOT_LABELS, RecipeDetail } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -61,7 +61,7 @@ export default function RecipeScreen() {
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
       <Stack.Screen options={{ title: recipe.name }} />
-      <ScrollView>
+      <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 16, gap: 16 }}>
           <View style={{ alignItems: 'center', gap: 6 }}>
             <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
@@ -84,11 +84,6 @@ export default function RecipeScreen() {
               {recipe.allergens.map(a => badge(a, `İçerir: ${ALLERGEN_LABELS[a]}`, t.danger))}
             </View>
           </View>
-
-          {recipe.steps.length > 0 && (
-            <Button title="Pişirme modunu başlat"
-              onPress={() => router.push({ pathname: '/cook/[id]', params: { id: String(recipe.id), servings: String(people) } })} />
-          )}
 
           {recipe.nutrition && <NutritionCard nutrition={recipe.nutrition} title="Besin değeri (1 porsiyon)" />}
 
@@ -121,6 +116,12 @@ export default function RecipeScreen() {
           <MealCostCard cost={recipe.cost} title={`${people} kişilik maliyet`} />
         </View>
       </ScrollView>
+      {recipe.steps.length > 0 && (
+        <ActionBar>
+          <Button title="Pişirme modunu başlat"
+            onPress={() => router.push({ pathname: '/cook/[id]', params: { id: String(recipe.id), servings: String(people) } })} />
+        </ActionBar>
+      )}
     </SafeAreaView>
   );
 }

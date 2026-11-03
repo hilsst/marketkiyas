@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Animated, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { cuisineGlyph } from '@/lib/icons';
 import FoodIcon from '@/components/FoodIcon';
@@ -16,6 +17,7 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
   onCancel: () => void; onConfirm: (slugs: string[]) => void;
 }) {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<string[]>(initial);
   const [scale] = useState(() => new Animated.Value(0.85));
 
@@ -29,7 +31,7 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 20 }}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 20, paddingTop: 20 + insets.top, paddingBottom: 20 + insets.bottom }}>
         <Animated.View style={{ transform: [{ scale }], backgroundColor: t.background, borderRadius: 24, maxHeight: '88%', overflow: 'hidden' }}>
           <View style={{ backgroundColor: t.tint, paddingVertical: 18, paddingHorizontal: 20, gap: 4 }}>
             <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>{when} hangi mutfaklar?</Text>
