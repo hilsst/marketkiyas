@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import Icon from '@/components/Icon';
 import { Muted, useTheme } from '@/components/ui';
 import { api, RecipeDetail } from '@/lib/api';
 
@@ -120,7 +121,7 @@ export default function CookScreen() {
               <Text style={{ color: x.done ? '#fff' : t.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 ⏱ {x.done ? 'Bitti!' : clock(x.endsAt - now)}
               </Text>
-              <Text style={{ color: x.done ? '#fff' : t.textMuted, fontSize: 12 }}>{x.label} ✕</Text>
+              <Text style={{ color: x.done ? '#fff' : t.textMuted, fontSize: 12 }}>{x.label}</Text>
             </Pressable>
           ))}
         </View>
@@ -140,7 +141,7 @@ export default function CookScreen() {
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
                   <View style={{ width: 28, height: 28, borderRadius: 8, borderWidth: 2, borderColor: done ? t.tint : t.border,
                     backgroundColor: done ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                    {done && <Text style={{ color: '#fff', fontWeight: '900' }}>✓</Text>}
+                    {done && <Icon name="check" size={16} color="#fff" />}
                   </View>
                   <Text style={{ color: done ? t.textMuted : t.text, fontSize: 19, flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>
                     {i.name}
@@ -160,7 +161,7 @@ export default function CookScreen() {
                 <Text style={{ color: t.tint, fontSize: 18, fontWeight: '800' }}>⏱ {minutes} dk zamanlayıcı başlat</Text>
               </Pressable>
             ))}
-            {step === total && <Text style={{ color: t.text, fontSize: 22, fontWeight: '800', marginTop: 12 }}>Afiyet olsun! 🎉</Text>}
+            {step === total && <Text style={{ color: t.text, fontSize: 22, fontWeight: '800', marginTop: 12 }}>Afiyet olsun!</Text>}
           </>
         )}
       </ScrollView>
@@ -169,7 +170,7 @@ export default function CookScreen() {
         {step > 0 && big('‹ Geri', () => go(-1), false)}
         {step < total
           ? big(step === 0 ? 'Başla ›' : 'İleri ›', () => go(1), true)
-          : big('Bitir ✓', () => router.back(), true)}
+          : big('Bitir', () => router.back(), true)}
       </View>
     </SafeAreaView>
   );

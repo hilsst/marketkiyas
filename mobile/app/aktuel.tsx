@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import FoodIcon from '@/components/FoodIcon';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Button, Card, Muted, useTheme } from '@/components/ui';
@@ -84,7 +85,7 @@ export default function AktuelScreen() {
           {data === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
           {data && sections.length === 0 && (
             <Card style={{ alignItems: 'center', gap: 6, padding: 24 }}>
-              <Text style={{ fontSize: 30 }}>📰</Text>
+              <FoodIcon name="newspaper-variant-outline" size={30} />
               <Text style={{ color: t.text }}>Henüz aktüel ürün yok</Text>
               <Muted style={{ textAlign: 'center' }}>Broşürler günde iki kez güncellenir.</Muted>
             </Card>
@@ -114,7 +115,7 @@ export default function AktuelScreen() {
                             %{Math.round((1 - num(item.price) / num(item.old_price)) * 100)}
                           </Text>
                         )}
-                        <View style={{ alignItems: 'center' }}><ProductImage uri={item.image_url} icon="📰" size={96} /></View>
+                        <View style={{ alignItems: 'center' }}><ProductImage uri={item.image_url} icon="newspaper-variant-outline" size={96} /></View>
                         {item.brand && <Text style={{ color: t.textMuted, fontSize: 11, fontWeight: '700' }} numberOfLines={1}>{item.brand}</Text>}
                         <Text style={{ color: t.text, fontSize: 13, fontWeight: '600', minHeight: 34 }} numberOfLines={2}>{item.title}</Text>
                         {item.quantity_text && <Text style={{ color: t.textMuted, fontSize: 11 }}>{item.quantity_text}</Text>}

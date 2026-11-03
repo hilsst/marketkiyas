@@ -2,6 +2,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { categoryGlyph } from '@/lib/icons';
+import FoodIcon from '@/components/FoodIcon';
 import AdSlot from '@/components/AdSlot';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
@@ -102,7 +104,7 @@ export default function HomeScreen() {
       {/* Üst: selamlama + alarm zili (alarmlar artık buradan da açılır) */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View>
-          <Muted style={{ fontSize: 14 }}>{user ? 'Merhaba 👋' : 'Hoş geldin 👋'}</Muted>
+          <Muted style={{ fontSize: 14 }}>{user ? 'Merhaba' : 'Hoş geldin'}</Muted>
           <Title>{user?.full_name?.split(' ')[0] || 'Ucuzu'}</Title>
         </View>
         <Pressable onPress={() => router.push('/alerts')} accessibilityRole="button" accessibilityLabel="Fiyat alarmları"
@@ -136,9 +138,10 @@ export default function HomeScreen() {
             </Text>
           </View>
           {family?.family && (
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700', marginTop: 6 }}>
-              👨‍👩‍👧 Ailenin bu ayki tasarrufu: {num(family.family.month_saved).toFixed(2)} ₺
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
+              <Icon name="users" size={16} color="#fff" />
+              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Ailenin bu ayki tasarrufu: {num(family.family.month_saved).toFixed(2)} ₺</Text>
+            </View>
           )}
         </Pressable>
       ) : (
@@ -184,7 +187,7 @@ export default function HomeScreen() {
             <Pressable key={c.id} onPress={() => router.push({ pathname: '/category/[id]', params: { id: String(c.id) } })}
               style={{ width: '23%', flexGrow: 1 }}>
               <Card style={{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, gap: 6 }}>
-                <Text style={{ fontSize: 26 }}>{c.icon || '🛒'}</Text>
+                <FoodIcon name={categoryGlyph(c.slug)} size={28} />
                 <Text style={{ color: t.text, fontSize: 11, textAlign: 'center' }} numberOfLines={2}>{c.name}</Text>
               </Card>
             </Pressable>
@@ -230,7 +233,7 @@ export default function HomeScreen() {
             {aktuel.map(it => (
               <Pressable key={it.id} onPress={() => router.push({ pathname: '/aktuel', params: { market: it.market_slug } })}>
                 <Card style={{ width: 140, gap: 6, padding: 12 }}>
-                  <View style={{ alignItems: 'center' }}><ProductImage uri={it.image_url} icon="📰" size={70} /></View>
+                  <View style={{ alignItems: 'center' }}><ProductImage uri={it.image_url} icon="newspaper-variant-outline" size={70} /></View>
                   <Text style={{ color: t.text, fontSize: 12, fontWeight: '600', minHeight: 32 }} numberOfLines={2}>{it.title}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <MarketBadge slug={it.market_slug} size={18} />

@@ -2,6 +2,7 @@ import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Dimensions, Easing, Modal, Pressable, Text, View } from 'react-native';
+import FoodIcon from '@/components/FoodIcon';
 
 const DURATION_MS = 4000; // kutlama ekranı bu kadar kalır, sonra onDone
 const CALM_DURATION_MS = 2500; // kazanç yoksa sakin ekran
@@ -65,7 +66,7 @@ export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, 
         <Animated.View style={{ alignItems: 'center', transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }}>
           {festive ? (
             <>
-              <Text style={{ fontSize: 72 }}>💰</Text>
+              <FoodIcon name="piggy-bank" size={80} color="#fff" />
               <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', opacity: 0.9, marginTop: 8 }}>
                 {savedAmount > 0 ? 'Tebrikler! Tasarruf kasana eklendi' : 'Tebrikler! Bu alışverişte kazancın'}
               </Text>
@@ -76,7 +77,7 @@ export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, 
             </>
           ) : (
             <>
-              <Text style={{ fontSize: 64 }}>✅</Text>
+              <FoodIcon name="check-circle" size={72} color="#fff" />
               <Text style={{ color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 8 }}>Alışveriş tamamlandı</Text>
             </>
           )}

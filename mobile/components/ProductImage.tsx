@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
 
+import FoodIcon from '@/components/FoodIcon';
 import { useTheme } from '@/components/ui';
+import type { FoodGlyph } from '@/lib/icons';
 
 /** Ürün fotoğrafı (marketfiyati); yoksa ya da açılmazsa kategori simgesi. Yumuşak zeminli yuvarlak kare. */
-export default function ProductImage({ uri, icon, size = 52 }: { uri: string | null | undefined; icon: string; size?: number }) {
+export default function ProductImage({ uri, icon, size = 52 }: { uri: string | null | undefined; icon: FoodGlyph; size?: number }) {
   const t = useTheme();
   const [failed, setFailed] = useState(false);
   const box = { width: size, height: size, borderRadius: Math.round(size * 0.24), overflow: 'hidden' as const, alignItems: 'center' as const, justifyContent: 'center' as const };
   if (!uri || failed) {
     return (
       <View style={[box, { backgroundColor: t.tintSoft }]}>
-        <Text style={{ fontSize: size * 0.5 }}>{icon}</Text>
+        <FoodIcon name={icon} size={Math.round(size * 0.5)} />
       </View>
     );
   }

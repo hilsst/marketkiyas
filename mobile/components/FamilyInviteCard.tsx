@@ -28,7 +28,7 @@ export default function FamilyInviteCard({ invite, onDone }: { invite: FamilyInv
 
   return (
     <Card style={{ gap: 10, borderColor: t.tint, borderWidth: 2 }}>
-      <Text style={{ color: t.text, fontSize: 16, fontWeight: '800' }}>👨‍👩‍👧 Ailene katılmaya davet edildin</Text>
+      <Text style={{ color: t.text, fontSize: 16, fontWeight: '800' }}>Ailene katılmaya davet edildin</Text>
       <Muted>
         {invite.invited_by ? `${invite.invited_by} seni ` : 'Seni '}“{invite.family_name}” ailesine çağırıyor. Katılınca ailedeki
         herkesin listelerini görür, kod paylaşmadan ürün eklersiniz.

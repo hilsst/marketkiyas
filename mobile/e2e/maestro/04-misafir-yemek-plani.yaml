@@ -6,7 +6,7 @@ appId: app.ucuzu
 # Karşılama ekranındaki "Yemek Planı" seçeneği (başlık aynı metinle başka yerde de geçtiği için açıklamasından seçilir)
 - tapOn: "1-14 günlük menü.*"
 - extendedWaitUntil:
-    visible: "🍲 Yeni plan"
+    visible: "Yeni plan"
     timeout: 60000
 - assertNotVisible: "Yemek planı yapmak için giriş yapın ya da ücretsiz üye olun."
 - tapOn: "Plan oluştur"
@@ -14,16 +14,16 @@ appId: app.ucuzu
 - tapOn:
     text: "(Planı oluştur|\\d+ mutfakla oluştur)"
 - extendedWaitUntil:
-    visible: "💾 Planını kaydet"
+    visible: "Planını kaydet"
     timeout: 120000
-- assertVisible: "🛒 Alışveriş listesine aktar"
-- tapOn: "💾 Planını kaydet"
+- assertVisible: "Alışveriş listesine aktar"
+- tapOn: "Planını kaydet"
 - runFlow: subflows/upgrade.yaml
 # Giriş ekranı kapanır, plan ekranına dönülür: misafir kartı gitmiş olmalı
 - extendedWaitUntil:
-    notVisible: "💾 Planını kaydet"
+    notVisible: "Planını kaydet"
     timeout: 30000
-- assertVisible: "🛒 Alışveriş listesine aktar"
+- assertVisible: "Alışveriş listesine aktar"
 # Hesap açılmış: Profil'de e-posta ve çıkış var
 # Planlayıcıdan sekmelere iki adım geri (plan -> Yemek Planı -> sekmeler)
 - back

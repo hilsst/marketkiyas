@@ -41,7 +41,7 @@ export default function AlertSheet({ visible, onClose, groupId, groupName, cheap
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={onClose} />
       <View style={{ backgroundColor: t.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 20 + insets.bottom, gap: 12 }}>
-        <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>🔔 Fiyatını takip et</Text>
+        <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>Fiyatını takip et</Text>
         {product ? (
           <Muted>Seçtiğin ürün takip edilecek: <Text style={{ color: t.text, fontWeight: '700' }}>{product.label}</Text>, şu an {product.price.toFixed(2)} ₺. Fiyatı düşünce Alarmlar sekmesinde haber veririz.</Muted>
         ) : (

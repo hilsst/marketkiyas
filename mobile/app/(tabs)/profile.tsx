@@ -76,7 +76,7 @@ export default function ProfileScreen() {
             <Card style={{ gap: 6 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: t.text, fontWeight: '700' }}>🔔 Haftalık menü bildirimi</Text>
+                  <Text style={{ color: t.text, fontWeight: '700' }}>Haftalık menü bildirimi</Text>
                   <Muted>{'Her pazar 11:00\'de "Bu haftanın menüsü hazır" der; dokununca planı açar.'}</Muted>
                 </View>
                 <Switch value={weekly} onValueChange={toggleWeekly} />

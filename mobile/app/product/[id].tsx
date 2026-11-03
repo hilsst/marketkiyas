@@ -114,7 +114,7 @@ export default function ProductScreen() {
               <Muted>{o.product.brand ? `${o.product.brand} · ` : ''}{o.product.name}</Muted>
               {o.fresh && (
                 <Text style={{ color: o.fresh.stale ? '#b45309' : t.textMuted, fontSize: 10, fontWeight: o.fresh.stale ? '700' : '400' }}>
-                  {o.fresh.stale ? '⚠ ' : ''}Fiyat {o.fresh.label} güncellendi{o.fresh.stale ? ' · kasada değişmiş olabilir' : ''}
+                  {o.fresh.stale ? '' : ''}Fiyat {o.fresh.label} güncellendi{o.fresh.stale ? ' · kasada değişmiş olabilir' : ''}
                 </Text>
               )}
             </View>
@@ -157,7 +157,7 @@ export default function ProductScreen() {
         <Pressable onPress={openAlert} accessibilityLabel="Fiyatını takip et"
           style={{ paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, justifyContent: 'center',
             borderColor: alert ? '#f59e0b' : t.border, backgroundColor: alert ? '#fef3c7' : t.card }}>
-          <Text style={{ color: alert ? '#92400e' : t.text, fontWeight: '700' }}>{alert ? '🔔 Takipte' : '🔔 Takip et'}</Text>
+          <Text style={{ color: alert ? '#92400e' : t.text, fontWeight: '700' }}>{alert ? 'Takipte' : 'Takip et'}</Text>
           {alert?.brand && <Text style={{ color: '#92400e', fontSize: 10 }} numberOfLines={1}>{alert.brand}</Text>}
         </Pressable>
       </View>

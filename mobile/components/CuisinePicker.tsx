@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Animated, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { cuisineGlyph } from '@/lib/icons';
+import FoodIcon from '@/components/FoodIcon';
+import Icon from '@/components/Icon';
 import { Button, Muted, useTheme } from '@/components/ui';
 import { Cuisine } from '@/lib/api';
 
@@ -29,7 +32,7 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 20 }}>
         <Animated.View style={{ transform: [{ scale }], backgroundColor: t.background, borderRadius: 24, maxHeight: '88%', overflow: 'hidden' }}>
           <View style={{ backgroundColor: t.tint, paddingVertical: 18, paddingHorizontal: 20, gap: 4 }}>
-            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>🌍 {when} hangi mutfaklar?</Text>
+            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>{when} hangi mutfaklar?</Text>
             <Text style={{ color: '#fff', opacity: 0.9 }}>
               Bir ya da birkaç mutfak seç. Öğünler bunlara dengeli dağıtılır; her öğün tek mutfaktan gelir.
             </Text>
@@ -44,7 +47,7 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
                   accessibilityState={{ checked: active, disabled: empty }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 2,
                     borderColor: active ? t.tint : t.border, backgroundColor: t.card, opacity: empty ? 0.5 : 1 }}>
-                  <Text style={{ fontSize: 34 }}>{c.icon ?? '🍽️'}</Text>
+                  <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><FoodIcon name={cuisineGlyph(c.slug)} size={26} /></View>
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>{c.name}</Text>
                     {empty ? (
@@ -57,7 +60,7 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
                   </View>
                   <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: active ? t.tint : t.border,
                     backgroundColor: active ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                    {active && <Text style={{ color: '#fff', fontWeight: '900' }}>✓</Text>}
+                    {active && <Icon name="check" size={16} color="#fff" />}
                   </View>
                 </Pressable>
               );
