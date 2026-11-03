@@ -409,10 +409,30 @@ def _item_inputs(
     return inputs
 
 
+async def _store_distances(
+    db: AsyncSession, store_ids: list[int], lat: float | None, lon: float | None
+) -> dict[int, float]:
+    """Kullanıcının konumundan seçili şubelere km; konum ya da şube konumu yoksa o şube yer almaz."""
+    if lat is None or lon is None or not store_ids:
+        return {}
+    rows = await db.execute(select(Store.id, Store.latitude, Store.longitude).where(Store.id.in_(store_ids)))
+    out: dict[int, float] = {}
+    for store_id, s_lat, s_lon in rows:
+        if s_lat is None or s_lon is None:
+            continue
+        out[store_id] = haversine_km(lat, lon, float(s_lat), float(s_lon))
+    return out
+
+
 async def run_optimizer(
-    db: AsyncSession, shopping_list: ShoppingList, user_id: int | None = None
+    db: AsyncSession,
+    shopping_list: ShoppingList,
+    user_id: int | None = None,
+    lat: float | None = None,
+    lon: float | None = None,
 ) -> OptimizationResult:
-    """user_id: fiyatları kimin şubelerinden alınacağı (ortak listede listeyi açan kişi)."""
+    """user_id: fiyatları kimin şubelerinden alınacağı (ortak listede listeyi açan kişi).
+    lat/lon: kullanıcının konumu (Yakın Market planı için; yoksa o plan hesaplanmaz)."""
     similar = await similar_groups(db, [item.group for item in shopping_list.items])
     product_ids = [m.product_id for item in shopping_list.items for m in item.group.members]
     product_ids += [m.product_id for groups in similar.values() for g in groups for m in g.members]
