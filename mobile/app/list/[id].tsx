@@ -8,10 +8,10 @@ import ProductImage from '@/components/ProductImage';
 import Icon from '@/components/Icon';
 import ItemPicker from '@/components/ItemPicker';
 import { ActionBar, Button, Card, Muted, Screen, Segmented, useTheme } from '@/components/ui';
-import { api, CompleteResponse, ItemPatch, ListDetail, ListItem, num, OptimizeResult, Plan, PlanType } from '@/lib/api';
+import { api, CompleteResponse, Store, ItemPatch, ListDetail, ListItem, num, OptimizeResult, Plan, PlanType } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
-import { Coords, getCoords, LocationResult } from '@/lib/location';
+import { Coords, distanceKm, formatKm, getCoords, LocationResult } from '@/lib/location';
 import { accountRedirect } from '@/lib/guest';
 
 type Tab = 'items' | 'optimize';
@@ -48,6 +48,8 @@ export default function ListScreen() {
   const [tab, setTab] = useState<Tab>('items');
   const [mode, setMode] = useState<PlanType>('single_market');
   const [error, setError] = useState<string | null>(null);
+  const [myPos, setMyPos] = useState<Coords | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
   const [pickItem, setPickItem] = useState<ListItem | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [celebration, setCelebration] = useState<CompleteResponse | null>(null);
@@ -61,12 +63,14 @@ export default function ListScreen() {
     setLoc('asking');
     const r = await getCoords();
     coords.current = r.coords;
+    setMyPos(r.coords);
     setLoc(r.coords ? 'ready' : r.reason);
     if (r.coords) reoptimize();
   }, [reoptimize]);
   const openTab = (k: Tab) => { setTab(k); if (k === 'optimize' && loc !== 'ready' && loc !== 'asking') void askLocation(); };
   const load = useCallback(() => {
     api.list(listId).then(setDetail).catch(() => setDetail(null));
+    api.myStores().then(setStores).catch(() => {});
     reoptimize();
   }, [listId, reoptimize]);
   // Ürün ekleyip geri dönünce liste tazelensin; ortak listede ekran açıkken diğer telefonun eklediği ürünler de gelsin
@@ -194,6 +198,25 @@ export default function ListScreen() {
         )}
       </View>
     );
+  };
+
+  /** Planın o marketten alacağı şubeler: ad, konuma göre mesafe (konum izni varsa) ve haritada aç */
+  const here = myPos;
+  const storeInfo = (pl: Plan, itemIds: number[]) => {
+    const ids = [...new Set(pl.lines.filter(l => itemIds.includes(l.item_id) && l.store_id != null).map(l => l.store_id as number))];
+    return ids.map(id => stores.find(s => s.id === id)).filter((s): s is Store => s != null).map(s => {
+      const at = s.latitude != null && s.longitude != null ? { lat: num(s.latitude), lon: num(s.longitude) } : null;
+      const km = here && at ? distanceKm(here, at) : null;
+      return (
+        <Pressable key={s.id} disabled={!at} accessibilityRole="link" accessibilityLabel={`${s.name} haritada aç`}
+          onPress={() => at && Linking.openURL(Platform.OS === 'ios' ? `http://maps.apple.com/?ll=${at.lat},${at.lon}&q=${encodeURIComponent(s.name)}` : `https://www.google.com/maps/search/?api=1&query=${at.lat},${at.lon}`)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 4 }}>
+          <Icon name="map-pin" size={14} color={t.tint} />
+          <Text style={{ color: t.textMuted, fontSize: 13, flex: 1 }} numberOfLines={1}>{s.name}{km != null ? ` · ${formatKm(km)}` : ''}</Text>
+          {at && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '700' }}>Haritada aç</Text>}
+        </Pressable>
+      );
+    });
   };
 
   const footer = completed ? (
@@ -365,6 +388,7 @@ export default function ListScreen() {
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 16, flex: 1 }}>{marketById(b.market_id)?.name}</Text>
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>{num(b.total).toFixed(2)} ₺</Text>
                   </View>
+                  {storeInfo(plan, b.item_ids)}
                   {plan.lines.filter(l => b.item_ids.includes(l.item_id)).map(l => (
                     <View key={l.item_id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, borderTopWidth: 1, borderTopColor: t.border, paddingVertical: 8 }}>
                       <Muted style={{ flex: 1 }}>{l.group_name} ({l.substituted ? l.product_name : l.brand || l.product_name}){l.substituted ? ' · benzeri alındı' : ''}</Muted>

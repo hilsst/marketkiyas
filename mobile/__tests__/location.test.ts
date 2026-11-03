@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 
-import { getCoords, inTurkey } from '@/lib/location';
+import { distanceKm, formatKm, getCoords, inTurkey } from '@/lib/location';
 
 jest.mock('expo-location', () => ({
   getForegroundPermissionsAsync: jest.fn(),
@@ -36,5 +36,16 @@ describe('location', () => {
     mocked.getForegroundPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: true });
     mocked.getLastKnownPositionAsync.mockResolvedValue({ coords: { latitude: 40.98, longitude: 29.02 } });
     expect(await getCoords()).toEqual({ coords: { lat: 40.98, lon: 29.02 } });
+  });
+});
+
+describe('distanceKm', () => {
+  it('ölçülü mesafe verir', () => {
+    expect(distanceKm({ lat: 41, lon: 29 }, { lat: 41, lon: 29 })).toBeCloseTo(0, 5);
+    expect(distanceKm({ lat: 41, lon: 29 }, { lat: 42, lon: 29 })).toBeCloseTo(111.2, 0);
+  });
+  it('biçimlendirir', () => {
+    expect(formatKm(0.42)).toBe('0,4 km');
+    expect(formatKm(12.4)).toBe('12 km');
   });
 });

@@ -32,3 +32,13 @@ export async function getCoords(): Promise<LocationResult> {
     return { coords: null, reason: 'unavailable' };
   }
 }
+
+/** İki nokta arası kuş uçuşu mesafe (km) */
+export function distanceKm(a: Coords, b: Coords): number {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lon - a.lon) / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+/** 0,4 km ya da 12 km */
+export const formatKm = (km: number) => `${km < 10 ? km.toFixed(1).replace('.', ',') : Math.round(km)} km`;
