@@ -191,7 +191,7 @@ export default function ListScreen() {
   ) : tab === 'items' ? (
     <ActionBar>
       <Button title="+ Ürün ekle" kind="secondary" onPress={() => router.push({ pathname: '/search', params: { listId: String(list.id) } })} />
-      {total > 0 && <Button title="Planları gör" onPress={() => setTab('optimize')} />}
+      {total > 0 && <Button title="En ucuzunu bul" onPress={() => setTab('optimize')} />}
     </ActionBar>
   ) : (
     <ActionBar>
@@ -236,7 +236,7 @@ export default function ListScreen() {
         </Card>
       )}
 
-      {!completed && <Segmented value={tab} onChange={setTab} options={[{ key: 'items', label: 'Ürünler' }, { key: 'optimize', label: 'Planlar' }]} />}
+      {!completed && <Segmented value={tab} onChange={setTab} options={[{ key: 'items', label: 'Ürünler' }, { key: 'optimize', label: 'Fiyatlar' }]} />}
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
 
       {completed && (

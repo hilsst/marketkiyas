@@ -20,9 +20,9 @@ appId: app.ucuzu
 - tapOn: "Yeni liste olarak aktar"
 # Aktarılan liste açılır
 - extendedWaitUntil:
-    visible: "Planları gör"
+    visible: "En ucuzunu bul"
     timeout: 20000
-- tapOn: "Planları gör"
+- tapOn: "En ucuzunu bul"
 - scrollUntilVisible:
     element: "Bu planı alışveriş listeme uygula"
 - tapOn: "Bu planı alışveriş listeme uygula"
