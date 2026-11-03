@@ -1,3 +1,4 @@
+import Icon from '@/components/Icon';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
@@ -5,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CuisinePicker from '@/components/CuisinePicker';
 import PantryPicker from '@/components/PantryPicker';
-import { Button, Card, Input, LoginPrompt, Muted, useTheme } from '@/components/ui';
+import { Button, Card, Chip, Input, LoginPrompt, Muted, useTheme } from '@/components/ui';
 import {
   Allergen, ALLERGEN_LABELS, api, COURSE_LABELS, CourseType, Cuisine, Diet, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanSummary, MealSlot,
   RecipeSummary, WEEKDAY_SHORT,
@@ -106,12 +107,9 @@ export default function MealsScreen() {
   );
 
   const chip = (key: string, active: boolean, label: string, onPress: () => void) => (
-    <Pressable key={key} onPress={onPress} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1,
-      borderColor: active ? t.tint : t.border, backgroundColor: active ? t.tint : t.card }}>
-      <Text style={{ color: active ? '#fff' : t.text, fontWeight: '600' }}>{label}</Text>
-    </Pressable>
+    <Chip key={key} on={active} label={label} onPress={onPress} />
   );
-  const sectionTitle = (text: string) => <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>{text}</Text>;
+  const sectionTitle = (text: string) => <Text style={{ color: t.text, fontWeight: '800', fontSize: 18, letterSpacing: -0.3 }}>{text}</Text>;
 
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
@@ -179,12 +177,12 @@ export default function MealsScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <Muted style={{ flex: 1 }}>Kaç kişilik?</Muted>
                 <Pressable onPress={() => setServings(n => Math.max(1, n - 1))} hitSlop={8}
-                  style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: t.text, fontSize: 20 }}>−</Text>
                 </Pressable>
                 <Text style={{ color: t.text, fontSize: 18, fontWeight: '800', minWidth: 28, textAlign: 'center' }}>{servings}</Text>
                 <Pressable onPress={() => setServings(n => Math.min(12, n + 1))} hitSlop={8}
-                  style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: t.text, fontSize: 20 }}>+</Text>
                 </Pressable>
               </View>
@@ -205,8 +203,8 @@ export default function MealsScreen() {
                 'Malzemesi ortak yemekler seçilir; aldığın maydanoz, yoğurt, peynir yarım kalmasın.')}
 
               <Pressable onPress={() => setPantryOpen(true)}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: have.length ? t.tint : t.border }}>
-                <Text style={{ fontSize: 24 }}>🧺</Text>
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, backgroundColor: t.background, borderWidth: have.length ? 1.5 : 0, borderColor: t.tint }}>
+                <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="archive" size={22} color={t.tint} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: '700' }}>Dolabımda ne var?</Text>
                   <Muted style={{ fontSize: 12 }} >
@@ -225,20 +223,20 @@ export default function MealsScreen() {
           )}
 
           <Pressable onPress={() => router.push('/meals/deals')}>
-            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Text style={{ fontSize: 28 }}>🏷️</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, padding: 16, backgroundColor: t.accentSoft }}>
+              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}><Icon name="tag" size={22} color="#fff" /></View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: t.text, fontWeight: '700' }}>İndirimden menü</Text>
-                <Muted style={{ fontSize: 12 }}>Bu hafta indirimdeki malzemeleri seç, menü onlarla kurulsun.</Muted>
+                <Text style={{ color: t.text, fontWeight: '800' }}>İndirimden menü</Text>
+                <Text style={{ color: t.accentText, fontSize: 12 }}>Bu hafta indirimdeki malzemeleri seç, menü onlarla kurulsun.</Text>
               </View>
-              <Text style={{ color: t.tint, fontWeight: '700' }}>Kur ›</Text>
-            </Card>
+              <Icon name="chevron-right" size={20} color={t.accentText} />
+            </View>
           </Pressable>
 
           {user && stockCount > 0 && (
             <Pressable onPress={() => router.push('/meals/pantry')}>
               <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Text style={{ fontSize: 28 }}>🧊</Text>
+                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="package" size={22} color={t.tint} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: '700' }}>Dolabım: {stockCount} malzeme artmış</Text>
                   <Muted style={{ fontSize: 12 }}>Önceki alışverişten artanlar; yeni plan önce bunları kullanır.</Muted>

@@ -1,3 +1,4 @@
+import Icon from '@/components/Icon';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
@@ -155,13 +156,14 @@ export default function MealPlanScreen() {
                           <>
                             <Pressable onPress={() => run('e' + e.id, () => api.changeMealEntry(planId, e.id))} disabled={changing != null}
                               hitSlop={6} accessibilityLabel="Başka öner"
-                              style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: t.border }}>
-                              <Text style={{ color: t.tint, fontWeight: '600', fontSize: 13 }}>🔄 Değiştir</Text>
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, height: 34, borderRadius: 12, backgroundColor: t.tintSoft }}>
+                              <Icon name="refresh-cw" size={15} color={t.tint} />
+                              <Text style={{ color: t.tint, fontWeight: '700', fontSize: 13 }}>Değiştir</Text>
                             </Pressable>
                             <Pressable onPress={() => run('e' + e.id, () => api.removeMealEntry(planId, e.id))} disabled={changing != null}
                               hitSlop={6} accessibilityLabel={`${COURSE_LABELS[e.course]} istemiyorum`}
-                              style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
-                              <Text style={{ color: t.danger, fontSize: 15, fontWeight: '700' }}>✕</Text>
+                              style={{ width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                              <Icon name="x" size={18} color={t.textMuted} />
                             </Pressable>
                           </>
                         )}

@@ -51,7 +51,7 @@ export default function RecipeScreen() {
 
   const step = (delta: number) => setServings(Math.min(12, Math.max(1, people + delta)));
   const round = (btn: string, onPress: () => void) => (
-    <Pressable onPress={onPress} hitSlop={8} style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
+    <Pressable onPress={onPress} hitSlop={8} style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ color: t.text, fontSize: 18 }}>{btn}</Text>
     </Pressable>
   );
@@ -62,8 +62,10 @@ export default function RecipeScreen() {
       <ScrollView>
         <View style={{ padding: 16, gap: 16 }}>
           <View style={{ alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 64 }}>{recipe.icon ?? '🍽️'}</Text>
-            <Text style={{ color: t.text, fontSize: 24, fontWeight: '800' }}>{recipe.name}</Text>
+            <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 60 }}>{recipe.icon ?? '🍽️'}</Text>
+            </View>
+            <Text style={{ color: t.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5, marginTop: 6 }}>{recipe.name}</Text>
             <Muted style={{ textAlign: 'center' }}>{recipe.description}</Muted>
             <Muted>
               {recipe.course} · Hazırlık {recipe.prep_minutes} dk · Pişirme {recipe.cook_minutes} dk · {recipe.meal_slots.map(s => MEAL_SLOT_LABELS[s]).join(', ')}
