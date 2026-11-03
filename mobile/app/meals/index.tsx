@@ -256,7 +256,7 @@ export default function MealsScreen() {
                     <Text style={{ color: t.text, fontWeight: '700' }}>{p.name}</Text>
                     <Muted>{p.days} gün · {p.entry_count} öğün · {p.servings} kişilik{p.budget ? ` · ${Number(p.budget).toFixed(0)} ₺ bütçe` : ''}{p.exported_list_id ? ' · listeye aktarıldı' : ''}</Muted>
                     {(p.cuisines?.length ?? 0) > 0 && (
-                      <Muted style={{ fontSize: 12 }}>{p.cuisines.map(s => cuisineOf(s)?.icon ?? '').join(' ')} {p.cuisines.map(s => cuisineOf(s)?.name ?? s).join(', ')}</Muted>
+                      <Muted style={{ fontSize: 12 }}>{p.cuisines.map(s => cuisineOf(s)?.name ?? s).join(', ')}</Muted>
                     )}
                   </Card>
                 </Pressable>

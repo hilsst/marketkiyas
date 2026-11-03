@@ -17,8 +17,8 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: c.tabIconSelected,
         tabBarInactiveTintColor: c.tabIconDefault,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        tabBarStyle: { backgroundColor: c.card, borderTopColor: c.border, height: 64, paddingTop: 6, paddingBottom: 8 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', lineHeight: 15 },
+        tabBarStyle: { backgroundColor: c.card, borderTopColor: c.border, height: 72, paddingTop: 8, paddingBottom: 10 },
         // Her ekran kendi başlığını çizer
         headerShown: false,
       }}>
