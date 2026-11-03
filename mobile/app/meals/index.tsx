@@ -11,7 +11,7 @@ import PantryPicker from '@/components/PantryPicker';
 import { ActionBar, Button, Card, Chip, Input, LoginPrompt, Muted, useTheme } from '@/components/ui';
 import {
   Allergen, ALLERGEN_LABELS, api, COURSE_LABELS, CourseType, Cuisine, Diet, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanSummary, MealSlot,
-  RecipeSummary, WEEKDAY_SHORT,
+  RecipeSummary,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -22,7 +22,6 @@ const DIETS: Diet[] = ['vejetaryen', 'vegan'];
 const ALLERGENS: Allergen[] = ['gluten', 'sut', 'yumurta', 'kuruyemis', 'susam', 'balik'];
 // Plan süresi (gün); 14'e kadar, ör. maaş gününe kadar 10 gün
 const LENGTHS = [1, 2, 3, 5, 7, 10, 14];
-const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 /** Yemek planlayıcı: 1-14 günlük plan oluştur (bütçe, kalan yemek, dolaptakiler), planlarım ve tarifler */
 export default function MealsScreen() {
@@ -33,7 +32,6 @@ export default function MealsScreen() {
   const [plans, setPlans] = useState<MealPlanSummary[]>([]);
   const [stockCount, setStockCount] = useState(0);
   const [days, setDays] = useState(7);
-  const [weekdays, setWeekdays] = useState<number[]>(ALL_DAYS);
   const [budget, setBudget] = useState('');
   const [leftovers, setLeftovers] = useState(false);
   const [lowWaste, setLowWaste] = useState(false);
@@ -85,7 +83,7 @@ export default function MealsScreen() {
       const amount = Number(budget.replace(',', '.'));
       const plan = await api.createMealPlan({
         period: days === 1 ? 'daily' : days === 7 ? 'weekly' : 'custom', days, cuisines: selected, servings, meal_slots: slots, courses,
-        diets, avoid_allergens: avoid, weekdays: days > 1 && weekdays.length < 7 ? weekdays : [],
+        diets, avoid_allergens: avoid,
         budget: amount > 0 ? amount : null, leftovers, low_waste: lowWaste, have,
       });
       setPicking(false);
@@ -93,10 +91,8 @@ export default function MealsScreen() {
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
   const openPicker = () => {
-    if (days > 1 && !weekdays.length) { setError('En az bir gün seçin.'); return; }
     setError(null); setPicking(true);
   };
-  const toggleDay = (d: number) => setWeekdays(cur => cur.includes(d) ? cur.filter(x => x !== d) : [...cur, d].sort());
   const option = (key: string, value: boolean, onChange: (v: boolean) => void, title: string, note: string) => (
     <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <View style={{ flex: 1 }}>
@@ -127,20 +123,6 @@ export default function MealsScreen() {
                   {LENGTHS.map(n => chip('d' + n, days === n, n === 1 ? 'Bugün' : n === 7 ? '1 hafta' : n === 14 ? '2 hafta' : `${n} gün`, () => setDays(n)))}
                 </View>
               </View>
-
-              {days > 1 && (
-                <View style={{ gap: 6 }}>
-                  <Muted>Hangi günler yemek yapılacak?</Muted>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                    {ALL_DAYS.map(d => chip('w' + d, weekdays.includes(d), WEEKDAY_SHORT[d], () => toggleDay(d)))}
-                  </View>
-                  <View style={{ flexDirection: 'row', gap: 14 }}>
-                    <Text style={{ color: t.tint, fontWeight: '600', fontSize: 13 }} onPress={() => setWeekdays([0, 1, 2, 3, 4])}>Hafta içi</Text>
-                    <Text style={{ color: t.tint, fontWeight: '600', fontSize: 13 }} onPress={() => setWeekdays([5, 6])}>Hafta sonu</Text>
-                    <Text style={{ color: t.tint, fontWeight: '600', fontSize: 13 }} onPress={() => setWeekdays(ALL_DAYS)}>Her gün</Text>
-                  </View>
-                </View>
-              )}
 
               <View style={{ gap: 6 }}>
                 <Muted>Öğünler</Muted>

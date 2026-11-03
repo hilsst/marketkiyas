@@ -15,6 +15,10 @@ import { ACCOUNT_REASON_TEXT, accountRedirect } from '@/lib/guest';
 import { rescheduleWeekly } from '@/lib/weekly';
 import { ALLERGEN_LABELS, api, COURSE_LABELS, formatSize, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealSlot, SLOT_COURSES } from '@/lib/api';
 
+const ORDINALS = ['Birinci', 'İkinci', 'Üçüncü', 'Dördüncü', 'Beşinci', 'Altıncı', 'Yedinci', 'Sekizinci', 'Dokuzuncu', 'Onuncu',
+  'On birinci', 'On ikinci', 'On üçüncü', 'On dördüncü'];
+const ordinalDay = (i: number) => `${ORDINALS[i] ?? `${i + 1}.`} gün`;
+/** Eski planlar (gün süzgeciyle yapılmış) takvim tarihiyle, yeniler "Birinci gün" diye başlar */
 const dayLabel = (d: Date) => d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
 
 /** Plan: günlere göre öğünler, "Başka öner", maliyet ve alışveriş listesine aktarma */
@@ -134,7 +138,7 @@ export default function MealPlanScreen() {
 
           {days.map(({ day, date, meals }) => (
             <Card key={day} style={{ gap: 12 }}>
-              <Text style={{ color: t.text, fontWeight: '800', fontSize: 16, textTransform: 'capitalize' }}>{dayLabel(date)}</Text>
+              <Text style={{ color: t.text, fontWeight: '800', fontSize: 16, textTransform: plan.weekdays.length > 0 ? 'capitalize' : 'none' }}>{plan.weekdays.length > 0 ? dayLabel(date) : ordinalDay(day)}</Text>
               {meals.map(({ slot, entries }) => {
                 const hasMain = entries.some(e => e.course === 'ana');
                 // Yan yemek (pilav, püre) yalnız ana yemek varken eklenebilir

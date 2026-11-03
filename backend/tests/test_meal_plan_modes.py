@@ -16,28 +16,26 @@ async def _create(client, headers, **body):
     return r.json()
 
 
-async def test_custom_length_and_weekdays(client, auth_headers):
-    # 2 Kasım 2026 Pazartesi; 10 gün, yalnız hafta içi -> 8 gün yemek
+async def test_custom_length_ignores_weekdays(client, auth_headers):
+    # 2 Kasım 2026 Pazartesi; 3 günlük plan, bugün (Pazartesi) seçilmemiş olsa bile 3 gün çıkar
     plan = await _create(
-        client, auth_headers, days=10, weekdays=[0, 1, 2, 3, 4], meal_slots=["aksam"], courses=["ana"],
+        client, auth_headers, days=3, weekdays=[1, 2, 3, 4, 5, 6], meal_slots=["aksam"], courses=["ana"],
         start_date="2026-11-02",
     )
-    assert plan["days"] == 10 and plan["period"] == "custom" and plan["weekdays"] == [0, 1, 2, 3, 4]
-    assert plan["name"] == "10 günlük yemek planı · 2 Kasım"
-    dates = sorted({e["date"] for e in plan["entries"]})
-    assert len(dates) == 8
-    assert all(date.fromisoformat(d).weekday() < 5 for d in dates)
-    assert "2026-11-07" not in dates and "2026-11-11" in dates
+    assert plan["days"] == 3 and plan["period"] == "custom" and plan["weekdays"] == []
+    assert plan["name"] == "3 günlük yemek planı · 2 Kasım"
+    assert len({e["day_index"] for e in plan["entries"]}) == 3
 
-    # Plan dışındaki güne ekleme yapılamaz; 10. güne (index 9) yapılabilir
+    # Eski istemci tek günlük planda başka bir günü seçse de plan çıkar (eskiden 422 dönerdi)
+    one = await _create(client, auth_headers, days=1, weekdays=[6], meal_slots=["aksam"], courses=["ana"], start_date="2026-11-02")
+    assert one["days"] == 1 and len(one["entries"]) == 1
+
+    # Plana ekleme: son gün (index 2) eklenir, planın dışındaki gün (index 3) reddedilir
     add = f"/api/meal-plans/{plan['id']}/entries"
-    assert (await client.post(add, headers=auth_headers, json={"day_index": 10, "slot": "aksam", "course": "ana"})).status_code == 422
-    r = await client.post(add, headers=auth_headers, json={"day_index": 5, "slot": "aksam", "course": "ana"})
-    assert r.status_code == 201 and any(e["day_index"] == 5 for e in r.json()["entries"])
+    assert (await client.post(add, headers=auth_headers, json={"day_index": 3, "slot": "aksam", "course": "ana"})).status_code == 422
+    r = await client.post(add, headers=auth_headers, json={"day_index": 2, "slot": "aksam", "course": "ana"})
+    assert r.status_code == 201 and any(e["day_index"] == 2 for e in r.json()["entries"])
 
-    # Seçilen günler süreye hiç denk gelmiyorsa hata (Pazartesi başlayan 1 günlük planda Pazar)
-    r = await client.post("/api/meal-plans", headers=auth_headers, json={"days": 1, "weekdays": [6], "start_date": "2026-11-02"})
-    assert r.status_code == 422
     assert (await client.post("/api/meal-plans", headers=auth_headers, json={"days": 15})).status_code == 422
     # Eski istemci: period yeterli
     assert (await _create(client, auth_headers, period="daily"))["days"] == 1
