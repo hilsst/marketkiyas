@@ -32,7 +32,16 @@ async def lifespan(_: FastAPI):
     task.cancel()
 
 
-app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+_prod = settings.environment == "production"
+app = FastAPI(
+    title=settings.app_name,
+    version="0.1.0",
+    lifespan=lifespan,
+    # Üretimde API şeması herkese açık olmasın
+    docs_url=None if _prod else "/docs",
+    redoc_url=None if _prod else "/redoc",
+    openapi_url=None if _prod else "/openapi.json",
+)
 
 app.add_middleware(AnalyticsMiddleware)
 app.add_middleware(
