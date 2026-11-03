@@ -173,8 +173,12 @@ class OptimizeOut(BaseModel):
     single_market: SingleMarketOut
     combination: PlanOut
     opportunist: PlanOut
+    nearby: PlanOut | None = None  # Yakın Market; konum gönderilmediyse ya da şube mesafesi yoksa None
+    nearby_extra: Decimal | None = None  # Yakın Market planının Fırsatçı'dan fazla tuttuğu tutar (≥ 0)
     savings: SavingsProjection
 
 
 class ApplyPlanRequest(BaseModel):
     plan_type: PlanType
+    lat: float | None = Field(default=None, ge=35, le=43)  # yalnız Yakın Market için
+    lon: float | None = Field(default=None, ge=25, le=45)

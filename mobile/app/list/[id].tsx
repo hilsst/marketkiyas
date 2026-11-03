@@ -1,6 +1,6 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, Share, Text, View } from 'react-native';
 
 import Celebration from '@/components/Celebration';
 import MarketBadge from '@/components/MarketBadge';
@@ -10,12 +10,14 @@ import { ActionBar, Button, Card, Muted, Screen, Segmented, useTheme } from '@/c
 import { api, CompleteResponse, ItemPatch, ListDetail, ListItem, num, OptimizeResult, Plan, PlanType } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
+import { Coords, getCoords, LocationResult } from '@/lib/location';
 import { accountRedirect } from '@/lib/guest';
 
 type Tab = 'items' | 'optimize';
 const SYNC_MS = 8000; // ortak listede diğer üyelerin değişiklikleri bu aralıkla çekilir
 const MODES: { key: PlanType; label: string }[] = [
   { key: 'single_market', label: 'Tek Market' },
+  { key: 'nearby', label: 'Yakın' },
   { key: 'combination', label: 'Kombinasyon' },
   { key: 'opportunist', label: 'Fırsatçı' },
 ];
@@ -48,8 +50,19 @@ export default function ListScreen() {
   const [finishing, setFinishing] = useState(false);
   const [celebration, setCelebration] = useState<CompleteResponse | null>(null);
   const seq = useRef(0);
+  // Yakın Market için konum: Fiyatlar sekmesi ilk açıldığında sorulur, yalnız hesaplamada kullanılır
+  const coords = useRef<Coords | null>(null);
+  const [loc, setLoc] = useState<'idle' | 'asking' | LocationResult['reason'] | 'ready'>('idle');
 
-  const reoptimize = useCallback(() => { api.optimize(listId).then(setOpt).catch(() => {}); }, [listId]);
+  const reoptimize = useCallback(() => { api.optimize(listId, coords.current).then(setOpt).catch(() => {}); }, [listId]);
+  const askLocation = useCallback(async () => {
+    setLoc('asking');
+    const r = await getCoords();
+    coords.current = r.coords;
+    setLoc(r.coords ? 'ready' : r.reason);
+    if (r.coords) reoptimize();
+  }, [reoptimize]);
+  const openTab = (k: Tab) => { setTab(k); if (k === 'optimize' && loc !== 'ready' && loc !== 'asking') void askLocation(); };
   const load = useCallback(() => {
     api.list(listId).then(setDetail).catch(() => setDetail(null));
     reoptimize();
@@ -82,7 +95,7 @@ export default function ListScreen() {
   const update = (itemId: number, patch: ItemPatch) => mutate(() => api.updateItem(listId, itemId, patch), !('is_checked' in patch && Object.keys(patch).length === 1));
   const remove = (itemId: number) => mutate(() => api.removeItem(listId, itemId));
 
-  const plan: Plan | null = opt ? (mode === 'single_market' ? opt.single_market.plan : mode === 'combination' ? opt.combination : opt.opportunist) : null;
+  const plan: Plan | null = opt ? (mode === 'single_market' ? opt.single_market.plan : mode === 'nearby' ? opt.nearby : mode === 'combination' ? opt.combination : opt.opportunist) : null;
   const comboLines = useMemo(() => new Map((opt?.combination.lines ?? []).map(l => [l.item_id, l])), [opt]);
 
   if (celebration) {
@@ -112,7 +125,7 @@ export default function ListScreen() {
     try { setCelebration(await api.complete(list.id)); } catch (e) { setError((e as Error).message); } finally { setFinishing(false); }
   };
   const apply = async () => {
-    const applied = await mutate(() => api.applyPlan(list.id, mode), false);
+    const applied = await mutate(() => api.applyPlan(list.id, mode, coords.current), false);
     if (applied) setTab('items');
   };
   const isOwner = list.owner_id === user?.id;
@@ -135,7 +148,7 @@ export default function ListScreen() {
   const blocked = shopping
     ? 'Plan uygulandı. Alışverişi Ürünler sekmesindeki "Alışverişi Bitir" ile tamamla.'
     : total > 0 && checked === total ? 'Tüm ürünler alınmış görünüyor. Yeni alışveriş için işaretleri kaldır.' : null;
-  const applyDisabled = blocked != null || total === 0 || (mode === 'single_market' && !opt?.single_market.available);
+  const applyDisabled = blocked != null || total === 0 || (mode === 'single_market' && !opt?.single_market.available) || (mode === 'nearby' && !opt?.nearby);
 
   const row = (it: ListItem, inShopping: boolean) => {
     const line = comboLines.get(it.id);
@@ -191,7 +204,7 @@ export default function ListScreen() {
   ) : tab === 'items' ? (
     <ActionBar>
       <Button title="+ Ürün ekle" kind="secondary" onPress={() => router.push({ pathname: '/search', params: { listId: String(list.id) } })} />
-      {total > 0 && <Button title="En ucuzunu bul" onPress={() => setTab('optimize')} />}
+      {total > 0 && <Button title="En ucuzunu bul" onPress={() => openTab('optimize')} />}
     </ActionBar>
   ) : (
     <ActionBar>
@@ -236,7 +249,7 @@ export default function ListScreen() {
         </Card>
       )}
 
-      {!completed && <Segmented value={tab} onChange={setTab} options={[{ key: 'items', label: 'Ürünler' }, { key: 'optimize', label: 'Fiyatlar' }]} />}
+      {!completed && <Segmented value={tab} onChange={openTab} options={[{ key: 'items', label: 'Ürünler' }, { key: 'optimize', label: 'Fiyatlar' }]} />}
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
 
       {completed && (
@@ -298,16 +311,45 @@ export default function ListScreen() {
           {!opt && <ActivityIndicator color={t.tint} />}
           {opt && (
             <>
-              <View style={{ borderRadius: 22, padding: 20, gap: 4, backgroundColor: mode === 'opportunist' ? t.accent : t.tint }}>
-                <Text style={{ color: '#fff', fontSize: 13, opacity: 0.92 }}>{mode === 'single_market' ? 'Tek markette, seçimlerinle' : mode === 'combination' ? 'Seçtiğin markalarla, en ucuz marketlerden' : 'Marka fark etmeden, her ürünün en ucuzu'}</Text>
+              {!(mode === 'nearby' && !opt.nearby) && <View style={{ borderRadius: 22, padding: 20, gap: 4, backgroundColor: mode === 'opportunist' ? t.accent : t.tint }}>
+                <Text style={{ color: '#fff', fontSize: 13, opacity: 0.92 }}>{mode === 'single_market' ? 'Tek markette, seçimlerinle' : mode === 'nearby' ? 'Sana en yakın marketlerden' : mode === 'combination' ? 'Seçtiğin markalarla, en ucuz marketlerden' : 'Marka fark etmeden, her ürünün en ucuzu'}</Text>
                 <Text style={{ color: '#fff', fontSize: 38, fontWeight: '800', letterSpacing: -1 }}>{plan ? `${num(plan.total).toFixed(2)} ₺` : '—'}</Text>
+                {mode === 'nearby' && plan && (
+                  <Text style={{ color: '#fff', fontSize: 12, opacity: 0.92, marginTop: 2 }}>{"Başka bir markette ürün başına 1 ₺'den fazla ucuzsa orada alınır."}</Text>
+                )}
+                {mode === 'opportunist' && opt.nearby && num(opt.nearby_extra) > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginTop: 4 }}>
+                    <Icon name="trending-up" size={16} color="#fff" />
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Yakın market planına göre {num(opt.nearby_extra).toFixed(2)} ₺ daha ucuz</Text>
+                  </View>
+                )}
                 {mode === 'opportunist' && num(opt.savings.weekly) > 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginTop: 4 }}>
                     <Icon name="trending-up" size={16} color="#fff" />
                     <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Seçimlerine göre {num(opt.savings.weekly).toFixed(2)} ₺ daha ucuz (yılda ~{num(opt.savings.yearly).toFixed(0)} ₺)</Text>
                   </View>
                 )}
-              </View>
+              </View>}
+              {mode === 'nearby' && !opt.nearby && (
+                <Card style={{ gap: 10 }}>
+                  <Text style={{ color: t.text, fontWeight: '800' }}>
+                    {loc === 'asking' || loc === 'idle' ? 'Konumun alınıyor…'
+                      : loc === 'denied' ? 'Konum izni kapalı'
+                      : loc === 'outside' ? 'Konumun Türkiye dışında görünüyor'
+                      : loc === 'unavailable' ? 'Konum alınamadı'
+                      : 'Yakın market bulunamadı'}
+                  </Text>
+                  <Muted>
+                    {loc === 'ready'
+                      ? 'Profil sayfandan "çevremdeki marketler"i seç; Yakın Market planı seçtiğin şubelerin mesafesine göre hazırlanır.'
+                      : 'Yakın Market planı, sana en yakın marketten başlamak için konumunu kullanır. Konumun kaydedilmez.'}
+                  </Muted>
+                  {loc === 'asking' || loc === 'idle' ? <ActivityIndicator color={t.tint} /> : loc !== 'ready' && (
+                    <Button title={loc === 'denied' ? 'Ayarlardan izin ver' : 'Tekrar dene'}
+                      onPress={() => (loc === 'denied' && Platform.OS !== 'web' ? Linking.openSettings() : askLocation())} />
+                  )}
+                </Card>
+              )}
               {mode === 'single_market' && !opt.single_market.available && (
                 <Text style={{ color: t.accentText, backgroundColor: t.accentSoft, borderRadius: 14, padding: 12 }}>{opt.single_market.warning || 'Hiçbir market listedeki tüm ürünleri satmıyor.'}</Text>
               )}

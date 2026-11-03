@@ -18,6 +18,7 @@ from app.models import (
     SavingsRecord,
     ShoppingList,
     ShoppingListItem,
+    Store,
     User,
 )
 from app.schemas.lists import (
@@ -37,6 +38,7 @@ from app.schemas.lists import (
 )
 from app.schemas.savings import CompleteResponse
 from app.services import optimizer
+from app.services.geo import haversine_km
 from app.services.optimizer import ItemInput, Offer, OptimizationResult, Plan
 from app.services.pricing import PriceResolver, build_resolver, candidate_market_ids
 
@@ -358,7 +360,10 @@ async def similar_groups(db: AsyncSession, groups: list[ProductGroup]) -> dict[i
     return result
 
 
-def _offers(members: list[GroupMember], resolver: PriceResolver) -> list[Offer]:
+def _offers(
+    members: list[GroupMember], resolver: PriceResolver, distances: dict[int, float] | None = None
+) -> list[Offer]:
+    distances = distances or {}
     offers = []
     for member in members:
         resolved = resolver.price(member.product)
@@ -372,18 +377,22 @@ def _offers(members: list[GroupMember], resolver: PriceResolver) -> list[Offer]:
                 market_id=member.product.market_id,
                 unit_price=resolved.price,
                 store_id=resolved.store_id,
+                distance_km=distances.get(resolved.store_id) if resolved.store_id is not None else None,
             )
         )
     return offers
 
 
 def _item_inputs(
-    shopping_list: ShoppingList, resolver: PriceResolver, similar: dict[int, list[ProductGroup]] | None = None
+    shopping_list: ShoppingList,
+    resolver: PriceResolver,
+    similar: dict[int, list[ProductGroup]] | None = None,
+    distances: dict[int, float] | None = None,
 ) -> list[ItemInput]:
     similar = similar or {}
     inputs = []
     for item in shopping_list.items:
-        offers = _offers(item.group.members, resolver)
+        offers = _offers(item.group.members, resolver, distances)
         similar_offers = [o for g in similar.get(item.group_id, []) for o in _offers(g.members, resolver)]
         inputs.append(
             ItemInput(
@@ -400,16 +409,37 @@ def _item_inputs(
     return inputs
 
 
+async def _store_distances(
+    db: AsyncSession, store_ids: list[int], lat: float | None, lon: float | None
+) -> dict[int, float]:
+    """Kullanıcının konumundan seçili şubelere km; konum ya da şube konumu yoksa o şube yer almaz."""
+    if lat is None or lon is None or not store_ids:
+        return {}
+    rows = await db.execute(select(Store.id, Store.latitude, Store.longitude).where(Store.id.in_(store_ids)))
+    out: dict[int, float] = {}
+    for store_id, s_lat, s_lon in rows:
+        if s_lat is None or s_lon is None:
+            continue
+        out[store_id] = haversine_km(lat, lon, float(s_lat), float(s_lon))
+    return out
+
+
 async def run_optimizer(
-    db: AsyncSession, shopping_list: ShoppingList, user_id: int | None = None
+    db: AsyncSession,
+    shopping_list: ShoppingList,
+    user_id: int | None = None,
+    lat: float | None = None,
+    lon: float | None = None,
 ) -> OptimizationResult:
-    """user_id: fiyatları kimin şubelerinden alınacağı (ortak listede listeyi açan kişi)."""
+    """user_id: fiyatları kimin şubelerinden alınacağı (ortak listede listeyi açan kişi).
+    lat/lon: kullanıcının konumu (Yakın Market planı için; yoksa o plan hesaplanmaz)."""
     similar = await similar_groups(db, [item.group for item in shopping_list.items])
     product_ids = [m.product_id for item in shopping_list.items for m in item.group.members]
     product_ids += [m.product_id for groups in similar.values() for g in groups for m in g.members]
     resolver = await build_resolver(db, user_id or shopping_list.user_id, product_ids)
     market_ids = await candidate_market_ids(db, resolver)
-    return optimizer.optimize(_item_inputs(shopping_list, resolver, similar), market_ids)
+    distances = await _store_distances(db, resolver.store_ids, lat, lon)
+    return optimizer.optimize(_item_inputs(shopping_list, resolver, similar, distances), market_ids)
 
 
 def _plan_out(plan: Plan) -> PlanOut:
@@ -462,6 +492,10 @@ def to_optimize_out(result: OptimizationResult) -> OptimizeOut:
         ),
         combination=_plan_out(result.combination),
         opportunist=_plan_out(result.opportunist),
+        nearby=_plan_out(result.nearby) if result.nearby else None,
+        nearby_extra=(
+            max(result.nearby.total - result.opportunist.total, Decimal("0.00")) if result.nearby else None
+        ),
         savings=SavingsProjection(
             preference_total=savings.preference_total,
             opportunist_total=savings.optimized_total,
@@ -473,11 +507,20 @@ def to_optimize_out(result: OptimizationResult) -> OptimizeOut:
 
 
 async def apply_plan(
-    db: AsyncSession, shopping_list: ShoppingList, plan_type: PlanType, user_id: int | None = None
+    db: AsyncSession,
+    shopping_list: ShoppingList,
+    plan_type: PlanType,
+    user_id: int | None = None,
+    lat: float | None = None,
+    lon: float | None = None,
 ) -> None:
     """"Listeye Uygula": her kaleme marketini ve ürününü atar, listeyi Alışveriş Modu'na alır."""
-    result = await run_optimizer(db, shopping_list, user_id)
+    result = await run_optimizer(db, shopping_list, user_id, lat, lon)
     plan = result.plan(plan_type)
+    if plan is None and plan_type is PlanType.NEARBY:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Yakın Market planı için konum gerekli: konum iznini açıp tekrar deneyin"
+        )
     if plan is None:
         raise HTTPException(
             status.HTTP_409_CONFLICT,

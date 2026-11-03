@@ -38,7 +38,13 @@
       ],
       "expo-secure-store",
       "expo-audio",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Ucuzu, alışverişini sana en yakın marketten planlamak için konumunu kullanır."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

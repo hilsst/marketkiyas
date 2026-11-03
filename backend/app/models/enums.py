@@ -10,11 +10,12 @@ class Unit(str, enum.Enum):
 
 
 class PlanType(str, enum.Enum):
-    """Liste detayındaki 3 optimizasyon sekmesi."""
+    """Liste detayındaki optimizasyon sekmeleri."""
 
     SINGLE_MARKET = "single_market"  # Tek Market
     COMBINATION = "combination"  # Kombinasyon (seçili markalarla)
     OPPORTUNIST = "opportunist"  # Fırsatçı 🚀 (marka farketmez)
+    NEARBY = "nearby"  # Yakın Market: en yakın şubeden, başka yerde belirgin ucuzsa orada
 
 
 class ListStatus(str, enum.Enum):

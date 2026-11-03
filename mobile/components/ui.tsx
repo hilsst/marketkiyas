@@ -131,8 +131,8 @@ export function Segmented<K extends string>({ options, value, onChange }: {
     <View style={{ flexDirection: 'row', backgroundColor: t.border, borderRadius: 14, padding: 4 }}>
       {options.map(o => (
         <Pressable key={o.key} onPress={() => onChange(o.key)} accessibilityRole="button"
-          style={{ flex: 1, paddingVertical: 10, borderRadius: 11, alignItems: 'center', backgroundColor: value === o.key ? t.card : 'transparent' }}>
-          <Text numberOfLines={1} style={{ color: value === o.key ? t.tintDark : t.textMuted, fontWeight: '700', fontSize: 13 }}>{o.label}</Text>
+          style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 2, borderRadius: 11, alignItems: 'center', backgroundColor: value === o.key ? t.card : 'transparent' }}>
+          <Text numberOfLines={1} style={{ color: value === o.key ? t.tintDark : t.textMuted, fontWeight: '700', fontSize: options.length > 3 ? 12 : 13 }}>{o.label}</Text>
         </Pressable>
       ))}
     </View>

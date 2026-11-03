@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import Annotated
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Query, Response, status
 from sqlalchemy import func, select
 
 from app.api.deps import AccountUser, CurrentUser, DbSession
@@ -157,10 +158,16 @@ async def delete_item(list_id: int, item_id: int, user: CurrentUser, db: DbSessi
 
 
 @router.get("/{list_id}/optimize", response_model=OptimizeOut)
-async def optimize_list(list_id: int, user: CurrentUser, db: DbSession) -> OptimizeOut:
+async def optimize_list(
+    list_id: int,
+    user: CurrentUser,
+    db: DbSession,
+    lat: Annotated[float | None, Query(ge=35, le=43)] = None,  # Türkiye sınırları; Yakın Market için
+    lon: Annotated[float | None, Query(ge=25, le=45)] = None,
+) -> OptimizeOut:
     """Üç sekmenin (Tek Market, Kombinasyon, Fırsatçı) hesaplaması ve tasarruf projeksiyonu."""
     shopping_list = await svc.get_owned_list(db, user, list_id)
-    return svc.to_optimize_out(await svc.run_optimizer(db, shopping_list, user.id))
+    return svc.to_optimize_out(await svc.run_optimizer(db, shopping_list, user.id, lat, lon))
 
 
 @router.post("/{list_id}/apply", response_model=ListDetail)
@@ -169,7 +176,7 @@ async def apply_plan(
 ) -> ListDetail:
     """"Listeye Uygula": kalemler markete göre gruplanır, liste Alışveriş Modu'na geçer."""
     shopping_list = await svc.get_owned_list(db, user, list_id, editable=True)
-    await svc.apply_plan(db, shopping_list, body.plan_type, user.id)
+    await svc.apply_plan(db, shopping_list, body.plan_type, user.id, body.lat, body.lon)
     return svc.to_detail(await svc.get_owned_list(db, user, list_id))
 
 

@@ -1,5 +1,4 @@
 import logging
-import math
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Annotated
 
@@ -12,6 +11,7 @@ from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models import Store, UserStore
 from app.schemas.stores import SelectStoresRequest, StoreOut
+from app.services.geo import haversine_km
 from app.services.marketfiyati.client import MarketFiyatiClient, MarketFiyatiError
 from app.services.marketfiyati.ingest import refresh_nearby_stores, sync_selected_stores
 
@@ -45,10 +45,7 @@ def get_store_sync() -> StoreSync:
 def _distance_km(store: Store, lat: float | None, lon: float | None) -> float | None:
     if lat is None or lon is None or store.latitude is None or store.longitude is None:
         return None
-    p1, p2 = math.radians(lat), math.radians(float(store.latitude))
-    dp, dl = p2 - p1, math.radians(float(store.longitude) - lon)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return round(6371 * 2 * math.asin(math.sqrt(a)), 2)
+    return round(haversine_km(lat, lon, float(store.latitude), float(store.longitude)), 2)
 
 
 def _store_out(store: Store, selected: set[int], lat: float | None = None, lon: float | None = None) -> StoreOut:
