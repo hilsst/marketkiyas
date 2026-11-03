@@ -6,7 +6,7 @@ import Celebration from '@/components/Celebration';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import Icon from '@/components/Icon';
-import { Button, Card, Muted, Screen, Segmented, useTheme } from '@/components/ui';
+import { ActionBar, Button, Card, Muted, Screen, Segmented, useTheme } from '@/components/ui';
 import { api, CompleteResponse, ItemPatch, ListDetail, ListItem, num, OptimizeResult, Plan, PlanType } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
@@ -178,8 +178,30 @@ export default function ListScreen() {
     );
   };
 
+  const footer = completed ? (
+    <ActionBar>
+      <Button title="Listeyi tekrar kullan" onPress={() => mutate(() => api.reopenList(list.id))} />
+      <Muted style={{ textAlign: 'center' }}>Aynı ürünlerle yeni bir alışverişe başlar, işaretler sıfırlanır.</Muted>
+    </ActionBar>
+  ) : tab === 'items' && shopping ? (
+    <ActionBar>
+      <Button title={finishing ? 'Kaydediliyor…' : 'Alışverişi Bitir ve Tasarrufu Kaydet'} onPress={finish} busy={finishing} />
+      <Muted style={{ textAlign: 'center' }}>Bir liste haftada bir kez tasarruf kasasına eklenir.</Muted>
+    </ActionBar>
+  ) : tab === 'items' ? (
+    <ActionBar>
+      <Button title="+ Ürün ekle" kind="secondary" onPress={() => router.push({ pathname: '/search', params: { listId: String(list.id) } })} />
+      {total > 0 && <Button title="Planları gör" onPress={() => setTab('optimize')} />}
+    </ActionBar>
+  ) : (
+    <ActionBar>
+      <Button title="Bu planı alışveriş listeme uygula" onPress={apply} disabled={applyDisabled} />
+      {blocked && <Muted style={{ textAlign: 'center' }}>{blocked}</Muted>}
+    </ActionBar>
+  );
+
   return (
-    <Screen safeTop={false}>
+    <Screen safeTop={false} footer={footer}>
       <Stack.Screen options={{ title: list.name, headerRight: () => (
         <View style={{ flexDirection: 'row', gap: 14, paddingHorizontal: 8 }}>
           <Text onPress={() => setSharing(v => !v)} style={{ color: t.tint, fontWeight: '700' }}>Paylaş</Text>
@@ -235,8 +257,6 @@ export default function ListScreen() {
               </View>
             ))}
           </Card>
-          <Button title="Listeyi tekrar kullan" onPress={() => mutate(() => api.reopenList(list.id))} />
-          <Muted style={{ textAlign: 'center' }}>Aynı ürünlerle yeni bir alışverişe başlar, işaretler sıfırlanır.</Muted>
         </>
       )}
 
@@ -260,8 +280,6 @@ export default function ListScreen() {
               </Card>
             );
           })}
-          <Button title={finishing ? 'Kaydediliyor…' : 'Alışverişi Bitir ve Tasarrufu Kaydet'} onPress={finish} busy={finishing} />
-          <Muted style={{ textAlign: 'center' }}>Bir liste haftada bir kez tasarruf kasasına eklenir.</Muted>
         </>
       )}
 
@@ -271,8 +289,6 @@ export default function ListScreen() {
             {list.items.length === 0 && <Muted style={{ padding: 16 }}>Liste boş. Aşağıdan ürün ekle.</Muted>}
             {list.items.map(i => row(i, false))}
           </Card>
-          <Button title="+ Ürün ekle" kind="secondary" onPress={() => router.push({ pathname: '/search', params: { listId: String(list.id) } })} />
-          {total > 0 && <Button title="Planları gör" onPress={() => setTab('optimize')} />}
         </>
       )}
 
@@ -322,8 +338,6 @@ export default function ListScreen() {
               )}
             </>
           )}
-          <Button title="Bu planı alışveriş listeme uygula" onPress={apply} disabled={applyDisabled} />
-          {blocked && <Muted style={{ textAlign: 'center' }}>{blocked}</Muted>}
         </>
       )}
     </Screen>

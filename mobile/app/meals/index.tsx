@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CuisinePicker from '@/components/CuisinePicker';
 import PantryPicker from '@/components/PantryPicker';
-import { Button, Card, Chip, Input, LoginPrompt, Muted, useTheme } from '@/components/ui';
+import { ActionBar, Button, Card, Chip, Input, LoginPrompt, Muted, useTheme } from '@/components/ui';
 import {
   Allergen, ALLERGEN_LABELS, api, COURSE_LABELS, CourseType, Cuisine, Diet, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanSummary, MealSlot,
   RecipeSummary, WEEKDAY_SHORT,
@@ -114,7 +114,7 @@ export default function MealsScreen() {
 
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
-      <ScrollView>
+      <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 16, gap: 16 }}>
           <Muted>1 ile 14 gün arası yemek planı yap; bütçeni, evdeki malzemeleri ve artan yemeği hesaba kat. Maliyet marketlerindeki en uygun fiyatla hesaplanır, istersen alışveriş listene aktar.</Muted>
 
@@ -216,7 +216,6 @@ export default function MealsScreen() {
               </Pressable>
 
               {error && !picking && <Text style={{ color: t.danger }}>{error}</Text>}
-              <Button title="Plan oluştur" onPress={openPicker} busy={busy} />
               <Muted style={{ fontSize: 12, textAlign: 'center', marginTop: -6 }}>Sonraki adımda mutfakları seçeceksiniz (Türk, İtalyan, Uzak Doğu...)</Muted>
             </Card>
           ) : (
@@ -309,6 +308,11 @@ export default function MealsScreen() {
           )}
         </View>
       </ScrollView>
+      {user && (
+        <ActionBar>
+          <Button title="Plan oluştur" onPress={openPicker} busy={busy} />
+        </ActionBar>
+      )}
       {picking && (
         <CuisinePicker cuisines={cuisines} initial={chosen} days={days} busy={busy} error={error}
           onCancel={() => setPicking(false)} onConfirm={create} />

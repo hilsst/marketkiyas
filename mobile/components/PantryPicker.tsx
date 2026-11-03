@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { courseGlyph } from '@/lib/icons';
 import FoodIcon from '@/components/FoodIcon';
@@ -18,6 +19,7 @@ const normalize = (s: string) => s.toLocaleLowerCase('tr-TR')
  */
 export default function PantryPicker({ initial, onClose }: { initial: string[]; onClose: (have: string[]) => void }) {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const [choices, setChoices] = useState<IngredientChoice[] | null>(null);
   const [have, setHave] = useState<string[]>(initial);
   const [query, setQuery] = useState('');
@@ -49,7 +51,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
   return (
     <Modal visible animationType="slide" onRequestClose={() => onClose(have)}>
       <View style={{ flex: 1, backgroundColor: t.background }}>
-        <View style={{ backgroundColor: t.tint, paddingTop: 48, paddingBottom: 16, paddingHorizontal: 20, gap: 4 }}>
+        <View style={{ backgroundColor: t.tint, paddingTop: 16 + Math.max(insets.top, 32), paddingBottom: 16, paddingHorizontal: 20, gap: 4 }}>
           <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>Dolabımda ne var?</Text>
           <Text style={{ color: '#fff', opacity: 0.9 }}>
             Evde olanları seç. Dolabım’a da eklenir; bunları kullanan yemekler öne çıkar, alışveriş listesine eklenmez.
@@ -91,7 +93,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
           )}
 
         </ScrollView>
-        <View style={{ padding: 16, gap: 8, borderTopWidth: 1, borderTopColor: t.border }}>
+        <View style={{ padding: 16, paddingBottom: 16 + insets.bottom, gap: 8, borderTopWidth: 1, borderTopColor: t.border }}>
           <Button title={have.length ? `Tamam (${have.length} malzeme)` : 'Tamam'} onPress={() => onClose(have)} />
           {have.length > 0 && <Text style={{ color: t.danger, textAlign: 'center' }} onPress={() => setHave([])}>Hepsini temizle</Text>}
         </View>

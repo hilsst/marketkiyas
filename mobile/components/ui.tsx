@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -14,13 +14,34 @@ export function useTheme() {
 }
 
 /** Ekran kabuğu: güvenli alan + kaydırma + sayfa arka planı. Başlık çubuğu olan (yığındaki) ekranlarda safeTop={false} */
-export function Screen({ children, scroll = true, safeTop = true }: { children: ReactNode; scroll?: boolean; safeTop?: boolean }) {
+export function Screen({ children, scroll = true, safeTop = true, footer }: {
+  children: ReactNode; scroll?: boolean; safeTop?: boolean; footer?: ReactNode;
+}) {
   const t = useTheme();
   const body = <View style={styles.body}>{children}</View>;
   return (
     <SafeAreaView edges={safeTop ? ['top'] : []} style={{ flex: 1, backgroundColor: t.background }}>
-      {scroll ? <ScrollView keyboardShouldPersistTaps="handled">{body}</ScrollView> : body}
+      {scroll ? <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">{body}</ScrollView> : body}
+      {footer}
     </SafeAreaView>
+  );
+}
+
+/**
+ * Ekranın altında sabit duran onay çubuğu: liste kendi alanında kayar, butonlar yerinde kalır.
+ * Android gezinme çubuğunun (ve iPhone alt çizgisinin) altına girmez.
+ */
+export function ActionBar({ children }: { children: ReactNode }) {
+  const t = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={{
+      backgroundColor: t.card, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 + insets.bottom, gap: 8,
+      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border,
+      shadowColor: t.shadow, shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: -4 }, elevation: 8,
+    }}>
+      {children}
+    </View>
   );
 }
 
