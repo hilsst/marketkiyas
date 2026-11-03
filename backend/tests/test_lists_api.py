@@ -331,3 +331,18 @@ async def test_campaign_regular_price(client, db, catalog):
     assert detail["products"][1]["regular_price"] is None
     search = (await client.get("/api/products", params={"q": "ekmek"})).json()[0]
     assert sorted(D(m["regular_price"]) for m in search["market_prices"] if m["regular_price"]) == [D("12.00")]
+
+
+async def test_nearby_plan_needs_location(client, auth_headers, catalog):
+    _, ids = catalog
+    h = auth_headers
+    lid = (await client.post("/api/lists", json={"name": "L"}, headers=h)).json()["id"]
+    await client.post(f"/api/lists/{lid}/items", json={"group_id": ids["milk"]}, headers=h)
+
+    opt = (await client.get(f"/api/lists/{lid}/optimize", params={"lat": 40.98, "lon": 29.02}, headers=h)).json()
+    assert opt["nearby"] is None and opt["nearby_extra"] is None  # şube seçilmedi: mesafe yok
+
+    r = await client.post(f"/api/lists/{lid}/apply", json={"plan_type": "nearby"}, headers=h)
+    assert r.status_code == 409 and "konum" in r.json()["detail"].lower()
+    # Türkiye dışı konum reddedilir
+    assert (await client.get(f"/api/lists/{lid}/optimize", params={"lat": 10, "lon": 29}, headers=h)).status_code == 422

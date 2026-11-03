@@ -19,6 +19,9 @@ from app.models.enums import PlanType
 
 NO_COMPLETE_MARKET_WARNING = "Hiçbir market listedeki tüm ürünleri satmıyor"
 
+# Yakın Market: daha uzak bir şube ürün başına bundan fazla ucuzsa oradan alınır
+NEARBY_THRESHOLD = Decimal("1.00")
+
 WEEKS_PER_MONTH = 4
 WEEKS_PER_YEAR = 52
 
@@ -33,6 +36,7 @@ class Offer:
     market_id: int
     unit_price: Decimal
     store_id: int | None = None  # fiyatın geldiği şube (kullanıcı şube seçtiyse)
+    distance_km: float | None = None  # kullanıcının konumundan şubeye; konum ya da şube konumu yoksa None
 
 
 @dataclass(frozen=True)
@@ -127,10 +131,13 @@ class OptimizationResult:
     combination: Plan
     opportunist: Plan
     savings: Savings
+    nearby: Plan | None = None  # konum yoksa (ya da şube mesafesi bilinmiyorsa) None
 
     def plan(self, plan_type: PlanType) -> Plan | None:
         if plan_type is PlanType.SINGLE_MARKET:
             return self.single_market.plan
+        if plan_type is PlanType.NEARBY:
+            return self.nearby
         if plan_type is PlanType.COMBINATION:
             return self.combination
         return self.opportunist
@@ -193,6 +200,28 @@ def opportunist_plan(items: list[ItemInput]) -> Plan:
     return _cheapest_plan(PlanType.OPPORTUNIST, items, respect_brand=False)
 
 
+def nearby_plan(items: list[ItemInput], threshold: Decimal = NEARBY_THRESHOLD) -> Plan | None:
+    """Yakın Market: marka tercihlerine uyarak her kalemi kullanıcıya EN YAKIN şubeden alır; yalnız başka
+    bir şubede birim fiyat `threshold` TL'den fazla ucuzsa oradan. Hiçbir teklifin mesafesi bilinmiyorsa
+    (konum izni yok, şube konumsuz) plan yoktur."""
+    plan = Plan(PlanType.NEARBY)
+    located = False
+    for item in items:
+        offers = item.allowed_offers(respect_brand=True)
+        best = _cheapest(offers)
+        if best is None:
+            plan.missing_item_ids.append(item.item_id)
+            continue
+        located = located or any(o.distance_km is not None for o in offers)
+        close = [o for o in offers if o.distance_km is not None and o.unit_price - best.unit_price <= threshold]
+        if close:
+            chosen = min(close, key=lambda o: (o.distance_km, o.unit_price, o.market_id, o.product_id))
+        else:
+            chosen = best
+        plan.lines.append(PlanLine(item.item_id, item.group_id, item.group_name, item.quantity, chosen))
+    return plan if located else None
+
+
 def single_market(items: list[ItemInput], market_ids: list[int]) -> SingleMarketResult:
     totals: list[MarketTotal] = []
     plans: dict[int, Plan] = {}
@@ -253,4 +282,5 @@ def optimize(items: list[ItemInput], market_ids: list[int]) -> OptimizationResul
         combination=combination,
         opportunist=opportunist,
         savings=calculate_savings(combination, opportunist),
+        nearby=nearby_plan(items),
     )

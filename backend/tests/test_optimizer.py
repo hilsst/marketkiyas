@@ -1,7 +1,7 @@
 from decimal import Decimal as D
 
 from app.models.enums import PlanType
-from app.services.optimizer import NO_COMPLETE_MARKET_WARNING, ItemInput, Offer, optimize
+from app.services.optimizer import NO_COMPLETE_MARKET_WARNING, ItemInput, Offer, nearby_plan, optimize
 
 BIM, A101, SOK, FILE = 1, 2, 3, 4
 MARKETS = [BIM, A101, SOK, FILE]
@@ -129,3 +129,43 @@ def test_plan_groups_lines_by_market():
         BIM: [1, 3],
         A101: [2],
     }
+
+
+def located(pid, market, price, km, brand=None):
+    return Offer(pid, f"p{pid}", brand, market, D(price), store_id=market, distance_km=km)
+
+
+def test_nearby_plan_needs_distances():
+    assert nearby_plan([item(1, MILK)]) is None
+    assert optimize([item(1, MILK)], MARKETS).nearby is None
+
+
+def test_nearby_takes_nearest_unless_another_store_is_clearly_cheaper():
+    # Süt: en yakın BİM (32.50, 0.5 km), A101 34.90 -> en yakın ve en ucuz = BİM
+    milk = [located(1, BIM, "32.50", 0.5), located(2, A101, "34.90", 1.0), located(3, SOK, "33.00", 2.0)]
+    # Ekmek: en yakın BİM 10.00; A101 9.50 fark 0.50 <= 1 TL -> yine BİM
+    bread = [located(5, BIM, "10.00", 0.5), located(6, A101, "9.50", 1.0)]
+    # Yumurta: BİM 80, A101 70 -> fark 10 TL > 1 TL -> A101
+    eggs = [located(8, BIM, "80.00", 0.5), located(9, A101, "70.00", 1.0)]
+    items = [item(1, milk), item(2, bread), item(3, eggs)]
+    plan = nearby_plan(items)
+    assert plan.plan_type is PlanType.NEARBY
+    chosen = {line.item_id: line.offer.market_id for line in plan.lines}
+    assert chosen == {1: BIM, 2: BIM, 3: A101}
+    # Fırsatçı en ucuzu seçer (ekmek A101'de 9.50), yakın plan biraz daha pahalı olur
+    result = optimize(items, MARKETS)
+    assert result.nearby.total >= result.opportunist.total
+    assert result.nearby.total - result.opportunist.total == D("0.50")
+
+
+def test_nearby_prefers_the_nearer_of_equally_cheap_stores_and_respects_brand():
+    pinar = [located(2, A101, "34.90", 3.0, "Pınar"), located(3, SOK, "34.90", 1.0, "Pınar"), located(1, BIM, "32.50", 0.2, "Sütaş")]
+    plan = nearby_plan([item(1, pinar, brand="Pınar")])
+    assert plan.lines[0].offer.market_id == SOK  # marka kilidi: BİM'in Sütaş'ı sayılmaz, eşit fiyatta yakın olan
+
+
+def test_nearby_ignores_stores_without_distance_and_reports_missing():
+    far = [located(1, BIM, "50.00", 0.5), Offer(2, "p2", None, A101, D("20.00"))]  # A101 şubesinin konumu yok
+    plan = nearby_plan([item(1, far), item(2, [])])
+    assert plan.lines[0].offer.market_id == A101  # BİM 30 TL pahalı; mesafesiz şube de en ucuz olduğu için alınır
+    assert plan.missing_item_ids == [2]

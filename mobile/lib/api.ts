@@ -33,7 +33,7 @@ export interface GroupProduct {
   price_history: PricePoint[]; price_updated_at: string | null; store_prices: { store_id: number; store_name: string; price: Money; updated_at: string | null }[];
 }
 export interface GroupDetail extends GroupSummary { products: GroupProduct[]; }
-export type PlanType = 'single_market' | 'combination' | 'opportunist';
+export type PlanType = 'single_market' | 'combination' | 'opportunist' | 'nearby';
 export interface AssignedProduct {
   market_id: number | null; product_id: number | null; product_name: string | null; brand: string | null;
   unit_price: Money | null; store_id: number | null; store_name: string | null;
@@ -68,6 +68,8 @@ export interface MarketTotal { market_id: number; total: Money; found: number; m
 export interface OptimizeResult {
   single_market: { available: boolean; warning: string | null; plan: Plan | null; markets: MarketTotal[] };
   combination: Plan; opportunist: Plan;
+  // Yakın Market: konum gönderilmediyse ya da seçili şubelerin konumu yoksa null; nearby_extra = Fırsatçı'ya göre fazla tutar
+  nearby: Plan | null; nearby_extra: Money | null;
   savings: { preference_total: Money; opportunist_total: Money; weekly: Money; monthly: Money; yearly: Money };
 }
 export interface CompleteResponse {
@@ -293,8 +295,10 @@ export const api = {
   updateItem: (listId: number, itemId: number, patch: ItemPatch) =>
     request<ListDetail>('PATCH', `/lists/${listId}/items/${itemId}`, patch),
   removeItem: (listId: number, itemId: number) => request<ListDetail>('DELETE', `/lists/${listId}/items/${itemId}`),
-  optimize: (listId: number) => request<OptimizeResult>('GET', `/lists/${listId}/optimize`),
-  applyPlan: (listId: number, plan_type: PlanType) => request<ListDetail>('POST', `/lists/${listId}/apply`, { plan_type }),
+  optimize: (listId: number, at?: { lat: number; lon: number } | null) =>
+    request<OptimizeResult>('GET', `/lists/${listId}/optimize${at ? `?lat=${at.lat}&lon=${at.lon}` : ''}`),
+  applyPlan: (listId: number, plan_type: PlanType, at?: { lat: number; lon: number } | null) =>
+    request<ListDetail>('POST', `/lists/${listId}/apply`, { plan_type, ...(plan_type === 'nearby' && at ? at : {}) }),
   cancelPlan: (listId: number) => request<ListDetail>('DELETE', `/lists/${listId}/plan`),
   complete: (listId: number) => request<CompleteResponse>('POST', `/lists/${listId}/complete`),
   // Tamamlanan liste kilitlidir; aynı ürünlerle yeniden açar
