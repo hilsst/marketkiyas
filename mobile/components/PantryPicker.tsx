@@ -2,6 +2,8 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { courseGlyph } from '@/lib/icons';
+import FoodIcon from '@/components/FoodIcon';
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { api, IngredientChoice, RecipeSummary } from '@/lib/api';
 
@@ -40,7 +42,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
     <Pressable key={name} onPress={() => toggle(name)}
       style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
         borderColor: active ? t.tint : t.border, backgroundColor: active ? t.tint : t.card }}>
-      <Text style={{ color: active ? '#fff' : t.text, fontWeight: '600', fontSize: 13 }}>{active ? '✓ ' : ''}{name}</Text>
+      <Text style={{ color: active ? '#fff' : t.text, fontWeight: '600', fontSize: 13 }}>{name}</Text>
     </Pressable>
   );
 
@@ -48,7 +50,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
     <Modal visible animationType="slide" onRequestClose={() => onClose(have)}>
       <View style={{ flex: 1, backgroundColor: t.background }}>
         <View style={{ backgroundColor: t.tint, paddingTop: 48, paddingBottom: 16, paddingHorizontal: 20, gap: 4 }}>
-          <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>🧺 Dolabımda ne var?</Text>
+          <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>Dolabımda ne var?</Text>
           <Text style={{ color: '#fff', opacity: 0.9 }}>
             Evde olanları seç. Dolabım’a da eklenir; bunları kullanan yemekler öne çıkar, alışveriş listesine eklenmez.
           </Text>
@@ -67,11 +69,11 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
               {recipes.slice(0, 8).map(r => (
                 <Pressable key={r.id} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(r.id) } })}
                   style={{ flexDirection: 'row', gap: 10, alignItems: 'center', padding: 10, borderRadius: 14, borderWidth: 1, borderColor: t.border, backgroundColor: t.card }}>
-                  <Text style={{ fontSize: 28 }}>{r.icon ?? '🍽️'}</Text>
+                  <View style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><FoodIcon name={courseGlyph(r.course_type)} size={22} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.text, fontWeight: '700' }}>{r.name}</Text>
                     <Muted style={{ fontSize: 12 }}>
-                      {r.missing && r.missing.length ? `Eksik: ${r.missing.join(', ')}` : '✓ Hepsi evde var'}
+                      {r.missing && r.missing.length ? `Eksik: ${r.missing.join(', ')}` : 'Hepsi evde var'}
                     </Muted>
                   </View>
                 </Pressable>

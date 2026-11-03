@@ -1,3 +1,5 @@
+import { courseGlyph } from '@/lib/icons';
+import FoodIcon from '@/components/FoodIcon';
 import Icon from '@/components/Icon';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -98,12 +100,12 @@ export default function MealPlanScreen() {
           {user?.is_guest && (
             <Pressable onPress={() => { const to = accountRedirect(user, 'plan'); if (to) router.push(to); }}>
               <Card style={{ gap: 4, borderColor: t.tint }}>
-                <Text style={{ color: t.text, fontWeight: '700' }}>💾 Planını kaydet</Text>
+                <Text style={{ color: t.text, fontWeight: '700' }}>Planını kaydet</Text>
                 <Muted>{ACCOUNT_REASON_TEXT.plan} Ücretsiz hesap aç ›</Muted>
               </Card>
             </Pressable>
           )}
-          <Muted>{plan.days} gün · {plan.servings} kişilik · {plan.meal_slots.map(s => MEAL_SLOT_LABELS[s]).join(', ')}. İstemediğiniz yemeği ✕ ile kaldırın, 🔄 ile değiştirin.</Muted>
+          <Muted>{plan.days} gün · {plan.servings} kişilik · {plan.meal_slots.map(s => MEAL_SLOT_LABELS[s]).join(', ')}. İstemediğiniz yemeği kaldırın ya da Değiştir ile başka öneri alın.</Muted>
           {(plan.diets.length > 0 || plan.avoid_allergens.length > 0) && (
             <Muted>
               {[...plan.diets.map(d => DIET_LABELS[d]), ...plan.avoid_allergens.map(a => `${ALLERGEN_LABELS[a]} yok`)].join(' · ')}
@@ -111,14 +113,14 @@ export default function MealPlanScreen() {
           )}
           {(plan.leftovers || plan.low_waste || plan.have.length > 0) && (
             <Muted>
-              {[plan.leftovers && '♻️ Bir pişir iki ye', plan.low_waste && '🧩 Az israf', plan.have.length > 0 && `🧺 Evde: ${plan.have.join(', ')}`]
+              {[plan.leftovers && 'Bir pişir iki ye', plan.low_waste && 'Az israf', plan.have.length > 0 && `Evde: ${plan.have.join(', ')}`]
                 .filter(Boolean).join(' · ')}
             </Muted>
           )}
           {plan.budget_status && (
             <Card style={{ gap: 4, borderColor: plan.budget_status.within ? t.tint : t.danger, borderWidth: 1 }}>
               <Text style={{ color: plan.budget_status.within ? t.tint : t.danger, fontWeight: '800', fontSize: 16 }}>
-                {plan.budget_status.within ? '✓ Bütçeye uyuyor' : '⚠️ Bütçe aşılıyor'}
+                {plan.budget_status.within ? 'Bütçeye uyuyor' : 'Bütçe aşılıyor'}
               </Text>
               <Muted>
                 Bütçe {Number(plan.budget_status.budget).toFixed(2)} ₺ · Alışveriş {Number(plan.budget_status.total).toFixed(2)} ₺
@@ -144,12 +146,12 @@ export default function MealPlanScreen() {
                       <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Pressable style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}
                           onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(e.recipe.id), servings: String(plan.servings) } })}>
-                          <Text style={{ fontSize: 26 }}>{e.recipe.icon ?? '🍽️'}</Text>
+                          <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><FoodIcon name={courseGlyph(e.course)} size={20} /></View>
                           <View style={{ flex: 1 }}>
                             <Muted style={{ fontSize: 12 }}>{COURSE_LABELS[e.course]}</Muted>
                             <Text style={{ color: t.text, fontWeight: '600' }}>{e.recipe.name}</Text>
-                            {e.leftover_of != null && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '600' }}>♻️ Dünden kalan, pişirmek yok</Text>}
-                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '600' }}>♻️ İki kat pişir, yarına kalsın</Text>}
+                            {e.leftover_of != null && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '600' }}>Dünden kalan, pişirmek yok</Text>}
+                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '600' }}>İki kat pişir, yarına kalsın</Text>}
                           </View>
                         </Pressable>
                         {changing === 'e' + e.id ? <ActivityIndicator color={t.tint} /> : (
@@ -199,7 +201,7 @@ export default function MealPlanScreen() {
 
           <MealCostCard cost={plan.cost} />
 
-          <Button title="🛒 Alışveriş listesine aktar" onPress={() => setPicker(true)} busy={exporting} />
+          <Button title="Alışveriş listesine aktar" onPress={() => setPicker(true)} busy={exporting} />
           <Button title="Yeni liste olarak aktar" kind="secondary" onPress={() => exportTo(null).catch(e => setError(e.message))} busy={exporting} />
           {plan.exported_list_id != null && (
             <Text style={{ color: t.tint, textAlign: 'center', fontWeight: '600' }}

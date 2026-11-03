@@ -43,7 +43,7 @@ export default function AlertsScreen() {
       <Title>Fiyat alarmları</Title>
       {!user ? <LoginPrompt what="Ürün takip etmek" /> : (
         <>
-          <Muted>Takip ettiğin ürünlerin fiyatı düşünce burada görünür. Ürün sayfasındaki 🔔 Takip et ile ekleyebilirsin.</Muted>
+          <Muted>Takip ettiğin ürünlerin fiyatı düşünce burada görünür. Ürün sayfasındaki Takip et ile ekleyebilirsin.</Muted>
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
           {alerts === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
           {alerts?.length === 0 && (
@@ -58,9 +58,9 @@ export default function AlertsScreen() {
                 <Card style={{ flexDirection: 'row', gap: 12, alignItems: 'center', borderColor: a.triggered ? t.tint : t.border, borderWidth: a.triggered ? 2 : 1 }}>
                   <ProductImage uri={a.image_url} icon={categoryIcon(a.category_id)} size={56} />
                   <View style={{ flex: 1, gap: 3 }}>
-                    {a.triggered && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '800' }}>📉 FİYATI DÜŞTÜ{a.unread ? ' · YENİ' : ''}</Text>}
+                    {a.triggered && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '800' }}>FİYATI DÜŞTÜ{a.unread ? ' · YENİ' : ''}</Text>}
                     <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{a.group_name}</Text>
-                    {a.product_id != null && <Muted>🎯 {a.brand || a.product_name}{a.current_market_id != null ? ` · ${marketById(a.current_market_id)?.name ?? ''}` : ''}</Muted>}
+                    {a.product_id != null && <Muted>{a.brand || a.product_name}{a.current_market_id != null ? ` · ${marketById(a.current_market_id)?.name ?? ''}` : ''}</Muted>}
                     <Muted>
                       {formatSize(a.quantity, a.unit) ? `${formatSize(a.quantity, a.unit)} · ` : ''}
                       {a.target_price != null ? `${num(a.target_price).toFixed(2)} ₺ altına inince` : threshold != null ? `${threshold.toFixed(2)} ₺ altına inince` : 'Fiyat düşünce'}

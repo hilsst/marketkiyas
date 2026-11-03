@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
+import FoodIcon from '@/components/FoodIcon';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Card, EmptyState, Muted, Screen, Title, useTheme } from '@/components/ui';
@@ -43,7 +44,7 @@ export default function DealsScreen() {
 
       <Pressable onPress={() => router.push('/aktuel')}>
         <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
-          <Text style={{ fontSize: 28 }}>📰</Text>
+          <FoodIcon name="newspaper-variant-outline" size={28} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: t.text, fontWeight: '700' }}>Marketlerin aktüel broşürleri</Text>
             <Muted>{"BİM ve Şok'un bu haftaki aktüel ürünleri"}</Muted>
@@ -63,7 +64,7 @@ export default function DealsScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           {chip('all', cat == null, () => setCat(null), chipText(cat == null, 'Tümü'))}
           {categories.filter(c => catIds.has(c.id)).map(c => chip(String(c.id), cat === c.id, () => setCat(c.id),
-            chipText(cat === c.id, `${c.icon || ''} ${c.name}`.trim())))}
+            chipText(cat === c.id, c.name)))}
         </ScrollView>
       )}
 

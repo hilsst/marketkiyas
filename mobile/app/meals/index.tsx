@@ -1,3 +1,5 @@
+import { courseGlyph, cuisineGlyph } from '@/lib/icons';
+import FoodIcon from '@/components/FoodIcon';
 import Icon from '@/components/Icon';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,7 +17,6 @@ import { useAuth } from '@/lib/auth';
 
 const SLOTS: MealSlot[] = ['kahvalti', 'ogle', 'ara', 'aksam'];
 const COURSES: CourseType[] = ['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek'];
-const COURSE_ICONS: Record<CourseType, string> = { corba: '🥣', ana: '🍛', yan: '🍚', salata: '🥗', tatli: '🍮', icecek: '🥤', ara: '🍎' };
 // Glutensiz ayrı bir seçenek değil: alerji listesindeki "Gluten" aynı işi görür
 const DIETS: Diet[] = ['vejetaryen', 'vegan'];
 const ALLERGENS: Allergen[] = ['gluten', 'sut', 'yumurta', 'kuruyemis', 'susam', 'balik'];
@@ -119,7 +120,7 @@ export default function MealsScreen() {
 
           {user ? (
             <Card style={{ gap: 14 }}>
-              {sectionTitle('🍲 Yeni plan')}
+              {sectionTitle('Yeni plan')}
               <View style={{ gap: 6 }}>
                 <Muted>Kaç günlük?</Muted>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -151,7 +152,7 @@ export default function MealsScreen() {
               <View style={{ gap: 6 }}>
                 <Muted>Menüde neler olsun? İstemediğinize dokunup çıkarın.</Muted>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {COURSES.map(c => chip(c, courses.includes(c), `${COURSE_ICONS[c]} ${COURSE_LABELS[c]}`, () => toggleCourse(c)))}
+                  {COURSES.map(c => chip(c, courses.includes(c), COURSE_LABELS[c], () => toggleCourse(c)))}
                 </View>
                 {courses.includes('yan') && <Muted style={{ fontSize: 12 }}>Yanında: pilav, makarna, püre gibi, yalnız uyduğu ana yemekle önerilir (ör. kuru fasulyeye pilav; mantıya önerilmez).</Muted>}
                 {courses.includes('icecek') && <Muted style={{ fontSize: 12 }}>İçecek, ana yemekle uyumlu hazır içeceklerden seçilir (ör. kuru fasulyeye ayran).</Muted>}
@@ -167,7 +168,7 @@ export default function MealsScreen() {
               <View style={{ gap: 6 }}>
                 <Muted>Alerjim var, bunlar olmasın</Muted>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {ALLERGENS.map(a => chip(a, avoid.includes(a), `🚫 ${ALLERGEN_LABELS[a]}`, () => toggle(setAvoid, a)))}
+                  {ALLERGENS.map(a => chip(a, avoid.includes(a), `${ALLERGEN_LABELS[a]} yok`, () => toggle(setAvoid, a)))}
                 </View>
                 {(diets.length > 0 || avoid.length > 0) && (
                   <Muted style={{ fontSize: 12 }}>Paketli ürünlerin etiketini yine de kontrol edin; alerjen bilgisi tarifteki malzemelere göredir.</Muted>
@@ -197,9 +198,9 @@ export default function MealsScreen() {
                 <Muted style={{ fontSize: 12 }}>Alışveriş tutarı bütçeyi aşarsa pahalı yemekler ucuzlarıyla değiştirilir; yetmezse içecek ve tatlı çıkarılır.</Muted>
               </View>
 
-              {option('leftovers', leftovers, setLeftovers, '♻️ Bir pişir, iki ye',
+              {option('leftovers', leftovers, setLeftovers, 'Bir pişir, iki ye',
                 slots.includes('ogle') ? 'Akşam yemeği iki kat pişer, ertesi gün öğlene kalır.' : 'Akşam yemeği iki kat pişer, ertesi akşama kalır.')}
-              {option('lowWaste', lowWaste, setLowWaste, '🧩 Az israf',
+              {option('lowWaste', lowWaste, setLowWaste, 'Az israf',
                 'Malzemesi ortak yemekler seçilir; aldığın maydanoz, yoğurt, peynir yarım kalmasın.')}
 
               <Pressable onPress={() => setPantryOpen(true)}
@@ -266,13 +267,13 @@ export default function MealsScreen() {
           {(recipes.length > 0 || browse) && (
             <View style={{ gap: 10 }}>
               {sectionTitle('Tarifler')}
-              <Muted style={{ marginTop: -4 }}>En sevilenler önde. Beğendiğiniz tarifi ❤️ ile işaretleyin; planlarda daha sık önerilir.</Muted>
+              <Muted style={{ marginTop: -4 }}>En sevilenler önde. Beğendiğiniz tarifi kalp ile işaretleyin; planlarda daha sık önerilir.</Muted>
               {cuisines.length > 1 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }}
                   contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-                  {chip('all', browse === null, '🌍 Hepsi', () => setBrowse(null))}
+                  {chip('all', browse === null, 'Hepsi', () => setBrowse(null))}
                   {cuisines.filter(c => c.recipe_count > 0).map(c =>
-                    chip(c.slug, browse === c.slug, `${c.icon ?? ''} ${c.name}`.trim(), () => setBrowse(c.slug)))}
+                    chip(c.slug, browse === c.slug, c.name, () => setBrowse(c.slug)))}
                 </ScrollView>
               )}
               {recipes.length === 0 && <Muted>Bu mutfakta seçimlerinize uyan tarif yok.</Muted>}
@@ -281,22 +282,22 @@ export default function MealsScreen() {
                 if (!group.length) return null;
                 return (
                   <View key={course} style={{ gap: 6 }}>
-                    <Muted style={{ fontWeight: '700' }}>{COURSE_ICONS[course]} {COURSE_LABELS[course]}</Muted>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><FoodIcon name={courseGlyph(course)} size={16} color={t.textMuted} /><Muted style={{ fontWeight: '700' }}>{COURSE_LABELS[course]}</Muted></View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }}
                       contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
                       {group.map(r => (
                         <Pressable key={r.id} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(r.id) } })}>
                           <Card style={{ width: 132, gap: 4, padding: 12 }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                              <Text style={{ fontSize: 30 }}>{r.icon ?? '🍽️'}</Text>
-                              {browse === null && <Text style={{ fontSize: 14 }}>{cuisineOf(r.cuisine)?.icon ?? ''}</Text>}
+                              <View style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><FoodIcon name={courseGlyph(r.course_type)} size={22} /></View>
+                              {browse === null && <FoodIcon name={cuisineGlyph(r.cuisine)} size={16} color={t.textMuted} />}
                             </View>
                             <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{r.name}</Text>
                             <Muted style={{ fontSize: 12 }}>
                               {r.prep_minutes + r.cook_minutes > 0 ? `${r.prep_minutes + r.cook_minutes} dk` : 'Hazır'}
                               {r.nutrition ? ` · ${r.nutrition.kcal} kcal` : ''}
                             </Muted>
-                            {(r.liked || r.like_count > 0) && <Muted style={{ fontSize: 12 }}>{r.liked ? '❤️' : '🤍'} {r.like_count}</Muted>}
+                            {(r.liked || r.like_count > 0) && <Muted style={{ fontSize: 12 }}>{r.like_count} beğeni</Muted>}
                           </Card>
                         </Pressable>
                       ))}

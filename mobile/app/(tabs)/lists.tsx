@@ -64,7 +64,7 @@ export default function ListsScreen() {
           </View>
           {joining ? (
             <Card style={{ gap: 8 }}>
-              <Text style={{ color: t.text, fontWeight: '700' }}>👥 Ortak listeye katıl</Text>
+              <Text style={{ color: t.text, fontWeight: '700' }}>Ortak listeye katıl</Text>
               <Muted>Listeyi paylaşan kişinin gönderdiği davet kodunu yaz.</Muted>
               <Input placeholder="Davet kodu (örn. MMDS534W)" value={code} onChangeText={setCode} autoCapitalize="characters" autoCorrect={false} onSubmitEditing={join} />
               <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -73,7 +73,7 @@ export default function ListsScreen() {
               </View>
             </Card>
           ) : (
-            <Text onPress={() => setJoining(true)} style={{ color: t.tint, fontWeight: '600' }}>👥 Kodla ortak listeye katıl</Text>
+            <Text onPress={() => setJoining(true)} style={{ color: t.tint, fontWeight: '600' }}>Kodla ortak listeye katıl</Text>
           )}
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
           {lists === null && !error && <ActivityIndicator color={t.tint} />}
@@ -89,10 +89,10 @@ export default function ListsScreen() {
                   <Muted>{l.item_count} ürün</Muted>
                 </View>
                 {(l.member_count > 0 || l.owner_id !== user.id) && (
-                  <Muted>👥 Ortak liste{l.owner_id !== user.id && l.owner_name ? ` · sahibi ${l.owner_name}` : ''}</Muted>
+                  <Muted>Ortak liste{l.owner_id !== user.id && l.owner_name ? ` · sahibi ${l.owner_name}` : ''}</Muted>
                 )}
-                {l.status === 'completed' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 12 }}>✅ Alışveriş tamamlandı</Text>}
-                {l.status === 'shopping' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 12 }}>🛒 Alışveriş sürüyor · {l.checked_count}/{l.item_count} alındı</Text>}
+                {l.status === 'completed' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 12 }}>Alışveriş tamamlandı</Text>}
+                {l.status === 'shopping' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 12 }}>Alışveriş sürüyor · {l.checked_count}/{l.item_count} alındı</Text>}
                 {l.estimated_total != null && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Muted>Tahmini: </Muted>

@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
+import Icon from '@/components/Icon';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Button, Card, Muted, Screen, useTheme } from '@/components/ui';
@@ -44,7 +45,7 @@ export default function DealMenuScreen() {
 
   return (
     <Screen safeTop={false}>
-      <Text style={{ color: t.text, fontSize: 22, fontWeight: '800' }}>🏷️ İndirimden menü</Text>
+      <Text style={{ color: t.text, fontSize: 22, fontWeight: '800' }}>İndirimden menü</Text>
       <Muted>Bu hafta indirimde olan malzemeleri seç; menüde o malzemeli yemekler öne çıksın. Fiyatlar yine marketlerdeki güncel fiyattan hesaplanır.</Muted>
       {items === null && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
       {items?.length === 0 && !error && (
@@ -56,7 +57,7 @@ export default function DealMenuScreen() {
           <Pressable key={i.name} onPress={() => toggle(i.name)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, borderWidth: 1,
               borderColor: on ? t.tint : t.border, backgroundColor: on ? t.tint + '18' : t.card }}>
-            <ProductImage uri={i.image_url} icon="🏷️" size={48} />
+            <ProductImage uri={i.image_url} icon="tag" size={48} />
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ color: t.text, fontWeight: '700' }}>{i.name}</Text>
               <Muted>{i.product_name} · {i.recipe_count} tarif</Muted>
@@ -70,7 +71,7 @@ export default function DealMenuScreen() {
                 {i.discount_percent > 0 && <Text style={{ color: '#c2410c', fontSize: 11, fontWeight: '800' }}>%{i.discount_percent}</Text>}
               </View>
             </View>
-            <Text style={{ fontSize: 22 }}>{on ? '✅' : '⬜'}</Text>
+            <Icon name={on ? 'check-square' : 'square'} size={24} color={on ? t.tint : t.textMuted} />
           </Pressable>
         );
       })}

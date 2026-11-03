@@ -13,7 +13,7 @@ appId: app.ucuzu
 - tapOn:
     text: "(Planı oluştur|\\d+ mutfakla oluştur)"
 - extendedWaitUntil:
-    visible: "🛒 Alışveriş listesine aktar"
+    visible: "Alışveriş listesine aktar"
     timeout: 120000
 - scrollUntilVisible:
     element: "Yeni liste olarak aktar"
@@ -24,16 +24,16 @@ appId: app.ucuzu
     timeout: 20000
 - tapOn: "Planları gör"
 - scrollUntilVisible:
-    element: "🛒 Bu planı alışveriş listeme uygula"
-- tapOn: "🛒 Bu planı alışveriş listeme uygula"
+    element: "Bu planı alışveriş listeme uygula"
+- tapOn: "Bu planı alışveriş listeme uygula"
 - scrollUntilVisible:
-    element: "✅ Alışverişi Bitir ve Tasarrufu Kaydet"
-- tapOn: "✅ Alışverişi Bitir ve Tasarrufu Kaydet"
+    element: "Alışverişi Bitir ve Tasarrufu Kaydet"
+- tapOn: "Alışverişi Bitir ve Tasarrufu Kaydet"
 # Misafir: hesap açma ekranı gelir
 - runFlow: subflows/upgrade.yaml
 - scrollUntilVisible:
-    element: "✅ Alışverişi Bitir ve Tasarrufu Kaydet"
-- tapOn: "✅ Alışverişi Bitir ve Tasarrufu Kaydet"
+    element: "Alışverişi Bitir ve Tasarrufu Kaydet"
+- tapOn: "Alışverişi Bitir ve Tasarrufu Kaydet"
 - extendedWaitUntil:
     visible: "Alışveriş tamamlandı"
     timeout: 30000

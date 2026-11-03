@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { api, Category, Market } from '@/lib/api';
+import { categoryGlyph, FoodGlyph } from '@/lib/icons';
 
 interface CatalogState {
   markets: Market[];
@@ -8,7 +9,7 @@ interface CatalogState {
   categories: Category[]; // yalnızca üst kategoriler
   categoryById: (id: number | null | undefined) => Category | undefined;
   subcategoriesOf: (id: number) => Category[]; // sunucu en kalabalığı önce verir
-  categoryIcon: (id: number | null | undefined) => string;
+  categoryIcon: (id: number | null | undefined) => FoodGlyph;
 }
 
 const CatalogContext = createContext<CatalogState | null>(null);
@@ -33,7 +34,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     categories: all.filter(c => c.parent_id == null),
     categoryById,
     subcategoriesOf: id => all.filter(c => c.parent_id === id),
-    categoryIcon: id => categoryById(id)?.icon || '🛒',
+    categoryIcon: id => categoryGlyph(categoryById(id)?.slug),
   }), [markets, marketMap, all, categoryById]);
 
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>;

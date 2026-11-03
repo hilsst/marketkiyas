@@ -156,7 +156,7 @@ export default function ListScreen() {
           {inShopping ? (
             <Muted>{[it.assigned?.brand || it.assigned?.product_name, it.assigned?.store_name].filter(Boolean).join(' · ')} × {qty}</Muted>
           ) : (
-            <Muted>{locked ? `🔒 ${line?.brand || it.preferred_brand || 'seçili ürün'}` : 'Farketmez (en ucuzu)'}{line ? ` · ${num(line.unit_price).toFixed(2)} ₺` : ''}</Muted>
+            <Muted>{locked ? `Seçili: ${line?.brand || it.preferred_brand || 'seçili ürün'}` : 'Farketmez (en ucuzu)'}{line ? ` · ${num(line.unit_price).toFixed(2)} ₺` : ''}</Muted>
           )}
         </View>
         {inShopping ? (
@@ -182,22 +182,22 @@ export default function ListScreen() {
     <Screen safeTop={false}>
       <Stack.Screen options={{ title: list.name, headerRight: () => (
         <View style={{ flexDirection: 'row', gap: 14, paddingHorizontal: 8 }}>
-          <Text onPress={() => setSharing(v => !v)} style={{ color: t.tint, fontWeight: '700' }}>👥 Paylaş</Text>
+          <Text onPress={() => setSharing(v => !v)} style={{ color: t.tint, fontWeight: '700' }}>Paylaş</Text>
           {isOwner
             ? <Text onPress={deleteList} style={{ color: t.danger, fontWeight: '600' }}>Sil</Text>
             : <Text onPress={leaveList} style={{ color: t.danger, fontWeight: '600' }}>Ayrıl</Text>}
         </View>
       ) }} />
-      <Muted>{total} ürün · alınan {checked}/{total}{list.members.length > 0 || !isOwner ? ' · 👥 ortak liste' : ''}</Muted>
+      <Muted>{total} ürün · alınan {checked}/{total}{list.members.length > 0 || !isOwner ? ' · ortak liste' : ''}</Muted>
 
       {sharing && (
         <Card style={{ gap: 10 }}>
-          <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>👥 Ortak liste</Text>
+          <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>Ortak liste</Text>
           <Muted>Kodu alan kişi kendi telefonunda bu listeyi görür, ürün ekler ve işaretler. Değişiklikler birkaç saniyede herkese yansır.</Muted>
           {list.share_code && (
             <Text selectable style={{ color: t.text, fontSize: 28, fontWeight: '900', letterSpacing: 4, textAlign: 'center' }}>{list.share_code}</Text>
           )}
-          {isOwner && <Button title="📤 Davet gönder (WhatsApp, SMS…)" onPress={shareInvite} />}
+          {isOwner && <Button title="Davet gönder (WhatsApp, SMS…)" onPress={shareInvite} />}
           <View style={{ gap: 4 }}>
             <Text style={{ color: t.text, fontWeight: '700' }}>Listedekiler</Text>
             <Muted>{list.owner_name || 'Sahip'}{isOwner ? ' (sen)' : ''} · sahibi</Muted>
@@ -220,7 +220,7 @@ export default function ListScreen() {
       {completed && (
         <>
           <Card style={{ gap: 4, borderColor: t.tint, borderWidth: 2 }}>
-            <Text style={{ color: t.tint, fontSize: 16, fontWeight: '800' }}>✅ Alışveriş tamamlandı</Text>
+            <Text style={{ color: t.tint, fontSize: 16, fontWeight: '800' }}>Alışveriş tamamlandı</Text>
             <Muted>
               {list.completed_at ? new Date(list.completed_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' }) + ' · ' : ''}
               Bu listeye artık ürün eklenemez.
@@ -229,13 +229,13 @@ export default function ListScreen() {
           <Card style={{ padding: 0 }}>
             {list.items.map(i => (
               <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: t.border }}>
-                <Text style={{ fontSize: 16 }}>{i.is_checked ? '✅' : '⬜'}</Text>
+                <Icon name={i.is_checked ? 'check-square' : 'square'} size={18} color={i.is_checked ? t.tint : t.textMuted} />
                 <Text style={{ color: t.text, flex: 1 }} numberOfLines={2}>{i.group_name}</Text>
                 <Muted>{num(i.quantity)} adet</Muted>
               </View>
             ))}
           </Card>
-          <Button title="🔁 Listeyi tekrar kullan" onPress={() => mutate(() => api.reopenList(list.id))} />
+          <Button title="Listeyi tekrar kullan" onPress={() => mutate(() => api.reopenList(list.id))} />
           <Muted style={{ textAlign: 'center' }}>Aynı ürünlerle yeni bir alışverişe başlar, işaretler sıfırlanır.</Muted>
         </>
       )}
@@ -243,7 +243,7 @@ export default function ListScreen() {
       {!completed && tab === 'items' && shopping && (
         <>
           <Card style={{ backgroundColor: t.tint, borderColor: t.tint, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>🛒 Alışveriş modu · {checked}/{total} alındı</Text>
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Alışveriş modu · {checked}/{total} alındı</Text>
             <Text onPress={() => mutate(() => api.cancelPlan(list.id), false)} style={{ color: '#fff', fontWeight: '700', textDecorationLine: 'underline' }}>İptal Et</Text>
           </Card>
           {list.shopping_groups.filter(g => g.market_id != null).map(g => {
@@ -260,7 +260,7 @@ export default function ListScreen() {
               </Card>
             );
           })}
-          <Button title={finishing ? 'Kaydediliyor…' : '✅ Alışverişi Bitir ve Tasarrufu Kaydet'} onPress={finish} busy={finishing} />
+          <Button title={finishing ? 'Kaydediliyor…' : 'Alışverişi Bitir ve Tasarrufu Kaydet'} onPress={finish} busy={finishing} />
           <Muted style={{ textAlign: 'center' }}>Bir liste haftada bir kez tasarruf kasasına eklenir.</Muted>
         </>
       )}
@@ -293,7 +293,7 @@ export default function ListScreen() {
                 )}
               </View>
               {mode === 'single_market' && !opt.single_market.available && (
-                <Text style={{ color: t.accentText, backgroundColor: t.accentSoft, borderRadius: 14, padding: 12 }}>⚠️ {opt.single_market.warning || 'Hiçbir market listedeki tüm ürünleri satmıyor.'}</Text>
+                <Text style={{ color: t.accentText, backgroundColor: t.accentSoft, borderRadius: 14, padding: 12 }}>{opt.single_market.warning || 'Hiçbir market listedeki tüm ürünleri satmıyor.'}</Text>
               )}
               {plan?.by_market.map(b => (
                 <Card key={b.market_id} style={{ gap: 4, padding: 14 }}>
@@ -322,7 +322,7 @@ export default function ListScreen() {
               )}
             </>
           )}
-          <Button title="🛒 Bu planı alışveriş listeme uygula" onPress={apply} disabled={applyDisabled} />
+          <Button title="Bu planı alışveriş listeme uygula" onPress={apply} disabled={applyDisabled} />
           {blocked && <Muted style={{ textAlign: 'center' }}>{blocked}</Muted>}
         </>
       )}

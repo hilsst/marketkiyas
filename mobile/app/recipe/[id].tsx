@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { courseGlyph } from '@/lib/icons';
+import FoodIcon from '@/components/FoodIcon';
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
 import { Button, Card, Muted, useTheme } from '@/components/ui';
@@ -63,7 +65,7 @@ export default function RecipeScreen() {
         <View style={{ padding: 16, gap: 16 }}>
           <View style={{ alignItems: 'center', gap: 6 }}>
             <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 60 }}>{recipe.icon ?? '🍽️'}</Text>
+              <FoodIcon name={courseGlyph(recipe.course_type)} size={60} />
             </View>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5, marginTop: 6 }}>{recipe.name}</Text>
             <Muted style={{ textAlign: 'center' }}>{recipe.description}</Muted>
@@ -73,7 +75,7 @@ export default function RecipeScreen() {
             <Pressable onPress={toggleLike} hitSlop={8} accessibilityLabel={recipe.liked ? 'Beğenmekten vazgeç' : 'Beğen'}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
                 borderWidth: 1, borderColor: recipe.liked ? t.danger : t.border }}>
-              <Text style={{ fontSize: 16 }}>{recipe.liked ? '❤️' : '🤍'}</Text>
+              <FoodIcon name={recipe.liked ? 'heart' : 'heart-outline'} size={18} color={recipe.liked ? t.danger : t.textMuted} />
               <Text style={{ color: t.text, fontWeight: '700' }}>{recipe.liked ? 'Beğendin' : 'Beğen'} · {recipe.like_count}</Text>
             </Pressable>
             {error && <Text style={{ color: t.danger }}>{error}</Text>}
@@ -84,7 +86,7 @@ export default function RecipeScreen() {
           </View>
 
           {recipe.steps.length > 0 && (
-            <Button title="👩‍🍳 Pişirme modunu başlat"
+            <Button title="Pişirme modunu başlat"
               onPress={() => router.push({ pathname: '/cook/[id]', params: { id: String(recipe.id), servings: String(people) } })} />
           )}
 

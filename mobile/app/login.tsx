@@ -43,7 +43,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
-        <Text style={{ fontSize: 28, fontWeight: '800', color: t.text }}>🛒 Ucuzu</Text>
+        <Text style={{ fontSize: 28, fontWeight: '800', color: t.text }}>Ucuzu</Text>
         <Muted>{upgrading && reason && ACCOUNT_REASON_TEXT[reason]
           ? ACCOUNT_REASON_TEXT[reason]
           : mode === 'login' ? 'Listelerin, tasarrufun ve marketlerin için giriş yap.' : 'Ücretsiz üye ol, alışverişte tasarrufunu takip et.'}</Muted>

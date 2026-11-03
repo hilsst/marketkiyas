@@ -27,10 +27,10 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
         hâlinde alınacakların toplamıdır; artan malzeme evde kalır.
       </Muted>
       {num(cost.leftover_value ?? 0) > 0 && (
-        <Muted>🧩 Paketlerden artacak malzemenin değeri yaklaşık {tl(cost.leftover_value ?? 0)}.</Muted>
+        <Muted>Paketlerden artacak malzemenin değeri yaklaşık {tl(cost.leftover_value ?? 0)}.</Muted>
       )}
       {(cost.from_stock?.length ?? 0) > 0 && (
-        <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>🧊 Dolabından (önceki alışverişten artan): {cost.from_stock!.map(s => `${s.name} ${formatSize(s.quantity, s.unit)}`).join(', ')}</Text>
+        <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>Dolabından (önceki alışverişten artan): {cost.from_stock!.map(s => `${s.name} ${formatSize(s.quantity, s.unit)}`).join(', ')}</Text>
       )}
       {cost.missing_count > 0 && (
         <Text style={{ color: t.danger, fontSize: 13 }}>
@@ -60,7 +60,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
       ))}
 
       {(cost.have?.length ?? 0) > 0 && (
-        <Muted>🧺 Dolabınızda olduğu için alınmayacak: {cost.have!.join(', ')}</Muted>
+        <Muted>Dolabınızda olduğu için alınmayacak: {cost.have!.join(', ')}</Muted>
       )}
       {cost.pantry.length > 0 && (
         <Muted>Evde olduğu varsayılanlar: {cost.pantry.join(', ')}</Muted>

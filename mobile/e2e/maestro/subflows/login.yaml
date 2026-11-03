@@ -13,7 +13,7 @@ appId: app.ucuzu
 # Başlıkta da "Giriş yap" yazar; sekme logonun altındadır
 - tapOn:
     text: "Giriş yap"
-    below: "🛒 Ucuzu"
+    below: "Ucuzu"
 - assertVisible: "Dikkat: Var olan hesabına girersen.*"
 - tapOn: "E-posta"
 - inputText: "demo@marketkiyas.app"

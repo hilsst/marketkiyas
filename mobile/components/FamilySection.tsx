@@ -49,7 +49,7 @@ export default function FamilySection({ user }: { user: User }) {
   const family = data?.family;
   if (!data) return null;
 
-  const header = <Text style={{ color: t.text, fontSize: 17, fontWeight: '800' }}>👨‍👩‍👧 Ailem</Text>;
+  const header = <Text style={{ color: t.text, fontSize: 17, fontWeight: '800' }}>Ailem</Text>;
 
   if (!family) {
     return (
@@ -111,7 +111,7 @@ export default function FamilySection({ user }: { user: User }) {
           )}
         </View>
       ))}
-      {family.pending_invites.map(e => <Muted key={e}>✉️ {e} · davet bekliyor</Muted>)}
+      {family.pending_invites.map(e => <Muted key={e}>{e} · davet bekliyor</Muted>)}
 
       {!full && (
         <>
