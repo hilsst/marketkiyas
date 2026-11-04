@@ -38,12 +38,12 @@ export default function MealsScreen() {
   const [leftovers, setLeftovers] = useState(false);
   const [lowWaste, setLowWaste] = useState(false);
   const [have, setHave] = useState<string[]>([]);
-  const [pantryOpen, setPantryOpen] = useState(false);
+  const [pantryOpen, setPantryOpen] = useState(mode === 'pantry');
   // Son seçilen mutfaklar; mutfak seçim kartı bunlarla açılır
   const [chosen, setChosen] = useState<string[]>([]);
   const [picking, setPicking] = useState(false);
   // Tarifler bölümünde gösterilen mutfak (null = hepsi)
-  const [browse, setBrowse] = useState<string | null>(null);
+  const [browse, setBrowse] = useState<string | null>(quick ? 'haftaici' : null);
   const [servings, setServings] = useState(2);
   const [slots, setSlots] = useState<MealSlot[]>(['aksam']);
   const [courses, setCourses] = useState<CourseType[]>(COURSES);
@@ -96,8 +96,6 @@ export default function MealsScreen() {
     setError(null);
     if (quick) create(['haftaici']); else setPicking(true);
   };
-  useEffect(() => { if (mode === 'pantry') setPantryOpen(true); }, [mode]);
-  useEffect(() => { if (quick) setBrowse('haftaici'); }, [quick]);
   const option = (key: string, value: boolean, onChange: (v: boolean) => void, title: string, note: string) => (
     <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <View style={{ flex: 1 }}>
