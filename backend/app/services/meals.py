@@ -1374,6 +1374,33 @@ async def to_detail(
 # --- Alışveriş listesine aktarma ------------------------------------------------------------
 
 
+def _add_cost_to_list(user: User, shopping_list: ShoppingList, cost: CostOut, *, note: str) -> dict[int, int]:
+    """Maliyet satırlarındaki bulunan ürün gruplarını paket adediyle listeye ekler; grup listede varsa miktarı artar."""
+    packages: dict[int, int] = defaultdict(int)
+    for line in cost.lines:
+        if line.match is not None:
+            packages[line.match.group_id] += line.packages
+    next_position = max((i.position for i in shopping_list.items), default=-1) + 1
+    for group_id, count in packages.items():
+        existing = next((i for i in shopping_list.items if i.group_id == group_id), None)
+        if existing is not None:
+            existing.quantity = min(existing.quantity + count, Decimal(999))
+            continue
+        shopping_list.items.append(
+            ShoppingListItem(
+                group_id=group_id,
+                quantity=Decimal(min(count, 999)),
+                position=next_position,
+                note=note,
+                added_by_user_id=user.id,
+            )
+        )
+        next_position += 1
+    if packages:
+        list_svc.reset_plan(shopping_list)
+    return packages
+
+
 async def export_to_list(
     db: AsyncSession, user: User, plan: MealPlan, *, list_id: int | None, list_name: str | None, include_pantry: bool
 ) -> tuple[ShoppingList, int, list[str], list[StockUse]]:
@@ -1391,29 +1418,25 @@ async def export_to_list(
         await db.flush()
         shopping_list = await list_svc.get_owned_list(db, user, new_list.id)
 
-    packages: dict[int, int] = defaultdict(int)
-    for line in cost.lines:
-        if line.match is not None:
-            packages[line.match.group_id] += line.packages
-    next_position = max((i.position for i in shopping_list.items), default=-1) + 1
-    for group_id, count in packages.items():
-        existing = next((i for i in shopping_list.items if i.group_id == group_id), None)
-        if existing is not None:
-            existing.quantity = min(existing.quantity + count, Decimal(999))
-            continue
-        shopping_list.items.append(
-            ShoppingListItem(
-                group_id=group_id,
-                quantity=Decimal(min(count, 999)),
-                position=next_position,
-                note="Yemek planı",
-                added_by_user_id=user.id,
-            )
-        )
-        next_position += 1
-    if packages:
-        list_svc.reset_plan(shopping_list)
+    packages = _add_cost_to_list(user, shopping_list, cost, note="Yemek planı")
     plan.exported_list_id = shopping_list.id
     await db.commit()
     skipped = [line.name for line in cost.lines if line.match is None]
     return shopping_list, len(packages), skipped, stored
+
+
+async def export_recipe_to_list(
+    db: AsyncSession, user: User, recipe: Recipe, *, servings: int, list_id: int | None, list_name: str | None
+) -> tuple[ShoppingList, int, list[str]]:
+    """Tek bir tarifin malzemeleri listeye eklenir (plan kurmadan; "Hızlı ama lezzetli yemekler" akışı)."""
+    cost = await compute_cost(db, [(recipe, Decimal(servings) / recipe.servings)], servings, user.id)
+    if list_id is not None:
+        shopping_list = await list_svc.get_owned_list(db, user, list_id, editable=True)
+    else:
+        new_list = ShoppingList(user_id=user.id, name=list_name or recipe.name, icon="🍲")
+        db.add(new_list)
+        await db.flush()
+        shopping_list = await list_svc.get_owned_list(db, user, new_list.id)
+    packages = _add_cost_to_list(user, shopping_list, cost, note=recipe.name[:60])
+    await db.commit()
+    return shopping_list, len(packages), [line.name for line in cost.lines if line.match is None]
