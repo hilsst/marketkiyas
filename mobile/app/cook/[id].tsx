@@ -6,8 +6,10 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BonAppetit from '@/components/BonAppetit';
 import Icon from '@/components/Icon';
 import { Muted, useTheme } from '@/components/ui';
+import { scaleAmount } from '@/lib/amount';
 import { api, RecipeDetail } from '@/lib/api';
 
 /**
@@ -65,6 +67,7 @@ export default function CookScreen() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0); // 0 = malzemeler, 1..n = adımlar
   const [ready, setReady] = useState<string[]>([]);
+  const [finished, setFinished] = useState(false);
   const [runs, setRuns] = useState<Record<string, Run>>({});
   const [now, setNow] = useState(() => Date.now());
   const runsRef = useRef<Record<string, Run>>({});
@@ -80,7 +83,10 @@ export default function CookScreen() {
   }, [params.id, params.servings]);
 
   const play = (player: typeof tick) => {
-    try { player.seekTo(0); player.play(); } catch { /* ses çalınamazsa titreşim yine var */ }
+    try {
+      // Android'de bitmiş çalar başa sarılmadan tekrar çalmaz; sarma bitince çal
+      Promise.resolve(player.seekTo(0)).catch(() => {}).then(() => player.play());
+    } catch { /* ses çalınamazsa titreşim yine var */ }
   };
 
   const running = Object.values(runs).some(x => !x.done);
@@ -98,7 +104,7 @@ export default function CookScreen() {
           // Son 5 saniye: her saniye kısa bip
           beeped.current[key] = left;
           play(tick);
-          Haptics.selectionAsync().catch(() => {});
+          Vibration.vibrate(120); // sessizdeyse de hissedilsin
         }
       }
       if (!finished.length) return;
@@ -174,7 +180,7 @@ export default function CookScreen() {
           <>
             <Text style={{ color: t.tint, fontWeight: '800' }}>HAZIRLIK · {total} ADIM</Text>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800' }}>Malzemeleri hazırla</Text>
-            {people !== recipe.servings && <Muted>Ölçüler {recipe.servings} kişilik; {people} kişi için oranlayın.</Muted>}
+            {people !== recipe.servings && <Muted>Ölçüler {people} kişiye göre ayarlandı.</Muted>}
             <Muted>Hazırladığına dokun, işaretlensin.</Muted>
             {recipe.ingredients.map(i => {
               const done = ready.includes(i.name);
@@ -188,7 +194,7 @@ export default function CookScreen() {
                   <Text style={{ color: done ? t.textMuted : t.text, fontSize: 19, flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>
                     {i.name}
                   </Text>
-                  <Text style={{ color: t.textMuted, fontSize: 16 }}>{i.amount_text}</Text>
+                  <Text style={{ color: t.textMuted, fontSize: 16 }}>{scaleAmount(i.amount_text, people / recipe.servings)}</Text>
                 </Pressable>
               );
             })}
@@ -218,13 +224,16 @@ export default function CookScreen() {
                       <View style={{ alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: t.border, overflow: 'hidden' }}>
                         <View style={{ height: 8, width: `${run ? Math.min(100, ((seconds * 1000 - left) / (seconds * 1000)) * 100) : 0}%`, backgroundColor: accent }} />
                       </View>
-                      <Pressable onPress={() => run ? clear(key) : start(key, seconds)}
-                        style={{ paddingHorizontal: 28, paddingVertical: 14, borderRadius: 999, backgroundColor: run ? 'transparent' : t.tint,
-                          borderWidth: run ? 2 : 0, borderColor: accent }}>
-                        <Text style={{ color: run ? accent : '#fff', fontSize: 18, fontWeight: '800' }}>
-                          {run?.done ? 'Kapat' : run ? 'Sıfırla' : 'Sayacı başlat'}
-                        </Text>
-                      </Pressable>
+                      {/* Sayaç çalışırken düğme kalkar; süre dolunca yalnız "Kapat" görünür */}
+                      {(!run || run.done) && (
+                        <Pressable onPress={() => run ? clear(key) : start(key, seconds)}
+                          style={{ paddingHorizontal: 28, paddingVertical: 14, borderRadius: 999, backgroundColor: run ? 'transparent' : t.tint,
+                            borderWidth: run ? 2 : 0, borderColor: accent }}>
+                          <Text style={{ color: run ? accent : '#fff', fontSize: 18, fontWeight: '800' }}>
+                            {run ? 'Kapat' : 'Sayacı başlat'}
+                          </Text>
+                        </Pressable>
+                      )}
                     </View>
                   );
                 })}
@@ -239,8 +248,15 @@ export default function CookScreen() {
         {step > 0 && big('‹ Geri', () => go(-1), false)}
         {step < total
           ? big(step === 0 ? 'Başla ›' : 'İleri ›', () => go(1), true)
-          : big('Bitir', () => router.back(), true)}
+          : big('Bitir', () => setFinished(true), true)}
       </View>
+      {finished && (
+        <BonAppetit dish={recipe.name} onDone={() => {
+          // Pişirme, tarif ve yemek ekranlarını kapatıp ana sayfaya dön
+          try { router.dismissAll(); } catch { /* yığın zaten tek ekran */ }
+          router.replace('/');
+        }} />
+      )}
     </SafeAreaView>
   );
 }

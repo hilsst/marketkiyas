@@ -107,11 +107,18 @@ export default function HomeScreen() {
           <Muted style={{ fontSize: 14 }}>{user ? 'Merhaba' : 'Hoş geldin'}</Muted>
           <Title>{user?.full_name?.split(' ')[0] || 'Ucuzu'}</Title>
         </View>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Pressable onPress={() => router.push('/welcome')} accessibilityRole="button" accessibilityLabel="Karşılama ekranı"
+          style={{ width: 46, height: 46, borderRadius: 16, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center',
+            shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
+          <Icon name="grid" size={22} />
+        </Pressable>
         <Pressable onPress={() => router.push('/alerts')} accessibilityRole="button" accessibilityLabel="Fiyat alarmları"
           style={{ width: 46, height: 46, borderRadius: 16, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center',
             shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
           <Icon name="bell" size={22} />
         </Pressable>
+        </View>
       </View>
 
       {/* 1) Arama: dokununca arama ekranı açılır */}
