@@ -85,6 +85,7 @@ async def test_cuisines_and_seeded_recipes(client):
         ("italyan", "İtalyan Mutfağı", "🍝", False),
         ("uzakdogu", "Uzak Doğu Mutfağı", "🥢", False),
         ("meksika", "Meksika Mutfağı", "🌮", False),
+        ("haftaici", "Hafta İçi Yemekleri", "⏱️", False),
     ]
     assert [c["recipe_count"] for c in cuisines] == [176, 46, 45, 38]  # toplam 305
     assert all(len(c["examples"]) == 3 for c in cuisines)
