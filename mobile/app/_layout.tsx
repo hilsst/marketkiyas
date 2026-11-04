@@ -78,6 +78,7 @@ function RootLayoutNav() {
         <Stack.Screen name="list/[id]" options={{ title: 'Liste' }} />
         <Stack.Screen name="welcome" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="meals/index" options={{ title: 'Yemek Planı' }} />
+        <Stack.Screen name="meals/quick" options={{ title: 'Hafta içi yemekleri' }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Yemek Planı' }} />
         <Stack.Screen name="meals/deals" options={{ title: 'İndirimden menü' }} />
         <Stack.Screen name="meals/pantry" options={{ title: 'Dolabım' }} />

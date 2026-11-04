@@ -26,9 +26,8 @@ const LENGTHS = [1, 2, 3, 5, 7, 10, 14];
 export default function MealsScreen() {
   const t = useTheme();
   const { user } = useAuth();
-  // Karşılamadaki pencereden gelen seçim: quick = hafta içi yemekleri, pantry = dolabımdakilerle
+  // Karşılamadaki pencereden gelen seçim: pantry = dolabımdakilerle
   const { mode } = useLocalSearchParams<{ mode?: string }>();
-  const quick = mode === 'quick';
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [plans, setPlans] = useState<MealPlanSummary[]>([]);
@@ -43,7 +42,7 @@ export default function MealsScreen() {
   const [chosen, setChosen] = useState<string[]>([]);
   const [picking, setPicking] = useState(false);
   // Tarifler bölümünde gösterilen mutfak (null = hepsi)
-  const [browse, setBrowse] = useState<string | null>(quick ? 'haftaici' : null);
+  const [browse, setBrowse] = useState<string | null>(null);
   const [servings, setServings] = useState(2);
   const [slots, setSlots] = useState<MealSlot[]>(['aksam']);
   const [courses, setCourses] = useState<CourseType[]>(COURSES);
@@ -94,7 +93,7 @@ export default function MealsScreen() {
   };
   const openPicker = () => {
     setError(null);
-    if (quick) create(['haftaici']); else setPicking(true);
+    setPicking(true);
   };
   const option = (key: string, value: boolean, onChange: (v: boolean) => void, title: string, note: string) => (
     <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -115,12 +114,6 @@ export default function MealsScreen() {
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
       <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 16, gap: 16 }}>
-          {quick && (
-            <Card style={{ gap: 4, backgroundColor: t.tint }}>
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>Hafta içi yemekleri</Text>
-              <Text style={{ color: '#fff', opacity: 0.95 }}>Restoran gibi sofra, market fiyatına. Her malzemesi markette, 45 dakikada sofrada.</Text>
-            </Card>
-          )}
           <Muted>1 ile 14 gün arası yemek planı yap; bütçeni, evdeki malzemeleri ve artan yemeği hesaba kat. Maliyet marketlerindeki en uygun fiyatla hesaplanır, istersen alışveriş listene aktar.</Muted>
 
           {user ? (
