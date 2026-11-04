@@ -5,6 +5,8 @@ appId: app.ucuzu
 - runFlow: subflows/start-guest.yaml
 # Karşılama ekranındaki "Yemek Planı" seçeneği (başlık aynı metinle başka yerde de geçtiği için açıklamasından seçilir)
 - tapOn: "1-14 günlük menü.*"
+# Açılan pencerede nasıl bir plan istendiği sorulur: mutfak seçerek kur
+- tapOn: "Mutfak seçerek kur"
 - extendedWaitUntil:
     visible: "Yeni plan"
     timeout: 60000

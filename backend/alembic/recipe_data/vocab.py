@@ -152,6 +152,8 @@ ekmek;Ekmek;ekmek;galeta,kirintisi,kadayif;F;gluten;plant;265,9,49,3
 galetaunu;Galeta unu;galeta unu;;T,F;gluten;plant;395,13,72,5
 tortilla;Tortilla;tortilla|lavas;cips;F,T;gluten;plant;300,8,50,7
 zeytin;Siyah zeytin;siyah zeytin|zeytin;ezmesi;M,T;;plant;115,1,6,11
+hardal;Hardal;hardal;tohum,toz,sos;T;hardal;plant;66,4,6,4
+mayonez;Mayonez;mayonez;light;T;yumurta;egg;680,1,1,75
 """.strip()
 
 VOCAB: dict[str, dict] = {}
