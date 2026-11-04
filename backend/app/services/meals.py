@@ -18,7 +18,7 @@ import math
 import random
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import HTTPException, status
@@ -69,6 +69,7 @@ from app.services import lists as list_svc
 from app.services.catalog import search_groups, search_groups_many
 from app.services.ingredient_match import grocery_like, name_matches, unit_compatible
 from app.services.normalize import normalize_text
+from app.services.pricing import PRICE_MAX_AGE
 
 log = logging.getLogger("marketkiyas.meals")
 
@@ -525,7 +526,11 @@ async def _has_catalog(db: AsyncSession) -> bool:
     """Katalogda fiyatı olan ürün var mı? (İlk kurulumda, senkronizasyondan önce hiçbir tarif gizlenmesin.)"""
     return await db.scalar(
         select(func.count()).select_from(GroupMember).join(Product, Product.id == GroupMember.product_id)
-        .where(Product.current_price.is_not(None)).limit(1)
+        .where(
+            Product.current_price.is_not(None),
+            or_(Product.last_seen_at.is_(None), Product.last_seen_at >= datetime.now(timezone.utc) - PRICE_MAX_AGE),
+        )
+        .limit(1)
     ) > 0
 
 

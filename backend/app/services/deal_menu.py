@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AktuelItem, Recipe, RecipeIngredient
 from app.schemas.meals import DealIngredientOut
-from app.services import catalog
+from app.services import catalog, meals
 from app.services.ingredient_match import name_matches
 from app.services.normalize import normalize_text
 
@@ -36,7 +36,7 @@ async def _ingredients(db: AsyncSession) -> list[_Ingredient]:
     rows = await db.execute(
         select(RecipeIngredient.name, RecipeIngredient.search_term, RecipeIngredient.exclude_terms, Recipe.id, Recipe.name)
         .join(Recipe, Recipe.id == RecipeIngredient.recipe_id)
-        .where(Recipe.is_active.is_(True), RecipeIngredient.is_pantry.is_(False))
+        .where(Recipe.is_active.is_(True), meals._available(), RecipeIngredient.is_pantry.is_(False))
     )
     by_key: dict[str, _Ingredient] = {}
     for name, term, excludes, recipe_id, recipe_name in rows:

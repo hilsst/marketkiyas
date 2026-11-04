@@ -168,3 +168,26 @@ async def test_pantry_items_do_not_hide_recipes(db):
     bolonez = (await db.scalars(select(Recipe).where(Recipe.slug == "spagetti-bolonez"))).one()
     await db.refresh(bolonez)
     assert "Dana kıyma" in bolonez.missing_ingredients
+
+
+async def test_stale_products_do_not_count_as_available(client, db):
+    """Haftalardır hiçbir senkronizasyonda görülmeyen ürün (sezon bitti) satılıyor sayılmaz;
+    yeniden görülünce tarif kendiliğinden geri gelir."""
+    from datetime import datetime, timedelta, timezone
+
+    await _add_products(db, POMODORO)
+    await _add_products(db, [("Dana Kıyma 500 g", Unit.G, 500, "250.00")])
+    await refresh_availability(db)
+    slugs = lambda: client.get("/api/recipes", params={"cuisine": "italyan"})  # noqa: E731
+    assert "spagetti-pomodoro" in {r["slug"] for r in (await slugs()).json()}
+
+    old = datetime.now(timezone.utc) - timedelta(days=10)
+    await db.execute(text("UPDATE products SET last_seen_at = :t WHERE name NOT LIKE 'Dana%'"), {"t": old})
+    await db.commit()
+    await refresh_availability(db)
+    assert "spagetti-pomodoro" not in {r["slug"] for r in (await slugs()).json()}
+
+    await db.execute(text("UPDATE products SET last_seen_at = now()"))
+    await db.commit()
+    await refresh_availability(db)
+    assert "spagetti-pomodoro" in {r["slug"] for r in (await slugs()).json()}

@@ -37,6 +37,10 @@ class PriceResolver:
             return self._store_prices.get(product.id)
         if product.current_price is None:
             return None
+        # Zincir geneli fiyat da bayat olamaz: PRICE_MAX_AGE'den uzun süredir hiçbir senkronizasyonda
+        # görülmeyen ürün artık satılmıyor sayılır (sezon bitti / rafta yok); yeniden görülünce döner.
+        if product.last_seen_at is not None and product.last_seen_at < datetime.now(timezone.utc) - PRICE_MAX_AGE:
+            return None
         return ResolvedPrice(product.current_price, None)
 
 
