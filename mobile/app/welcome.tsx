@@ -53,7 +53,11 @@ export default function WelcomeScreen() {
   // Alışveriş: ana sayfaya (sekmeler) dön; Yemek Planı: planlayıcıyı aç
   const shopping = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const meals = () => setAsking(true);
-  const pick = (mode: PlanKind) => { setAsking(false); router.replace({ pathname: '/meals', params: { mode } }); };
+  const pick = (mode: PlanKind) => {
+    setAsking(false);
+    if (mode === 'quick') router.replace('/meals/quick');
+    else router.replace({ pathname: '/meals', params: { mode } });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
