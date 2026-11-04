@@ -4,7 +4,6 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import FoodIcon from '@/components/FoodIcon';
-import AddRecipeToList from '@/components/AddRecipeToList';
 import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
 import { api, RecipeSummary } from '@/lib/api';
 import { courseGlyph } from '@/lib/icons';
@@ -76,8 +75,7 @@ export default function QuickMealScreen() {
       </ScrollView>
       {!!dish && (
         <ActionBar>
-          <AddRecipeToList recipeId={dish.id} />
-          <Button title="Tarife bak" kind="secondary" onPress={() => open(dish)} />
+          <Button title="Tarife bak" onPress={() => open(dish)} />
           {dishes.length > 1 && <Button title="Başka tabak öner" onPress={() => setIndex(i => (i + 1) % dishes.length)} />}
         </ActionBar>
       )}
