@@ -74,6 +74,20 @@ async def get_recipe(
     return await svc.recipe_detail(db, recipe, servings or recipe.servings, user.id if user else None)
 
 
+@router.post("/recipes/{recipe_id}/to-list", response_model=ExportOut)
+async def export_recipe(
+    recipe_id: int, body: ExportRequest, user: CurrentUser, db: DbSession,
+    servings: Annotated[int | None, Query(ge=1, le=12)] = None,
+) -> ExportOut:
+    """Tek tarifin malzemelerini alışveriş listesine ekler (mevcut listeye ya da yeni listeye)."""
+    recipe = await svc.get_recipe(db, recipe_id)
+    shopping_list, added, skipped = await svc.export_recipe_to_list(
+        db, user, recipe, servings=servings or recipe.servings, list_id=body.list_id, list_name=body.list_name
+    )
+    detail = list_svc.to_detail(await list_svc.get_owned_list(db, user, shopping_list.id))
+    return ExportOut(list=detail, added=added, skipped=skipped, stored=[])
+
+
 @router.get("/meal-plans", response_model=list[MealPlanSummary])
 async def list_plans(user: CurrentUser, db: DbSession) -> list[MealPlanSummary]:
     return await svc.list_plans(db, user)

@@ -6,15 +6,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import FoodIcon from '@/components/FoodIcon';
 import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
 import { api, RecipeSummary } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { courseGlyph } from '@/lib/icons';
 
 const minutes = (r: RecipeSummary) => r.prep_minutes + r.cook_minutes;
 
-/** Hafta içi yemekleri: plan kurmaz, her seferinde tek bir "restoran tabağı" önerir. */
+/** Hızlı ama lezzetli yemekler: plan kurmaz, her seferinde tek bir "restoran tabağı" önerir. */
 export default function QuickMealScreen() {
   const t = useTheme();
   const [dishes, setDishes] = useState<RecipeSummary[] | null>(null);
+  const { user } = useAuth();
   const [index, setIndex] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api.recipes('haftaici')
@@ -30,6 +34,16 @@ export default function QuickMealScreen() {
 
   if (dishes === null) return <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }} />;
   const dish = dishes[index % Math.max(dishes.length, 1)];
+  const addToList = async () => {
+    if (!dish) return;
+    if (!user) { router.push('/login'); return; }
+    setAdding(true);
+    setError(null);
+    try {
+      const out = await api.exportRecipe(dish.id, { list_name: dish.name });
+      router.push({ pathname: '/list/[id]', params: { id: String(out.list.id) } });
+    } catch (e) { setError((e as Error).message); } finally { setAdding(false); }
+  };
   const open = (r: RecipeSummary) => router.push({ pathname: '/recipe/[id]', params: { id: String(r.id) } });
 
   return (
@@ -75,6 +89,8 @@ export default function QuickMealScreen() {
       </ScrollView>
       {!!dish && (
         <ActionBar>
+          {!!error && <Muted style={{ color: t.danger }}>{error}</Muted>}
+          <Button title="Malzemeleri alışveriş listesine ekle" onPress={addToList} busy={adding} />
           <Button title="Tarife bak" onPress={() => open(dish)} />
           {dishes.length > 1 && <Button title="Başka tabak öner" onPress={() => setIndex(i => (i + 1) % dishes.length)} />}
         </ActionBar>
