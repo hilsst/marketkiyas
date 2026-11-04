@@ -113,7 +113,7 @@ async def test_cuisines_and_seeded_recipes(client):
     assert {"spagetti-bolonez", "firinda-lazanya", "tiramisu", "minestrone"} <= set(italian)
     assert all(r["cuisine"] == "italyan" for r in italian.values())
     # Filtresiz liste bütün mutfakları getirir
-    assert len(await _recipes(client)) == 176 + 46 + 45 + 38
+    assert len(await _recipes(client)) == 176 + 46 + 45 + 38 + 28
 
 
 async def test_recipe_detail_cost_scales_with_servings(client, kitchen):
