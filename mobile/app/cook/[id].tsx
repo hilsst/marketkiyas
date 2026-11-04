@@ -37,6 +37,10 @@ export function stepTimers(text: string): number[] {
 /** Bir adımın sayacı: key = "adım:sıra"; endsAt boşsa henüz başlamadı */
 interface Run { endsAt: number; done: boolean; }
 
+function startRun(seconds: number): Run {
+  return { endsAt: Date.now() + seconds * 1000, done: false };
+}
+
 const label = (seconds: number) => seconds >= 3600 && seconds % 3600 === 0 ? `${seconds / 3600} sa`
   : seconds % 60 === 0 ? `${seconds / 60} dk` : seconds < 60 ? `${seconds} sn` : `${Math.floor(seconds / 60)} dk ${seconds % 60} sn`;
 
@@ -123,10 +127,10 @@ export default function CookScreen() {
   const text = step > 0 ? recipe.steps[step - 1] : '';
   const timers = stepTimers(text);
   const start = (key: string, seconds: number) => {
-    const at = Date.now();
+    const run = startRun(seconds);
     delete beeped.current[key];
-    setNow(at);
-    setRuns(cur => ({ ...cur, [key]: { endsAt: at + seconds * 1000, done: false } }));
+    setNow(run.endsAt - seconds * 1000);
+    setRuns(cur => ({ ...cur, [key]: run }));
   };
   const clear = (key: string) => setRuns(cur => { const next = { ...cur }; delete next[key]; return next; });
   const go = (delta: number) => {
