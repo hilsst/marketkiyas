@@ -279,6 +279,12 @@ class ExportRequest(BaseModel):
     include_pantry: bool = False
 
 
+class RecipeExportRequest(ExportRequest):
+    """Tek yemeğin malzemelerini listeye ekle; servings boşsa tarifin kendi kişi sayısı."""
+
+    servings: int | None = Field(default=None, ge=1, le=50)
+
+
 class ExportOut(BaseModel):
     list: ListDetail
     added: int  # listeye eklenen / miktarı artan kalem

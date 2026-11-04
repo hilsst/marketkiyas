@@ -85,7 +85,7 @@ async def test_cuisines_and_seeded_recipes(client):
         ("italyan", "İtalyan Mutfağı", "🍝", False),
         ("uzakdogu", "Uzak Doğu Mutfağı", "🥢", False),
         ("meksika", "Meksika Mutfağı", "🌮", False),
-        ("haftaici", "Hafta İçi Yemekleri", "⏱️", False),
+        ("haftaici", "Hızlı ama lezzetli yemekler", "⏱️", False),
     ]
     assert [c["recipe_count"] for c in cuisines][:4] == [176, 46, 45, 38]  # toplam 305 + hafta içi pilotu
     assert all(len(c["examples"]) == 3 for c in cuisines)
@@ -240,6 +240,21 @@ async def test_change_entry(client, auth_headers, kitchen):
 
     assert (await client.delete(f"/api/meal-plans/{plan['id']}", headers=auth_headers)).status_code == 204
     assert (await client.get(f"/api/meal-plans/{plan['id']}", headers=auth_headers)).status_code == 404
+
+
+async def test_export_single_recipe_to_list(client, auth_headers, kitchen):
+    _, ids = kitchen
+    recipe = (await _recipes(client))["menemen"]
+    r = await client.post(f"/api/recipes/{recipe['id']}/to-list", headers=auth_headers, json={})
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert {i["group_id"] for i in out["list"]["items"]} == {ids["yumurta"], ids["domates"], ids["biber"], ids["zeytinyagi"]}
+    assert out["added"] == 4 and out["list"]["name"] == recipe["name"]
+    # İkinci kez aynı listeye: yeni kalem açılmaz
+    again = (await client.post(
+        f"/api/recipes/{recipe['id']}/to-list", headers=auth_headers, json={"list_id": out["list"]["id"]}
+    )).json()
+    assert len(again["list"]["items"]) == 4
 
 
 async def test_export_to_new_and_existing_list(client, auth_headers, kitchen):

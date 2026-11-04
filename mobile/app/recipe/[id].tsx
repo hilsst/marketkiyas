@@ -7,6 +7,7 @@ import { courseGlyph } from '@/lib/icons';
 import FoodIcon from '@/components/FoodIcon';
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
+import AddRecipeToList from '@/components/AddRecipeToList';
 import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
 import { ALLERGEN_LABELS, api, DIET_LABELS, MEAL_SLOT_LABELS, RecipeDetail } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -116,12 +117,13 @@ export default function RecipeScreen() {
           <MealCostCard cost={recipe.cost} title={`${people} kişilik maliyet`} />
         </View>
       </ScrollView>
-      {recipe.steps.length > 0 && (
-        <ActionBar>
+      <ActionBar>
+        <AddRecipeToList recipeId={recipe.id} servings={people} kind={recipe.steps.length > 0 ? 'secondary' : undefined} />
+        {recipe.steps.length > 0 && (
           <Button title="Pişirme modunu başlat"
             onPress={() => router.push({ pathname: '/cook/[id]', params: { id: String(recipe.id), servings: String(people) } })} />
-        </ActionBar>
-      )}
+        )}
+      </ActionBar>
     </SafeAreaView>
   );
 }

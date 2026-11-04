@@ -84,6 +84,7 @@ export default function ProfileScreen() {
               {weeklyNote && <Text style={{ color: t.danger }}>{weeklyNote}</Text>}
             </Card>
           )}
+          <Button title="Karşılama ekranını göster" kind="secondary" onPress={() => router.push('/welcome')} />
           {!user.is_guest && <FamilySection user={user} />}
           {!user.is_guest && <Button title="Çıkış yap" kind="secondary" onPress={logout} />}
 

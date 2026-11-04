@@ -7,7 +7,7 @@ import { Muted, useTheme } from '@/components/ui';
 export type PlanKind = 'quick' | 'cuisine' | 'pantry';
 
 /**
- * Karşılamada "Yemek Planı"na basınca ortada açılan kart: nasıl bir plan? Üstte öne çıkan "Hafta içi yemekleri"
+ * Karşılamada "Yemek Planı"na basınca ortada açılan kart: nasıl bir plan? Üstte öne çıkan "Hızlı ama lezzetli yemekler"
  * (30-45 dakikada biten, malzemesi marketten alınan yemekler), altında mutfak seçerek kurma ve dolaptakilerle plan.
  */
 export default function PlanKindFlyer({ quickCount, onPick, onCancel }: {
@@ -52,7 +52,7 @@ export default function PlanKindFlyer({ quickCount, onPick, onCancel }: {
                 <Icon name="clock" size={26} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 0.6, opacity: 0.85 }}>HAFTA İÇİ YEMEKLERİ</Text>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 0.6, opacity: 0.85 }}>HIZLI AMA LEZZETLİ YEMEKLER</Text>
                 <Text style={{ color: '#fff', fontSize: 19, fontWeight: '800', letterSpacing: -0.3 }}>Restoran gibi sofra, market fiyatına.</Text>
               </View>
             </View>
