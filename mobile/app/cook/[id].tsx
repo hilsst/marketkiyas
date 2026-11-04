@@ -1,33 +1,50 @@
+import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BonAppetit from '@/components/BonAppetit';
 import Icon from '@/components/Icon';
 import { Muted, useTheme } from '@/components/ui';
+import { scaleAmount } from '@/lib/amount';
 import { api, RecipeDetail } from '@/lib/api';
 
-/** Adımdaki süreler: "15 dakika", "20-25 dakika" (üst sınır), "1 saat", "10 dk" -> dakika */
+/**
+ * Adımda gerçekten beklenen süreler (saniye): "15 dakika", "20-25 dakika" (üst sınır), "1 saat", "30 saniye".
+ * Aletin ısınması (fırını/ocağı ısıtmak) için sayaç yok, kullanıcı alet hazır olunca adımı kendisi geçer;
+ * ama "15 dakika fırınlayın" gibi içeride tutma süreleri sayılır. "Bitmesine 3 dakika kala", "son 5 dakikada"
+ * gibi tarifin içinden bir an belirten ifadeler de bekleme süresi değildir.
+ */
 export function stepTimers(text: string): number[] {
   const found: number[] = [];
-  const re = /(\d+)(?:\s*[-–]\s*(\d+))?\s*(dakika|dk|saat)/gi;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    const value = Number(m[2] ?? m[1]);
-    const minutes = m[3].toLowerCase() === 'saat' ? value * 60 : value;
-    if (minutes > 0 && minutes <= 600 && !found.includes(minutes)) found.push(minutes);
+  const re = /(\d+)(?:\s*[-–]\s*(\d+))?\s*(dakika|dk|saat|saniye|sn)/gi;
+  for (const sentence of text.split(/[.!?]\s+/)) {
+    const preheat = /ısıt/i.test(sentence) && !/(pişir|fırınla|fırında|bekle|kavur|kaynat|haşla)/i.test(sentence);
+    if (preheat || /\bkala\b|\bson\s+\d+\s*(dakika|dk)/i.test(sentence)) continue;
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(sentence)) !== null) {
+      const value = Number(m[2] ?? m[1]);
+      const unit = m[3].toLowerCase();
+      const seconds = unit === 'saat' ? value * 3600 : unit === 'saniye' || unit === 'sn' ? value : value * 60;
+      if (seconds > 0 && seconds <= 36000 && !found.includes(seconds)) found.push(seconds);
+    }
   }
   return found;
 }
 
-interface Timer { id: number; label: string; endsAt: number; done: boolean; }
+/** Bir adımın sayacı: key = "adım:sıra"; endsAt boşsa henüz başlamadı */
+interface Run { endsAt: number; done: boolean; }
 
-function newTimer(step: number, minutes: number): Timer {
-  const at = Date.now();
-  return { id: at, label: `Adım ${step}: ${minutes} dk`, endsAt: at + minutes * 60_000, done: false };
+function startRun(seconds: number): Run {
+  return { endsAt: Date.now() + seconds * 1000, done: false };
 }
+
+const label = (seconds: number) => seconds >= 3600 && seconds % 3600 === 0 ? `${seconds / 3600} sa`
+  : seconds % 60 === 0 ? `${seconds / 60} dk` : seconds < 60 ? `${seconds} sn` : `${Math.floor(seconds / 60)} dk ${seconds % 60} sn`;
 
 const clock = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -50,30 +67,58 @@ export default function CookScreen() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0); // 0 = malzemeler, 1..n = adımlar
   const [ready, setReady] = useState<string[]>([]);
-  const [timers, setTimers] = useState<Timer[]>([]);
+  const [finished, setFinished] = useState(false);
+  const [runs, setRuns] = useState<Record<string, Run>>({});
   const [now, setNow] = useState(() => Date.now());
-  const timersRef = useRef<Timer[]>([]);
-  useEffect(() => { timersRef.current = timers; }, [timers]);
+  const runsRef = useRef<Record<string, Run>>({});
+  const beeped = useRef<Record<string, number>>({});
+  const tick = useAudioPlayer(require('@/assets/sounds/tick.wav'));
+  const alarm = useAudioPlayer(require('@/assets/sounds/alarm.wav'));
+  useEffect(() => { runsRef.current = runs; }, [runs]);
+  useEffect(() => { setAudioModeAsync({ playsInSilentMode: true }).catch(() => {}); }, []);
 
   useEffect(() => {
     api.recipe(Number(params.id), params.servings ? Number(params.servings) : undefined)
       .then(setRecipe).catch(e => setError((e as Error).message));
   }, [params.id, params.servings]);
 
-  const running = timers.some(x => !x.done);
+  const play = (player: typeof tick) => {
+    try {
+      // Android'de bitmiş çalar başa sarılmadan tekrar çalmaz; sarma bitince çal
+      Promise.resolve(player.seekTo(0)).catch(() => {}).then(() => player.play());
+    } catch { /* ses çalınamazsa titreşim yine var */ }
+  };
+
+  const running = Object.values(runs).some(x => !x.done);
   useEffect(() => {
     if (!running) return;
-    const tick = setInterval(() => {
+    const loop = setInterval(() => {
       const at = Date.now();
       setNow(at);
-      const finished = timersRef.current.filter(x => !x.done && x.endsAt <= at);
+      const finished: string[] = [];
+      for (const [key, run] of Object.entries(runsRef.current)) {
+        if (run.done) continue;
+        const left = Math.ceil((run.endsAt - at) / 1000);
+        if (left <= 0) finished.push(key);
+        else if (left <= 5 && beeped.current[key] !== left) {
+          // Son 5 saniye: her saniye kısa bip
+          beeped.current[key] = left;
+          play(tick);
+          Vibration.vibrate(120); // sessizdeyse de hissedilsin
+        }
+      }
       if (!finished.length) return;
-      setTimers(cur => cur.map(x => finished.some(f => f.id === x.id) ? { ...x, done: true } : x));
+      setRuns(cur => {
+        const next = { ...cur };
+        for (const key of finished) if (next[key]) next[key] = { ...next[key], done: true };
+        return next;
+      });
+      play(alarm);
       Vibration.vibrate([0, 600, 300, 600, 300, 600]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Alert.alert('⏰ Süre doldu', finished.map(f => f.label).join(', '));
-    }, 500);
-    return () => clearInterval(tick);
+    }, 250);
+    return () => clearInterval(loop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
   if (!recipe) {
@@ -86,11 +131,14 @@ export default function CookScreen() {
 
   const total = recipe.steps.length;
   const text = step > 0 ? recipe.steps[step - 1] : '';
-  const startTimer = (minutes: number) => {
-    const timer = newTimer(step, minutes);
-    setNow(timer.id);
-    setTimers(cur => [...cur, timer]);
+  const timers = stepTimers(text);
+  const start = (key: string, seconds: number) => {
+    const run = startRun(seconds);
+    delete beeped.current[key];
+    setNow(run.endsAt - seconds * 1000);
+    setRuns(cur => ({ ...cur, [key]: run }));
   };
+  const clear = (key: string) => setRuns(cur => { const next = { ...cur }; delete next[key]; return next; });
   const go = (delta: number) => {
     Haptics.selectionAsync().catch(() => {});
     setStep(s => Math.min(total, Math.max(0, s + delta)));
@@ -111,17 +159,17 @@ export default function CookScreen() {
         <View style={{ height: 6, width: `${(step / Math.max(total, 1)) * 100}%`, backgroundColor: t.tint }} />
       </View>
 
-      {timers.length > 0 && (
+      {/* Başka adımda çalışan sayaçlar: dokununca o adıma gider */}
+      {Object.entries(runs).filter(([key]) => Number(key.split(':')[0]) !== step).length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 12, paddingBottom: 0 }}>
-          {timers.map(x => (
-            <Pressable key={x.id} onPress={() => setTimers(cur => cur.filter(y => y.id !== x.id))}
-              accessibilityLabel={`${x.label} zamanlayıcısını kapat`}
+          {Object.entries(runs).filter(([key]) => Number(key.split(':')[0]) !== step).map(([key, run]) => (
+            <Pressable key={key} onPress={() => setStep(Number(key.split(':')[0]))}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-                backgroundColor: x.done ? t.danger : t.card, borderWidth: 1, borderColor: x.done ? t.danger : t.tint }}>
-              <Text style={{ color: x.done ? '#fff' : t.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
-                ⏱ {x.done ? 'Bitti!' : clock(x.endsAt - now)}
+                backgroundColor: run.done ? t.danger : t.card, borderWidth: 1, borderColor: run.done ? t.danger : t.tint }}>
+              <Text style={{ color: run.done ? '#fff' : t.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+                {run.done ? 'Bitti!' : clock(run.endsAt - now)}
               </Text>
-              <Text style={{ color: x.done ? '#fff' : t.textMuted, fontSize: 12 }}>{x.label}</Text>
+              <Text style={{ color: run.done ? '#fff' : t.textMuted, fontSize: 12 }}>Adım {key.split(':')[0]}</Text>
             </Pressable>
           ))}
         </View>
@@ -132,7 +180,7 @@ export default function CookScreen() {
           <>
             <Text style={{ color: t.tint, fontWeight: '800' }}>HAZIRLIK · {total} ADIM</Text>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800' }}>Malzemeleri hazırla</Text>
-            {people !== recipe.servings && <Muted>Ölçüler {recipe.servings} kişilik; {people} kişi için oranlayın.</Muted>}
+            {people !== recipe.servings && <Muted>Ölçüler {people} kişiye göre ayarlandı.</Muted>}
             <Muted>Hazırladığına dokun, işaretlensin.</Muted>
             {recipe.ingredients.map(i => {
               const done = ready.includes(i.name);
@@ -146,7 +194,7 @@ export default function CookScreen() {
                   <Text style={{ color: done ? t.textMuted : t.text, fontSize: 19, flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>
                     {i.name}
                   </Text>
-                  <Text style={{ color: t.textMuted, fontSize: 16 }}>{i.amount_text}</Text>
+                  <Text style={{ color: t.textMuted, fontSize: 16 }}>{scaleAmount(i.amount_text, people / recipe.servings)}</Text>
                 </Pressable>
               );
             })}
@@ -155,12 +203,42 @@ export default function CookScreen() {
           <>
             <Text style={{ color: t.tint, fontWeight: '800' }}>ADIM {step} / {total}</Text>
             <Text style={{ color: t.text, fontSize: 28, lineHeight: 40, fontWeight: '600' }}>{text}</Text>
-            {stepTimers(text).map(minutes => (
-              <Pressable key={minutes} onPress={() => startTimer(minutes)}
-                style={{ alignSelf: 'flex-start', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 999, borderWidth: 2, borderColor: t.tint }}>
-                <Text style={{ color: t.tint, fontSize: 18, fontWeight: '800' }}>⏱ {minutes} dk zamanlayıcı başlat</Text>
-              </Pressable>
-            ))}
+            {timers.length > 0 && (
+              <View style={{ flex: 1, justifyContent: 'center', gap: 16, paddingVertical: 12 }}>
+                {timers.map((seconds, i) => {
+                  const key = `${step}:${i}`;
+                  const run = runs[key];
+                  const left = run ? Math.max(0, run.endsAt - now) : seconds * 1000;
+                  const urgent = !!run && !run.done && Math.ceil(left / 1000) <= 5;
+                  const accent = run?.done || urgent ? t.danger : t.tint;
+                  return (
+                    <View key={key} style={{ alignItems: 'center', gap: 14, paddingVertical: 28, paddingHorizontal: 16, borderRadius: 28,
+                      backgroundColor: t.card, borderWidth: 2, borderColor: accent }}>
+                      <Text style={{ color: t.textMuted, fontWeight: '700', letterSpacing: 0.6 }}>
+                        {run?.done ? 'SÜRE DOLDU' : run ? 'KALAN SÜRE' : `SÜRE · ${label(seconds)}`}
+                      </Text>
+                      <Text style={{ color: accent, fontSize: urgent ? 84 : 72, fontWeight: '900', fontVariant: ['tabular-nums'] }}
+                        accessibilityLabel={run?.done ? 'Süre doldu' : `${clock(left)} kaldı`}>
+                        {run?.done ? '00:00' : clock(left)}
+                      </Text>
+                      <View style={{ alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: t.border, overflow: 'hidden' }}>
+                        <View style={{ height: 8, width: `${run ? Math.min(100, ((seconds * 1000 - left) / (seconds * 1000)) * 100) : 0}%`, backgroundColor: accent }} />
+                      </View>
+                      {/* Sayaç çalışırken düğme kalkar; süre dolunca yalnız "Kapat" görünür */}
+                      {(!run || run.done) && (
+                        <Pressable onPress={() => run ? clear(key) : start(key, seconds)}
+                          style={{ paddingHorizontal: 28, paddingVertical: 14, borderRadius: 999, backgroundColor: run ? 'transparent' : t.tint,
+                            borderWidth: run ? 2 : 0, borderColor: accent }}>
+                          <Text style={{ color: run ? accent : '#fff', fontSize: 18, fontWeight: '800' }}>
+                            {run ? 'Kapat' : 'Sayacı başlat'}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
             {step === total && <Text style={{ color: t.text, fontSize: 22, fontWeight: '800', marginTop: 12 }}>Afiyet olsun!</Text>}
           </>
         )}
@@ -170,8 +248,15 @@ export default function CookScreen() {
         {step > 0 && big('‹ Geri', () => go(-1), false)}
         {step < total
           ? big(step === 0 ? 'Başla ›' : 'İleri ›', () => go(1), true)
-          : big('Bitir', () => router.back(), true)}
+          : big('Bitir', () => setFinished(true), true)}
       </View>
+      {finished && (
+        <BonAppetit dish={recipe.name} onDone={() => {
+          // Pişirme, tarif ve yemek ekranlarını kapatıp ana sayfaya dön
+          try { router.dismissAll(); } catch { /* yığın zaten tek ekran */ }
+          router.replace('/');
+        }} />
+      )}
     </SafeAreaView>
   );
 }

@@ -10,6 +10,7 @@ import NutritionCard from '@/components/NutritionCard';
 import AddRecipeToList from '@/components/AddRecipeToList';
 import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
 import { ALLERGEN_LABELS, api, DIET_LABELS, MEAL_SLOT_LABELS, RecipeDetail } from '@/lib/api';
+import { scaleAmount } from '@/lib/amount';
 import { useAuth } from '@/lib/auth';
 
 /** Tarif: malzemeler, yapılışı ve seçilen kişi sayısına göre maliyet */
@@ -95,11 +96,11 @@ export default function RecipeScreen() {
               <Text style={{ color: t.text, fontWeight: '700' }}>{people} kişilik</Text>
               {round('+', () => step(1))}
             </View>
-            {scale !== 1 && <Muted>Ölçüler {recipe.servings} kişiliktir; maliyet {people} kişiye göre hesaplandı.</Muted>}
+            {scale !== 1 && <Muted>Ölçüler ve maliyet {people} kişiye göre hesaplandı (tarif {recipe.servings} kişilik).</Muted>}
             {recipe.ingredients.map(i => (
               <View key={i.name} style={{ flexDirection: 'row', gap: 8 }}>
                 <Text style={{ color: t.text, flex: 1 }}>• {i.name}{i.is_pantry ? ' (evde)' : ''}</Text>
-                <Muted>{i.amount_text}</Muted>
+                <Muted>{scaleAmount(i.amount_text, scale)}</Muted>
               </View>
             ))}
           </Card>
