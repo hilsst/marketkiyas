@@ -1,8 +1,11 @@
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Icon, { IconName } from '@/components/Icon';
+import PlanKindFlyer, { PlanKind } from '@/components/PlanKindFlyer';
+import { api } from '@/lib/api';
 import { Muted, useTheme } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 
@@ -11,6 +14,11 @@ export default function WelcomeScreen() {
   const t = useTheme();
   const { user } = useAuth();
   const name = user?.full_name?.split(' ')[0];
+  const [asking, setAsking] = useState(false);
+  const [quickCount, setQuickCount] = useState(0);
+  useEffect(() => {
+    api.cuisines().then(cs => setQuickCount(cs.find(c => c.slug === 'haftaici')?.recipe_count ?? 0)).catch(() => {});
+  }, []);
 
   const option = (icon: IconName, title: string, text: string, onPress: () => void, primary: boolean) => (
     <Pressable onPress={onPress} accessibilityRole="button"
@@ -44,7 +52,8 @@ export default function WelcomeScreen() {
 
   // Alışveriş: ana sayfaya (sekmeler) dön; Yemek Planı: planlayıcıyı aç
   const shopping = () => (router.canGoBack() ? router.back() : router.replace('/'));
-  const meals = () => router.replace('/meals');
+  const meals = () => setAsking(true);
+  const pick = (mode: PlanKind) => { setAsking(false); router.replace({ pathname: '/meals', params: { mode } }); };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
@@ -63,6 +72,7 @@ export default function WelcomeScreen() {
         {option('shopping-bag', 'Alışveriş', 'Ürün ara, fiyatları karşılaştır, listeni en ucuz marketlere göre planla.', shopping, false)}
         {!user && <Muted style={{ textAlign: 'center', marginTop: 6 }}>Üye olmadan başlayabilirsin</Muted>}
       </View>
+      {asking && <PlanKindFlyer quickCount={quickCount} onPick={pick} onCancel={() => setAsking(false)} />}
     </SafeAreaView>
   );
 }

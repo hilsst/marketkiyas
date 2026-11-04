@@ -16,5 +16,5 @@ const COURSE: Record<string, FoodGlyph> = {
 };
 export const courseGlyph = (course?: string | null): FoodGlyph => (course && COURSE[course]) || 'silverware-fork-knife';
 
-const CUISINE: Record<string, FoodGlyph> = { anadolu: 'pot-steam', italyan: 'pizza', uzakdogu: 'noodles', meksika: 'taco' };
+const CUISINE: Record<string, FoodGlyph> = { anadolu: 'pot-steam', italyan: 'pizza', uzakdogu: 'noodles', meksika: 'taco', haftaici: 'clock-fast' };
 export const cuisineGlyph = (slug?: string | null): FoodGlyph => (slug && CUISINE[slug]) || 'earth';
