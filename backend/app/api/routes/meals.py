@@ -19,6 +19,7 @@ from app.schemas.meals import (
     MealPlanSummary,
     MealPlanUpdate,
     RecipeDetail,
+    RecipeExportRequest,
     RecipeSummary,
 )
 from app.services import deals_menu
@@ -51,6 +52,18 @@ async def list_recipes(
 async def list_ingredients(db: DbSession) -> list[IngredientChoice]:
     """"Dolabımda ne var" seçicisi: tariflerde geçen malzemeler (tuz, baharat hariç)."""
     return await svc.ingredient_choices(db)
+
+
+@router.post("/recipes/{recipe_id}/to-list", response_model=ExportOut)
+async def export_recipe(recipe_id: int, body: RecipeExportRequest, user: CurrentUser, db: DbSession) -> ExportOut:
+    """Tek bir yemeğin malzemelerini alışveriş listesine ekle (plan kurmadan)."""
+    recipe = await svc.get_recipe(db, recipe_id)
+    shopping_list, added, skipped = await svc.export_recipe_to_list(
+        db, user, recipe, servings=body.servings or recipe.servings, list_id=body.list_id,
+        list_name=body.list_name, include_pantry=body.include_pantry,
+    )
+    detail = list_svc.to_detail(await list_svc.get_owned_list(db, user, shopping_list.id))
+    return ExportOut(list=detail, added=added, skipped=skipped, stored=[])
 
 
 @router.put("/recipes/{recipe_id}/like", status_code=status.HTTP_204_NO_CONTENT)

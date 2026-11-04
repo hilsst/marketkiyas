@@ -357,6 +357,8 @@ export const api = {
   addMealEntry: (planId: number, day_index: number, slot: MealSlot, course: CourseType) =>
     request<MealPlanDetail>('POST', `/meal-plans/${planId}/entries`, { day_index, slot, course }),
   deleteMealPlan: (id: number) => request<void>('DELETE', '/meal-plans/' + id),
+  exportRecipe: (id: number, body: { list_id?: number | null; list_name?: string | null; servings?: number | null }) =>
+    request<MealPlanExport>('POST', `/recipes/${id}/to-list`, body),
   exportMealPlan: (id: number, body: { list_id?: number | null; list_name?: string | null; include_pantry?: boolean }) =>
     request<MealPlanExport>('POST', `/meal-plans/${id}/to-list`, body),
 };
