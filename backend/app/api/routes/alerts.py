@@ -37,7 +37,7 @@ async def mark_seen(user: CurrentUser, db: DbSession) -> Response:
 async def delete_alert(alert_id: int, user: CurrentUser, db: DbSession) -> Response:
     alert = await db.get(PriceAlert, alert_id)
     if alert is None or alert.user_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Alarm bulunamadı")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Takip bulunamadı")
     await db.delete(alert)
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -7,7 +7,7 @@ import { api, num, PriceAlert } from '@/lib/api';
 import { formatTL } from '@/lib/format';
 
 /**
- * "Fiyatını takip et": fiyat düşünce ya da yazılan fiyatın altına inince Alarmlar sekmesinde haber verilir.
+ * "Fiyatını takip et": fiyat düşünce ya da yazılan fiyatın altına inince Takip sekmesinde haber verilir.
  * Ürün sayfasında bir satır seçiliyse (marka/market) yalnızca o ürün takip edilir, değilse en ucuzu.
  */
 export default function AlertSheet({ visible, onClose, groupId, groupName, cheapest, product, alert, onChange }: {

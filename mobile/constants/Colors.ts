@@ -18,6 +18,7 @@ export default {
     tabIconSelected: brand,
     danger: '#C62828',
     onTint: '#FFFFFF',
+    info: '#075985',
     shadow: '#0F1F19',
   },
   dark: {
@@ -36,6 +37,7 @@ export default {
     tabIconSelected: '#34D399',
     danger: '#F87171',
     onTint: '#04251A',
+    info: '#7DD3FC',
     shadow: '#000000',
   },
 };

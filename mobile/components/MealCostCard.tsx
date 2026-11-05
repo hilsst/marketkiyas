@@ -40,8 +40,8 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
       <Text style={{ color: t.text, fontWeight: '800', fontSize: 18, letterSpacing: -0.3 }}>{title}</Text>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1, backgroundColor: t.tint, borderRadius: 18, padding: 14, gap: 2 }}>
-          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>ALIŞVERİŞ TUTARI</Text>
-          <Text style={{ color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>{tl(cost.purchase_total)}</Text>
+          <Text style={{ color: t.onTint, fontSize: 13, fontWeight: '700' }}>ALIŞVERİŞ TUTARI</Text>
+          <Text style={{ color: t.onTint, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>{tl(cost.purchase_total)}</Text>
         </View>
         <View style={{ flex: 1, borderRadius: 18, padding: 14, gap: 2, backgroundColor: t.background }}>
           <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '700' }}>KİŞİ BAŞI ÖĞÜN</Text>
@@ -59,7 +59,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
           <Pressable onPress={() => setOpen(o => !o)} accessibilityRole="button" accessibilityState={{ expanded: open }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.tintSoft, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11 }}>
             <Icon name="package" size={18} color={t.tintDark} />
-            <Text style={{ color: t.tintDark, fontWeight: '700', fontSize: 14, flex: 1 }}>Dolabından kullanılanlar</Text>
+            <Text style={{ color: t.tintDark, fontWeight: '700', fontSize: 14, flex: 1 }}>Dolabınızdan kullanılanlar</Text>
             <View style={{ backgroundColor: t.card, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 1 }}>
               <Text style={{ color: t.tintDark, fontSize: 13, fontWeight: '700' }}>{homeCount}</Text>
             </View>
@@ -83,7 +83,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
               )}
               {have.length > 0 && (
                 <View style={{ gap: 6 }}>
-                  <Muted style={{ fontSize: 13 }}>Dolabında olduğu için alınmayacak</Muted>
+                  <Muted style={{ fontSize: 13 }}>Dolabınızda olduğu için alınmayacak</Muted>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{have.map((h, i) => chip(`h${i}`, h))}</View>
                 </View>
               )}

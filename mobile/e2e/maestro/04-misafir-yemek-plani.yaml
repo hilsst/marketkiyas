@@ -6,7 +6,7 @@ appId: app.ucuzu
 # Karşılama ekranındaki "Yemek Planı" seçeneği (başlık aynı metinle başka yerde de geçtiği için açıklamasından seçilir)
 - tapOn: "1-14 günlük menü.*"
 # Açılan pencerede nasıl bir plan istendiği sorulur: mutfak seçerek kur
-- tapOn: "Mutfak seçerek kur"
+- tapOn: "Mutfak seçerek kurun"
 - extendedWaitUntil:
     visible: "Yeni plan"
     timeout: 60000

@@ -519,7 +519,7 @@ async def apply_plan(
     plan = result.plan(plan_type)
     if plan is None and plan_type is PlanType.NEARBY:
         raise HTTPException(
-            status.HTTP_409_CONFLICT, "Yakın Market planı için konum gerekli: konum iznini açıp tekrar deneyin"
+            status.HTTP_409_CONFLICT, "En yakın market planı için konum gerekli: konum iznini açıp tekrar deneyin"
         )
     if plan is None:
         raise HTTPException(

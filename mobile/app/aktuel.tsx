@@ -66,7 +66,7 @@ export default function AktuelScreen() {
       {label}
     </Pressable>
   );
-  const chipText = (active: boolean, text: string) => <Text style={{ color: active ? '#fff' : t.text, fontSize: 14, fontWeight: '600' }}>{text}</Text>;
+  const chipText = (active: boolean, text: string) => <Text style={{ color: active ? t.onTint : t.text, fontSize: 14, fontWeight: '600' }}>{text}</Text>;
 
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
@@ -118,7 +118,7 @@ export default function AktuelScreen() {
                         )}
                         <View style={{ alignItems: 'center' }}><ProductImage uri={item.image_url} icon="newspaper-variant-outline" size={96} /></View>
                         {item.brand && <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>{item.brand}</Text>}
-                        <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 34 }} numberOfLines={2}>{item.title}</Text>
+                        <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{item.title}</Text>
                         {item.quantity_text && <Text style={{ color: t.textMuted, fontSize: 13 }}>{item.quantity_text}</Text>}
                         <View style={{ marginTop: 'auto', gap: 2 }}>
                           {item.old_price && <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{tl(item.old_price)}</Text>}

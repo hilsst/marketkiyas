@@ -17,9 +17,10 @@ appId: app.ucuzu
 # Kapat-aç: temizlemeden başlat, yine misafir (yeni hesap açılmaz, token korunur)
 - stopApp
 - launchApp
+# Karşılama yalnız ilk kurulumda çıkar: ikinci açılışta doğrudan ana sayfa
 - extendedWaitUntil:
-    visible: "Bugün ne yapmak istersiniz?"
+    visible: "Ana Sayfa"
     timeout: 60000
-- tapOn: "Alışveriş"
+- assertNotVisible: "Bugün ne yapmak istersiniz?"
 - runFlow: subflows/wait-guest.yaml
 - assertNotVisible: "Giriş yap / Üye ol"

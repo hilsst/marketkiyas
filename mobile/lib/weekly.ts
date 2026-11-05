@@ -19,7 +19,7 @@ export function weeklyContent(total?: number | null) {
     : '. Bütçenize göre kurun, en ucuza alın.';
   return {
     title: 'Ucuzu',
-    body: total != null && total > 0 ? `Bu haftanın menüsü hazır${cost}` : `Bu haftanın menüsünü kur${cost}`,
+    body: total != null && total > 0 ? `Bu haftanın menüsü hazır${cost}` : `Bu haftanın menüsünü kurun${cost}`,
     data: { url: '/meals' },
   };
 }

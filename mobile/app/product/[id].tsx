@@ -19,7 +19,7 @@ import { formatTL } from '@/lib/format';
 /**
  * Ürün sayfası: seçili şubelerdeki her fiyat ayrı satır (web'deki gibi "BİM · Karlıdağ").
  * Bir satıra dokununca o ürün (marka) seçilir; seçilmezse listeye "Farketmez" (en ucuzu) eklenir.
- * Listeden gelindiyse (?listId=) ürün doğrudan o listeye eklenir. 🔔 ile fiyatı takip edilir (Alarmlar sekmesi).
+ * Listeden gelindiyse (?listId=) ürün doğrudan o listeye eklenir. 🔔 ile fiyatı takip edilir (Takip sekmesi).
  */
 export default function ProductScreen() {
   const t = useTheme();

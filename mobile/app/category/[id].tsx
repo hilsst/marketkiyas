@@ -51,7 +51,7 @@ export default function CategoryScreen() {
                 <Pressable key={c.id ?? 'all'} onPress={() => { setSub(c.id); setResults(null); }}
                   style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1,
                     backgroundColor: on ? t.tint : t.card, borderColor: on ? t.tint : t.border }}>
-                  <Text style={{ color: on ? '#fff' : t.text, fontWeight: on ? '700' : '500' }}>{c.name}</Text>
+                  <Text style={{ color: on ? t.onTint : t.text, fontWeight: on ? '700' : '500' }}>{c.name}</Text>
                 </Pressable>
               );
             })}

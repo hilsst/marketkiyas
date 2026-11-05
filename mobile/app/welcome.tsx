@@ -30,10 +30,10 @@ export default function WelcomeScreen() {
       })}>
       {primary ? (
         <>
-          <Icon name={icon} size={34} color="#fff" />
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Ne pişireceğinizi seçin, gerisini Ucuzu en ucuza yapsın</Text>
-          <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800', letterSpacing: -0.5 }}>{title}</Text>
-          <Text style={{ color: '#fff', fontSize: 14 }}>{text}</Text>
+          <Icon name={icon} size={34} color={t.onTint} />
+          <Text style={{ color: t.onTint, fontSize: 15, fontWeight: '600' }}>Ne pişireceğinizi seçin, gerisini Ucuzu en ucuza yapsın</Text>
+          <Text style={{ color: t.onTint, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 }}>{title}</Text>
+          <Text style={{ color: t.onTint, fontSize: 14 }}>{text}</Text>
         </>
       ) : (
         <>
@@ -65,7 +65,7 @@ export default function WelcomeScreen() {
         <View style={{ gap: 4, marginBottom: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: t.tint, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="shopping-cart" size={22} color="#fff" />
+              <Icon name="shopping-cart" size={22} color={t.onTint} />
             </View>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>Ucuzu</Text>
           </View>

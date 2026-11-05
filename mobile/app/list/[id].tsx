@@ -117,6 +117,7 @@ export default function ListScreen() {
   if (detail === null) return <Screen safeTop={false}><Muted>Liste bulunamadı.</Muted></Screen>;
 
   const list = detail;
+  const onCard = mode === 'opportunist' ? '#fff' : t.onTint; // plan kartı: turuncuda beyaz, yeşilde (koyu temada açık yeşil) koyu yazı
   const total = list.items.length;
   const checked = list.items.filter(i => i.is_checked).length;
   const shopping = list.applied_plan != null;
@@ -166,7 +167,7 @@ export default function ListScreen() {
       <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: t.border, opacity: it.is_checked ? 0.7 : 1 }}>
         <Pressable onPress={() => update(it.id, { is_checked: !it.is_checked })} hitSlop={10} accessibilityRole="checkbox" accessibilityLabel={`${it.group_name} alındı`} accessibilityState={{ checked: it.is_checked }}
           style={{ width: 32, height: 32, borderRadius: 10, borderWidth: 2, borderColor: it.is_checked ? t.tint : t.border, backgroundColor: it.is_checked ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-          {it.is_checked && <Icon name="check" size={20} color="#fff" />}
+          {it.is_checked && <Icon name="check" size={20} color={t.onTint} />}
         </Pressable>
         <ProductImage uri={it.image_url} icon={categoryIcon(it.category_id)} size={40} />
         <Pressable disabled={inShopping} onPress={() => setPickItem(it)} accessibilityRole="button" accessibilityLabel={`${it.group_name} için market ve marka seçin`}
@@ -313,8 +314,8 @@ export default function ListScreen() {
       {!completed && tab === 'items' && shopping && (
         <>
           <Card style={{ backgroundColor: t.tint, borderColor: t.tint, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Alışveriş modu · {checked}/{total} alındı</Text>
-            <Text onPress={() => mutate(() => api.cancelPlan(list.id), false)} style={{ color: '#fff', fontWeight: '700', textDecorationLine: 'underline' }}>İptal Et</Text>
+            <Text style={{ color: t.onTint, fontWeight: '700' }}>Alışveriş modu · {checked}/{total} alındı</Text>
+            <Text onPress={() => mutate(() => api.cancelPlan(list.id), false)} style={{ color: t.onTint, fontWeight: '700', textDecorationLine: 'underline' }}>İptal Et</Text>
           </Card>
           {list.shopping_groups.filter(g => g.market_id != null).map(g => {
             const items = g.item_ids.map(i => itemById.get(i)).filter((i): i is ListItem => !!i);
@@ -350,21 +351,21 @@ export default function ListScreen() {
           {opt && (
             <>
               {!(mode === 'nearby' && !opt.nearby) && <View style={{ borderRadius: 22, padding: 20, gap: 4, backgroundColor: mode === 'opportunist' ? t.accent : t.tint }}>
-                <Text style={{ color: '#fff', fontSize: 14 }}>{mode === 'single_market' ? 'Tek markette, seçtiğiniz markalarla' : mode === 'nearby' ? 'Size en yakın marketlerden' : mode === 'combination' ? 'Seçtiğiniz markalarla, birkaç marketten en ucuza' : 'Marka fark etmeksizin, her ürünün en ucuzu'}</Text>
-                <Text style={{ color: '#fff', fontSize: 38, fontWeight: '800', letterSpacing: -1 }}>{plan ? `${formatTL(num(plan.total))} ₺` : '—'}</Text>
+                <Text style={{ color: onCard, fontSize: 14 }}>{mode === 'single_market' ? 'Tek markette, seçtiğiniz markalarla' : mode === 'nearby' ? 'Size en yakın marketlerden' : mode === 'combination' ? 'Seçtiğiniz markalarla, birkaç marketten en ucuza' : 'Marka fark etmeksizin, her ürünün en ucuzu'}</Text>
+                <Text style={{ color: onCard, fontSize: 38, fontWeight: '800', letterSpacing: -1 }}>{plan ? `${formatTL(num(plan.total))} ₺` : '—'}</Text>
                 {mode === 'nearby' && plan && (
-                  <Text style={{ color: '#fff', fontSize: 13, marginTop: 2 }}>{"Başka bir markette ürün başına 1 ₺'den fazla ucuzsa orada alınır."}</Text>
+                  <Text style={{ color: onCard, fontSize: 13, marginTop: 2 }}>{"Başka bir markette ürün başına 1 ₺'den fazla ucuzsa orada alınır."}</Text>
                 )}
                 {mode === 'opportunist' && opt.nearby && num(opt.nearby_extra) > 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginTop: 4 }}>
-                    <Icon name="trending-up" size={16} color="#fff" />
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>En yakın market planına göre {formatTL(num(opt.nearby_extra))} ₺ daha ucuz</Text>
+                    <Icon name="trending-up" size={16} color={onCard} />
+                    <Text style={{ color: onCard, fontWeight: '700', fontSize: 14 }}>En yakın market planına göre {formatTL(num(opt.nearby_extra))} ₺ daha ucuz</Text>
                   </View>
                 )}
                 {mode === 'opportunist' && num(opt.savings.weekly) > 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginTop: 4 }}>
-                    <Icon name="trending-up" size={16} color="#fff" />
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Seçimlerinize göre {formatTL(num(opt.savings.weekly))} ₺ daha ucuz (yılda ~{formatTL(num(opt.savings.yearly), 0)} ₺)</Text>
+                    <Icon name="trending-up" size={16} color={onCard} />
+                    <Text style={{ color: onCard, fontWeight: '700', fontSize: 14 }}>Seçimlerinize göre {formatTL(num(opt.savings.weekly))} ₺ daha ucuz (yılda ~{formatTL(num(opt.savings.yearly), 0)} ₺)</Text>
                   </View>
                 )}
               </View>}
@@ -375,7 +376,7 @@ export default function ListScreen() {
                       : loc === 'denied' ? 'Konum izni kapalı'
                       : loc === 'outside' ? 'Konumunuz Türkiye dışında görünüyor'
                       : loc === 'unavailable' ? 'Konum alınamadı'
-                      : 'Yakında market bulunamadı'}
+                      : 'Yakınınızda market bulunamadı'}
                   </Text>
                   <Muted>
                     {loc === 'ready'

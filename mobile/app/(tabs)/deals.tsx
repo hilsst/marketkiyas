@@ -36,7 +36,7 @@ export default function DealsScreen() {
       {label}
     </Pressable>
   );
-  const chipText = (active: boolean, text: string) => <Text style={{ color: active ? '#fff' : t.text, fontSize: 14, fontWeight: '600' }}>{text}</Text>;
+  const chipText = (active: boolean, text: string) => <Text style={{ color: active ? t.onTint : t.text, fontSize: 14, fontWeight: '600' }}>{text}</Text>;
 
   return (
     <Screen>
@@ -83,7 +83,7 @@ export default function DealsScreen() {
               <Text style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, backgroundColor: '#ef4444', color: '#fff',
                 fontSize: 13, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>%{d.discount_percent}</Text>
               <View style={{ alignItems: 'center' }}><ProductImage uri={d.image_url} icon={categoryIcon(d.category_id)} size={70} /></View>
-              <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 34 }} numberOfLines={2}>{d.group_name}</Text>
+              <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{d.group_name}</Text>
               <Text style={{ color: t.textMuted, fontSize: 13 }} numberOfLines={1}>{[d.brand, formatSize(d.quantity, d.unit)].filter(Boolean).join(' · ')}</Text>
               <View style={{ marginTop: 'auto', gap: 2 }}>
                 <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{formatTL(num(d.previous_price))} ₺</Text>

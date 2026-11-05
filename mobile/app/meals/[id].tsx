@@ -100,7 +100,7 @@ export default function MealPlanScreen() {
             <Pressable onPress={() => { const to = accountRedirect(user, 'plan'); if (to) router.push(to); }}>
               <Card style={{ gap: 4, borderColor: t.tint }}>
                 <Text style={{ color: t.text, fontWeight: '700' }}>Planınızı kaydedin</Text>
-                <Muted>{ACCOUNT_REASON_TEXT.plan} Ücretsiz hesap aç ›</Muted>
+                <Muted>{ACCOUNT_REASON_TEXT.plan} Ücretsiz hesap açın ›</Muted>
               </Card>
             </Pressable>
           )}
@@ -150,7 +150,7 @@ export default function MealPlanScreen() {
                             <Muted style={{ fontSize: 13 }}>{COURSE_LABELS[e.course]}</Muted>
                             <Text style={{ color: t.text, fontWeight: '600' }}>{e.recipe.name}</Text>
                             {e.leftover_of != null && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>Dünden kalan, pişirmek yok</Text>}
-                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>İki kat pişir, yarına kalsın</Text>}
+                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>İki kat pişirin, yarına kalsın</Text>}
                           </View>
                         </Pressable>
                         {changing === 'e' + e.id ? <ActivityIndicator color={t.tint} /> : (

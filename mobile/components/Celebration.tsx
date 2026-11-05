@@ -69,11 +69,11 @@ export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, 
             <>
               <FoodIcon name="piggy-bank" size={80} color="#fff" />
               <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginTop: 8 }}>
-                {savedAmount > 0 ? 'Tebrikler! Tasarruf kasana eklendi' : 'Tebrikler! Bu alışverişte kazancın'}
+                {savedAmount > 0 ? 'Tebrikler! Tasarruf kasanıza eklendi' : 'Tebrikler! Bu alışverişteki kazancınız'}
               </Text>
               <Text style={{ color: '#fff', fontSize: 56, fontWeight: '900', marginVertical: 6 }}>{formatTL(amount)} ₺</Text>
               {savedAmount <= 0 && <Text style={{ color: '#fff', fontSize: 13 }}>ortalama raf fiyatlarına göre</Text>}
-              <Text style={{ color: '#fff', marginTop: 6 }}>Kasandaki toplam: {formatTL(vaultTotal)} ₺</Text>
+              <Text style={{ color: '#fff', marginTop: 6 }}>Kasanızdaki toplam: {formatTL(vaultTotal)} ₺</Text>
               <Text style={{ color: '#fff', fontSize: 13, marginTop: 4 }}>Bu tempoyla yılda yaklaşık {formatTL((amount * 52), 0)} ₺</Text>
             </>
           ) : (

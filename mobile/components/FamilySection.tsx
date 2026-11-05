@@ -130,7 +130,7 @@ export default function FamilySection({ user }: { user: User }) {
       {info && <Text style={{ color: t.tint }}>{info}</Text>}
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
 
-      <Text onPress={() => confirm('Aileden ayrılırsan ailenin listelerini artık göremezsin. Kendi listelerin sende kalır.',
+      <Text onPress={() => confirm('Aileden ayrılırsanız ailenin listelerini artık göremezsiniz. Kendi listeleriniz sizde kalır.',
         () => run(() => api.removeFamilyMember(user.id)))}
         style={{ color: t.danger, textAlign: 'center', padding: 6 }}>Aileden ayrıl</Text>
     </Card>

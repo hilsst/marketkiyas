@@ -14,6 +14,7 @@ import { Card, Muted, Screen, SectionHeader, Title, useTheme } from '@/component
 import { AktuelItem, api, MyFamily, num, SavingsVault, Store } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { loadFlag, saveFlag } from '@/lib/session';
+import { formatKm } from '@/lib/location';
 import { useCatalog } from '@/lib/catalog';
 import { formatTL } from '@/lib/format';
 
@@ -35,7 +36,7 @@ export default function HomeScreen() {
     welcomed = true;
     loadFlag(WELCOME_KEY).then(seen => {
       if (seen) return;
-      void saveFlag(WELCOME_KEY, '1');
+      saveFlag(WELCOME_KEY, '1').catch(() => {});
       router.push('/welcome');
     }).catch(() => router.push('/welcome'));
   }, []);
@@ -143,25 +144,25 @@ export default function HomeScreen() {
       {/* 2) Bu ayki tasarruf */}
       {user ? (
         <Pressable onPress={() => router.push('/profile')} style={{ backgroundColor: t.tint, borderRadius: 22, padding: 20, gap: 4 }}>
-          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700', letterSpacing: 0.5 }}>{monthName.toLocaleUpperCase('tr-TR')} AYI TASARRUFUN</Text>
-          <Text style={{ color: '#fff', fontSize: 40, fontWeight: '800', letterSpacing: -1 }}>{formatTL(monthSaved)} ₺</Text>
+          <Text style={{ color: t.onTint, fontSize: 13, fontWeight: '700', letterSpacing: 0.5 }}>{monthName.toLocaleUpperCase('tr-TR')} AYI TASARRUFUNUZ</Text>
+          <Text style={{ color: t.onTint, fontSize: 40, fontWeight: '800', letterSpacing: -1 }}>{formatTL(monthSaved)} ₺</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Icon name="trending-up" size={16} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 14 }}>
+            <Icon name="trending-up" size={16} color={t.onTint} />
+            <Text style={{ color: t.onTint, fontSize: 14 }}>
               Toplam {formatTL(num(vault?.total_saved))} ₺ · {monthSaved > 0 ? 'Böyle devam!' : 'Bir liste oluşturun, "En ucuz" planıyla başlayın'}
             </Text>
           </View>
           {family?.family && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
-              <Icon name="users" size={16} color="#fff" />
-              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Ailenin bu ayki tasarrufu: {formatTL(num(family.family.month_saved))} ₺</Text>
+              <Icon name="users" size={16} color={t.onTint} />
+              <Text style={{ color: t.onTint, fontSize: 14, fontWeight: '700' }}>Ailenin bu ayki tasarrufu: {formatTL(num(family.family.month_saved))} ₺</Text>
             </View>
           )}
         </Pressable>
       ) : (
         <Pressable onPress={() => router.push('/login')}>
           <Card style={{ gap: 4 }}>
-            <Text style={{ color: t.text, fontWeight: '700' }}>Tasarrufunu takip et</Text>
+            <Text style={{ color: t.text, fontWeight: '700' }}>Tasarrufunuzu takip edin</Text>
             <Muted>Giriş yapın, her ay ne kadar kazandığınızı burada görün.</Muted>
           </Card>
         </Pressable>
@@ -187,7 +188,7 @@ export default function HomeScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>İndirimden menü</Text>
-            <Text style={{ color: t.accentText, fontSize: 14 }}>Bu hafta indirimdeki malzemelerle menü kur.</Text>
+            <Text style={{ color: t.accentText, fontSize: 14 }}>Bu hafta indirimdeki malzemelerle menü kurun.</Text>
           </View>
           <Icon name="chevron-right" size={20} color={t.accentText} />
         </View>
@@ -271,7 +272,7 @@ export default function HomeScreen() {
                 <MarketBadge id={s.market_id} size={30} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: '600' }} numberOfLines={1}>{s.name}</Text>
-                  <Muted>{s.market_name}{s.distance_km != null ? ` · ${s.distance_km.toFixed(1)} km` : ''}</Muted>
+                  <Muted>{s.market_name}{s.distance_km != null ? ` · ${formatKm(s.distance_km)}` : ''}</Muted>
                 </View>
               </View>
             ))}

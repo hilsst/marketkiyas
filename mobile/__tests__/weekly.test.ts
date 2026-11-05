@@ -12,7 +12,7 @@ describe('weekly menu notification', () => {
 
   it('falls back to an invitation when no plan cost is known', () => {
     for (const total of [null, undefined, 0]) {
-      expect(weeklyContent(total).body).toMatch(/^Bu haftanın menüsünü kur/);
+      expect(weeklyContent(total).body).toMatch(/^Bu haftanın menüsünü kurun/);
     }
   });
 

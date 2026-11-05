@@ -46,7 +46,7 @@ export default function LoginScreen() {
         <Text style={{ fontSize: 28, fontWeight: '800', color: t.text }}>Ucuzu</Text>
         <Muted>{upgrading && reason && ACCOUNT_REASON_TEXT[reason]
           ? ACCOUNT_REASON_TEXT[reason]
-          : mode === 'login' ? 'Listelerin, tasarrufun ve marketlerin için giriş yap.' : 'Ücretsiz üye ol, alışverişte tasarrufunu takip et.'}</Muted>
+          : mode === 'login' ? 'Listeleriniz, tasarrufunuz ve marketleriniz için giriş yapın.' : 'Ücretsiz üye olun, alışverişte tasarrufunuzu takip edin.'}</Muted>
         {guest && mode === 'login' && (
           <Muted style={{ color: t.danger }}>Dikkat: Var olan hesabınıza girerseniz şu anki misafir planlarınız ve listeleriniz bu hesaba taşınmaz. {'Onları korumak için "Üye ol" ile hesap açın.'}</Muted>
         )}
@@ -56,7 +56,7 @@ export default function LoginScreen() {
             <Pressable key={m} onPress={() => { setMode(m); setError(null); }}
               style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center',
                 backgroundColor: mode === m ? t.tint : t.card, borderWidth: 1, borderColor: mode === m ? t.tint : t.border }}>
-              <Text style={{ color: mode === m ? '#fff' : t.text, fontWeight: '600' }}>{m === 'login' ? 'Giriş yap' : 'Üye ol'}</Text>
+              <Text style={{ color: mode === m ? t.onTint : t.text, fontWeight: '600' }}>{m === 'login' ? 'Giriş yap' : 'Üye ol'}</Text>
             </Pressable>
           ))}
         </View>

@@ -34,8 +34,8 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 20, paddingTop: 20 + insets.top, paddingBottom: 20 + insets.bottom }}>
         <Animated.View style={{ transform: [{ scale }], backgroundColor: t.background, borderRadius: 24, maxHeight: '88%', overflow: 'hidden' }}>
           <View style={{ backgroundColor: t.tint, paddingVertical: 18, paddingHorizontal: 20, gap: 4 }}>
-            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>{when} hangi mutfaklar?</Text>
-            <Text style={{ color: '#fff' }}>
+            <Text style={{ color: t.onTint, fontSize: 22, fontWeight: '800' }}>{when} hangi mutfaklar?</Text>
+            <Text style={{ color: t.onTint }}>
               Bir ya da birkaç mutfak seçin. Öğünler bunlara dengeli dağıtılır; her öğün tek mutfaktan gelir.
             </Text>
           </View>
@@ -62,7 +62,7 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
                   </View>
                   <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: active ? t.tint : t.border,
                     backgroundColor: active ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                    {active && <Icon name="check" size={16} color="#fff" />}
+                    {active && <Icon name="check" size={16} color={t.onTint} />}
                   </View>
                 </Pressable>
               );

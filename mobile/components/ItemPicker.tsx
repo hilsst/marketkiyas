@@ -76,7 +76,7 @@ export default function ItemPicker({ item, onClose, onPick }: {
                 {offers[0] && <Muted>En ucuz {formatTL(offers[0].price)} ₺</Muted>}
               </View>
             ))}
-            {brands.length > 1 && label('MARKA SEÇ (HER MARKETTE EN UCUZU)')}
+            {brands.length > 1 && label('MARKA SEÇİN (HER MARKETTE EN UCUZU)')}
             {brands.length > 1 && brands.map(([brand, price]) => option(`b-${brand}`, brandOnly && item.preferred_brand === brand,
               () => onPick({ preferred_brand: brand }), (
                 <View style={{ flex: 1 }}>
@@ -95,7 +95,7 @@ export default function ItemPicker({ item, onClose, onPick }: {
                 <Text style={{ color: t.text, fontWeight: '800' }}>{formatTL(o.price)} ₺</Text>
               </>
             )))}
-            {offers.length === 0 && <Muted>Seçili marketlerinde bu ürün şu an bulunamadı.</Muted>}
+            {offers.length === 0 && <Muted>Seçili marketlerinizde bu ürün şu an bulunamadı.</Muted>}
           </ScrollView>
         )}
       </View>

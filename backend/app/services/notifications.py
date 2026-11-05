@@ -169,7 +169,7 @@ async def create_weekly(db: AsyncSession, user: User, week_start: date) -> Notif
     kurulur. Plan kurulamazsa yer bırakılır ki sonraki tur yeniden denesin; plan asla bildirimsiz kalmaz."""
     reserved = await db.scalar(
         pg_insert(Notification).values(
-            user_id=user.id, kind=KIND, title="Haftalık menün hazırlanıyor", body="", week_start=week_start, data="{}",
+            user_id=user.id, kind=KIND, title="Haftalık menünüz hazırlanıyor", body="", week_start=week_start, data="{}",
         ).on_conflict_do_nothing(constraint="uq_notifications_user_kind_week").returning(Notification.id)
     )
     await db.commit()
@@ -183,7 +183,7 @@ async def create_weekly(db: AsyncSession, user: User, week_start: date) -> Notif
         await db.commit()
         raise
     note = await db.get(Notification, reserved)
-    note.title = "Haftalık menün hazır 🍲"
+    note.title = "Haftalık menünüz hazır 🍲"
     note.body = f"Bu haftanın menüsü hazır: {_money(total)}"
     if deal_count:
         note.body += f" · {deal_count} malzeme indirimde"

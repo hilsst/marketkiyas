@@ -44,7 +44,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
     <Pressable key={name} onPress={() => toggle(name)}
       style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
         borderColor: active ? t.tint : t.border, backgroundColor: active ? t.tint : t.card }}>
-      <Text style={{ color: active ? '#fff' : t.text, fontWeight: '600', fontSize: 14 }}>{name}</Text>
+      <Text style={{ color: active ? t.onTint : t.text, fontWeight: '600', fontSize: 14 }}>{name}</Text>
     </Pressable>
   );
 
@@ -52,8 +52,8 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
     <Modal visible animationType="slide" onRequestClose={() => onClose(have)}>
       <View style={{ flex: 1, backgroundColor: t.background }}>
         <View style={{ backgroundColor: t.tint, paddingTop: 16 + Math.max(insets.top, 32), paddingBottom: 16, paddingHorizontal: 20, gap: 4 }}>
-          <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>Dolabımda ne var?</Text>
-          <Text style={{ color: '#fff' }}>
+          <Text style={{ color: t.onTint, fontSize: 22, fontWeight: '800' }}>Dolabımda ne var?</Text>
+          <Text style={{ color: t.onTint }}>
             Evde olanları seçin. Dolabım’a da eklenir; bunları kullanan yemekler öne çıkar, alışveriş listesine eklenmez.
           </Text>
         </View>

@@ -69,7 +69,7 @@ export function Button({
   const primary = kind === 'primary';
   return (
     <Pressable onPress={onPress} disabled={busy || disabled} accessibilityRole="button" accessibilityLabel={title}
-      accessibilityState={{ disabled: !!disabled, busy: !!busy }}
+      accessibilityState={{ disabled: !!(busy || disabled), busy: !!busy }}
       style={({ pressed }) => [styles.button, {
         backgroundColor: primary ? t.tint : t.card, borderColor: primary ? t.tint : t.border,
         opacity: pressed || busy || disabled ? 0.6 : 1,
