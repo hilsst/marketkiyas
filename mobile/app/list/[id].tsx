@@ -47,7 +47,7 @@ export default function ListScreen() {
   const [detail, setDetail] = useState<ListDetail | null | undefined>(undefined);
   const [opt, setOpt] = useState<OptimizeResult | null>(null);
   const [tab, setTab] = useState<Tab>('items');
-  const [mode, setMode] = useState<PlanType>('single_market');
+  const [pickedMode, setMode] = useState<PlanType>('single_market');
   const [error, setError] = useState<string | null>(null);
   const [myPos, setMyPos] = useState<Coords | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
@@ -103,6 +103,10 @@ export default function ListScreen() {
   const update = (itemId: number, patch: ItemPatch) => mutate(() => api.updateItem(listId, itemId, patch), !('is_checked' in patch && Object.keys(patch).length === 1));
   const remove = (itemId: number) => mutate(() => api.removeItem(listId, itemId));
 
+  // "Birkaç market" yalnız markası seçilmiş ürün varsa anlamlı: markasızken "En ucuz" ile aynı sonucu verir
+  const hasBrandChoice = !!detail?.items.some(i => i.preferred_product_id != null || i.preferred_brand != null);
+  const mode: PlanType = pickedMode === 'combination' && !hasBrandChoice ? 'single_market' : pickedMode;
+  const modes = hasBrandChoice ? MODES : MODES.filter(m => m.key !== 'combination');
   const plan: Plan | null = opt ? (mode === 'single_market' ? opt.single_market.plan : mode === 'nearby' ? opt.nearby : mode === 'combination' ? opt.combination : opt.opportunist) : null;
   const comboLines = useMemo(() => new Map((opt?.combination.lines ?? []).map(l => [l.item_id, l])), [opt]);
 
@@ -346,7 +350,7 @@ export default function ListScreen() {
 
       {!completed && tab === 'optimize' && (
         <>
-          <Segmented value={mode} onChange={setMode} options={MODES} />
+          <Segmented value={mode} onChange={setMode} options={modes} />
           {!opt && <ActivityIndicator color={t.tint} />}
           {opt && (
             <>
