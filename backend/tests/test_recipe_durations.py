@@ -25,10 +25,10 @@ def test_every_change_targets_a_real_step():
             assert idx < len(RECIPES[slug]["steps"]), (slug, idx)
 
 
-def test_every_new_step_has_a_timer_duration():
+def test_every_changed_recipe_gets_a_timer_and_no_step_breaks_the_timer_rules():
     for slug, steps in SURELER.items():
+        assert any(DURATION.search(text) for text in steps.values()), slug
         for idx, text in steps.items():
-            assert DURATION.search(text), (slug, idx, text)
             for sentence in re.split(r"[.!?]\s+", text):
                 assert not (PREHEAT.search(sentence) and not COOK_VERBS.search(sentence)), (slug, idx, text)
             assert not re.search(r"\bkala\b", text), (slug, idx, text)

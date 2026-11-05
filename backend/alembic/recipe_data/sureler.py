@@ -210,3 +210,38 @@ SURELER: dict[str, dict[int, str]] = {
     "hi-balkabagi-corbasi": {0: "Balkabağı ve havucu küp doğrayıp 700 ml suda yumuşayana kadar 15 dakika haşlayın.",
                              2: "Kaynatıp 3 dakika pişirerek kıvamını ayarlayın."},
 }
+
+
+# Kuru baklagiller: tariflerde ıslatma/ön haşlama adımı yok, sayaçla az pişmiş fasulye "onaylanmasın" diye metinler
+# "haşlanmış" baklagil varsayar; kuru fasulye/buğday/nohut için süre ve ıslatma açıkça yazılır.
+_DUZELTME: dict[str, dict[int, str]] = {
+    "refried-beans": {1: "Haşlanmış fasulyeyi ekleyip ezin ve 10 dakika pişirin."},
+    "toskana-fasulye-corbasi": {1: "Haşlanmış fasulye ve su ekleyip 30 dakika pişirin."},
+    "fasulye-corbasi": {0: "Bir gece ıslatılmış fasulyeyi yumuşayana kadar 60 dakika haşlayın."},
+    "asure": {0: "Islatılmış buğdayı ve baklagilleri ayrı ayrı yumuşayana kadar 50 dakika haşlayın."},
+    "fasulye-chili": {1: "Haşlanmış fasulye, mısır, domates ve baharat ekleyin."},
+    "domates-fasulye-corbasi": {1: "Haşlanmış fasulye, domates ve su ekleyin."},
+    "misirli-tavuk-yemegi": {1: "Mısır, haşlanmış fasulye ve domatesi ekleyin."},
+    "zeytinyagli-barbunya": {1: "Haşlanmış barbunya, patates ve domatesi ekleyin."},
+    "peynirli-nachos-tabagi": {1: "Haşlanmış fasulye, kaşar ve domatesi serpin."},
+    "tostada": {1: "Haşlanmış fasulyeyi ezip sürün."},
+    "fasulyeli-burrito": {0: "Haşlanmış fasulyeyi baharatla ezin."},
+    "tavuklu-burrito": {1: "Tortillaya pirinç, haşlanmış fasulye ve tavuğu dizin."},
+    "nohutlu-kori": {1: "Domates, köri ve haşlanmış nohutu ekleyin."},
+    "etli-nohutlu-pilav": {0: "Eti yumuşayana kadar 60 dakika haşlayıp suyunu ayırın.",
+                           2: "Et suyu ve haşlanmış nohutla 15 dakika pişirip 10 dakika demleyin."},
+    # Tavuk ve et süreleri (bütün göğüs için yeterli pişme), dil bilgisi
+    "hi-tavuklu-makarna-salatasi": {1: "Tavuğu zeytinyağında her yüzünü 6 dakika, kabağı 3 dakika pişirip doğrayın."},
+    "tavuk-enchilada": {0: "Tavuğu 15-20 dakika pişirip didin."},
+    "tavuklu-asya-salata": {0: "Tavuğu 15 dakika pişirip didin."},
+    "tereyagli-eriste": {0: "Erişteyi 8 dakika haşlayıp süzün."},
+    "tavuklu-alfredo": {0: "Tavuğun her yüzünü 5 dakika kızartıp dilimleyin."},
+    "tavuk-gogsu": {0: "Tavuk göğsünü 20 dakika haşlayıp ince didin, suda bekletin."},
+    "tavuk-parmigiana": {0: "Tavuk göğüslerini galeta ununa bulayıp her yüzünü 5 dakika kızartın."},
+    "lokma": {1: "Kaşıkla kızgın yağa bırakıp çevirerek altın rengi olana kadar 3-4 dakika kızartın."},
+    "dugun-corbasi": {2: "Yumurta-yoğurt terbiyesini ılıştırarak ekleyin, karıştırarak 3 dakika kaynatın."},
+    "gullac": {0: "Sütü şekerle, şeker eriyene kadar karıştırarak 5 dakika pişirin."},
+    "kis-cayi": {1: "Su, elma, portakal ve tarçını 10 dakika kaynatıp çayı ekleyin."},
+}
+for _slug, _steps in _DUZELTME.items():
+    SURELER.setdefault(_slug, {}).update(_steps)

@@ -30,7 +30,11 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-def _apply(changes: dict[str, dict[int, str]]) -> None:
+ORIGINAL = {r["slug"]: r["steps"] for data in (ANA, EK, ITALYAN, ASYA, MEKSIKA, HAFTA_ICI) for r in data}
+
+
+def _apply(changes: dict[str, dict[int, str]], expect: dict[str, dict[int, str]]) -> None:
+    """Adımı yalnız beklenen metinde ise değiştirir (elle düzenlenmiş adımın üstüne yazmaz)."""
     conn = op.get_bind()
     for slug, steps in changes.items():
         row = conn.execute(sa.text("SELECT id, steps FROM recipes WHERE slug = :s"), {"s": slug}).first()
@@ -38,15 +42,17 @@ def _apply(changes: dict[str, dict[int, str]]) -> None:
             continue
         lines = row.steps.split("\n")
         for idx, text in steps.items():
-            if idx < len(lines):
+            if idx < len(lines) and lines[idx] == expect[slug][idx]:
                 lines[idx] = text
         conn.execute(sa.text("UPDATE recipes SET steps = :t WHERE id = :i"), {"t": "\n".join(lines), "i": row.id})
 
 
 def upgrade() -> None:
-    _apply(SURELER)
+    _apply(SURELER, {slug: {i: ORIGINAL[slug][i] for i in steps} for slug, steps in SURELER.items()})
 
 
 def downgrade() -> None:
-    original = {r["slug"]: r["steps"] for data in (ANA, EK, ITALYAN, ASYA, MEKSIKA, HAFTA_ICI) for r in data}
-    _apply({slug: {i: original[slug][i] for i in steps} for slug, steps in SURELER.items() if slug in original})
+    _apply(
+        {slug: {i: ORIGINAL[slug][i] for i in steps} for slug, steps in SURELER.items()},
+        SURELER,
+    )
