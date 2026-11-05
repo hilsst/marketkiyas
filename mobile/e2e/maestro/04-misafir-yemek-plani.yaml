@@ -1,12 +1,12 @@
 # Uçtan uca 4: misafir yemek planı. Karşılama ekranından planlayıcı giriş istemeden açılır, plan kurulur,
-# "Planını kaydet" kartı çıkar; karttan hesap açılınca plan aynı hesapta kalır ve kart kaybolur.
+# "Planınızı kaydedin" kartı çıkar; karttan hesap açılınca plan aynı hesapta kalır ve kart kaybolur.
 appId: app.ucuzu
 ---
 - runFlow: subflows/start-guest.yaml
 # Karşılama ekranındaki "Yemek Planı" seçeneği (başlık aynı metinle başka yerde de geçtiği için açıklamasından seçilir)
 - tapOn: "1-14 günlük menü.*"
 # Açılan pencerede nasıl bir plan istendiği sorulur: mutfak seçerek kur
-- tapOn: "Mutfak seçerek kur"
+- tapOn: "Mutfak seçerek kurun"
 - extendedWaitUntil:
     visible: "Yeni plan"
     timeout: 60000
@@ -16,14 +16,14 @@ appId: app.ucuzu
 - tapOn:
     text: "(Planı oluştur|\\d+ mutfakla oluştur)"
 - extendedWaitUntil:
-    visible: "Planını kaydet"
+    visible: "Planınızı kaydedin"
     timeout: 120000
 - assertVisible: "Alışveriş listesine aktar"
-- tapOn: "Planını kaydet"
+- tapOn: "Planınızı kaydedin"
 - runFlow: subflows/upgrade.yaml
 # Giriş ekranı kapanır, plan ekranına dönülür: misafir kartı gitmiş olmalı
 - extendedWaitUntil:
-    notVisible: "Planını kaydet"
+    notVisible: "Planınızı kaydedin"
     timeout: 30000
 - assertVisible: "Alışveriş listesine aktar"
 # Hesap açılmış: Profil'de e-posta ve çıkış var

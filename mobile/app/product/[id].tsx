@@ -14,11 +14,12 @@ import PriceReport from '@/components/PriceReport';
 import { useAuth } from '@/lib/auth';
 import { priceFreshness } from '@/lib/trust';
 import { useCatalog } from '@/lib/catalog';
+import { formatTL } from '@/lib/format';
 
 /**
  * Ürün sayfası: seçili şubelerdeki her fiyat ayrı satır (web'deki gibi "BİM · Karlıdağ").
  * Bir satıra dokununca o ürün (marka) seçilir; seçilmezse listeye "Farketmez" (en ucuzu) eklenir.
- * Listeden gelindiyse (?listId=) ürün doğrudan o listeye eklenir. 🔔 ile fiyatı takip edilir (Alarmlar sekmesi).
+ * Listeden gelindiyse (?listId=) ürün doğrudan o listeye eklenir. 🔔 ile fiyatı takip edilir (Takip sekmesi).
  */
 export default function ProductScreen() {
   const t = useTheme();
@@ -113,14 +114,14 @@ export default function ProductScreen() {
               </Text>
               <Muted>{o.product.brand ? `${o.product.brand} · ` : ''}{o.product.name}</Muted>
               {o.fresh && (
-                <Text style={{ color: o.fresh.stale ? '#b45309' : t.textMuted, fontSize: 10, fontWeight: o.fresh.stale ? '700' : '400' }}>
+                <Text style={{ color: o.fresh.stale ? '#b45309' : t.textMuted, fontSize: 12, fontWeight: o.fresh.stale ? '700' : '400' }}>
                   {o.fresh.stale ? '' : ''}Fiyat {o.fresh.label} güncellendi{o.fresh.stale ? ' · kasada değişmiş olabilir' : ''}
                 </Text>
               )}
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: i === 0 ? t.tint : t.text, fontWeight: '800', fontSize: 16 }}>{o.price.toFixed(2)} ₺</Text>
-              {i === 0 && <Text style={{ color: t.tint, fontSize: 10, fontWeight: '700' }}>EN UCUZ</Text>}
+              <Text style={{ color: i === 0 ? t.tint : t.text, fontWeight: '800', fontSize: 16 }}>{formatTL(o.price)} ₺</Text>
+              {i === 0 && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '700' }}>EN UCUZ</Text>}
             </View>
           </Pressable>
         ))}
@@ -130,7 +131,7 @@ export default function ProductScreen() {
             product={reportOffer.product} onClose={() => setReporting(false)} />
         )}
         {!reporting && offers.length > 0 && (
-          <Text onPress={() => setReporting(true)} style={{ color: t.textMuted, fontSize: 12, textAlign: 'center', padding: 10 }}>
+          <Text onPress={() => setReporting(true)} style={{ color: t.textMuted, fontSize: 13, textAlign: 'center', padding: 10 }}>
             Kasada farklı mı çıktı? <Text style={{ color: t.tint, fontWeight: '700' }}>Bu fiyat yanlış</Text>
           </Text>
         )}
@@ -144,21 +145,21 @@ export default function ProductScreen() {
               <Pressable key={g.id} onPress={() => router.push({ pathname: '/product/[id]', params: { id: String(g.id), ...(listId ? { listId } : {}) } })}
                 style={{ width: 104, gap: 2 }}>
                 <ProductImage uri={g.image_url} icon={categoryIcon(g.category_id)} size={52} />
-                <Text style={{ color: t.text, fontSize: 11 }} numberOfLines={2}>{g.name}</Text>
-                {g.min_price && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '800' }}>{num(g.min_price).toFixed(2)} ₺</Text>}
+                <Text style={{ color: t.text, fontSize: 13 }} numberOfLines={2}>{g.name}</Text>
+                {g.min_price && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '800' }}>{formatTL(num(g.min_price))} ₺</Text>}
               </Pressable>
             ))}
           </ScrollView>
         </View>
       )}
-      <Muted>{selectedProduct ? `Seçili marka: ${selectedProduct.brand || selectedProduct.name} (tekrar dokunarak kaldırabilirsin)` : 'Marka seçmezsen listeye "Farketmez" eklenir, her zaman en ucuzu alınır.'}</Muted>
+      <Muted>{selectedProduct ? `Seçili marka: ${selectedProduct.brand || selectedProduct.name} (tekrar dokunarak kaldırabilirsiniz)` : 'Marka seçmezseniz listeye "Farketmez" eklenir, her zaman en ucuzu alınır.'}</Muted>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}><Button title={listId ? 'Bu listeye ekle' : 'Listeye ekle'} onPress={onAdd} busy={adding} /></View>
         <Pressable onPress={openAlert} accessibilityLabel="Fiyatını takip et"
           style={{ paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, justifyContent: 'center',
             borderColor: alert ? '#f59e0b' : t.border, backgroundColor: alert ? '#fef3c7' : t.card }}>
           <Text style={{ color: alert ? '#92400e' : t.text, fontWeight: '700' }}>{alert ? 'Takipte' : 'Takip et'}</Text>
-          {alert?.brand && <Text style={{ color: '#92400e', fontSize: 10 }} numberOfLines={1}>{alert.brand}</Text>}
+          {alert?.brand && <Text style={{ color: '#92400e', fontSize: 12 }} numberOfLines={1}>{alert.brand}</Text>}
         </Pressable>
       </View>
       {alertNote && <Text style={{ color: t.tint, textAlign: 'center', fontWeight: '600' }}>{alertNote}</Text>}

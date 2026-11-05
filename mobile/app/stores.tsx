@@ -4,7 +4,7 @@ import { Card, Muted, Screen } from '@/components/ui';
 export default function StoresScreen() {
   return (
     <Screen safeTop={false}>
-      <Card><Muted>Yakınındaki şubeleri seçeceğin ekran 6. adımda geliyor.</Muted></Card>
+      <Card><Muted>Yakınınızdaki şubeleri seçeceğiniz ekran 6. adımda geliyor.</Muted></Card>
     </Screen>
   );
 }

@@ -7,6 +7,7 @@ import MarketBadge from '@/components/MarketBadge';
 import { Muted, useTheme } from '@/components/ui';
 import { api, GroupDetail, ItemPatch, ListItem, num } from '@/lib/api';
 import { useCatalog } from '@/lib/catalog';
+import { formatTL } from '@/lib/format';
 
 interface Offer { key: string; productId: number; brand: string | null; name: string; marketId: number; store: string | null; price: number }
 
@@ -57,14 +58,14 @@ export default function ItemPicker({ item, onClose, onPick }: {
       <Icon name={selected ? 'check-circle' : 'circle'} size={20} color={selected ? t.tint : t.border} />
     </Pressable>
   );
-  const label = (text: string) => <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '800', letterSpacing: 0.4, marginTop: 4 }}>{text}</Text>;
+  const label = (text: string) => <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '800', letterSpacing: 0.4, marginTop: 4 }}>{text}</Text>;
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} onPress={onClose} />
       <View style={{ backgroundColor: t.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 20 + insets.bottom, gap: 10, maxHeight: '80%' }}>
         <Text style={{ color: t.text, fontWeight: '800', fontSize: 18 }} numberOfLines={2}>{item.group_name}</Text>
-        <Muted>Seçtiklerin Tek Market, Yakın ve Kombinasyon planlarında korunur. Fırsatçı seçimlerini yok sayıp en ucuzunu verir.</Muted>
+        <Muted>Seçtikleriniz “Tek market”, “En yakın” ve “Birkaç market” planlarında korunur. “En ucuz” planı seçimlerinizi yok sayıp her ürünün en ucuzunu verir.</Muted>
         {group === undefined && <ActivityIndicator color={t.tint} style={{ padding: 20 }} />}
         {group === null && <Text style={{ color: t.danger }}>Ürünler yüklenemedi.</Text>}
         {group && (
@@ -72,15 +73,15 @@ export default function ItemPicker({ item, onClose, onPick }: {
             {option('any', anything, () => onPick({ preferred_product_id: null }), (
               <View style={{ flex: 1 }}>
                 <Text style={{ color: t.text, fontWeight: '700' }}>Farketmez (en ucuzu)</Text>
-                {offers[0] && <Muted>En ucuz {offers[0].price.toFixed(2)} ₺</Muted>}
+                {offers[0] && <Muted>En ucuz {formatTL(offers[0].price)} ₺</Muted>}
               </View>
             ))}
-            {brands.length > 1 && label('MARKA SEÇ (HER MARKETTE EN UCUZU)')}
+            {brands.length > 1 && label('MARKA SEÇİN (HER MARKETTE EN UCUZU)')}
             {brands.length > 1 && brands.map(([brand, price]) => option(`b-${brand}`, brandOnly && item.preferred_brand === brand,
               () => onPick({ preferred_brand: brand }), (
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: '700' }}>{brand}</Text>
-                  <Muted>En ucuz {price.toFixed(2)} ₺</Muted>
+                  <Muted>En ucuz {formatTL(price)} ₺</Muted>
                 </View>
               )))}
             {label('BELİRLİ MARKET VE ÜRÜN')}
@@ -91,10 +92,10 @@ export default function ItemPicker({ item, onClose, onPick }: {
                   <Text style={{ color: t.text, fontWeight: '600' }} numberOfLines={1}>{marketById(o.marketId)?.name}{o.store ? ` · ${o.store}` : ''}</Text>
                   <Muted>{o.brand ? `${o.brand} · ` : ''}{o.name}</Muted>
                 </View>
-                <Text style={{ color: t.text, fontWeight: '800' }}>{o.price.toFixed(2)} ₺</Text>
+                <Text style={{ color: t.text, fontWeight: '800' }}>{formatTL(o.price)} ₺</Text>
               </>
             )))}
-            {offers.length === 0 && <Muted>Seçili marketlerinde bu ürün şu an bulunamadı.</Muted>}
+            {offers.length === 0 && <Muted>Seçili marketlerinizde bu ürün şu an bulunamadı.</Muted>}
           </ScrollView>
         )}
       </View>

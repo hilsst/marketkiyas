@@ -8,6 +8,7 @@ import { api, ListSummary, num } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { accountRedirect } from '@/lib/guest';
 import { useCatalog } from '@/lib/catalog';
+import { formatTL } from '@/lib/format';
 
 export default function ListsScreen() {
   const t = useTheme();
@@ -65,7 +66,7 @@ export default function ListsScreen() {
           {joining ? (
             <Card style={{ gap: 8 }}>
               <Text style={{ color: t.text, fontWeight: '700' }}>Ortak listeye katıl</Text>
-              <Muted>Listeyi paylaşan kişinin gönderdiği davet kodunu yaz.</Muted>
+              <Muted>Listeyi paylaşan kişinin gönderdiği davet kodunu yazın.</Muted>
               <Input placeholder="Davet kodu (örn. MMDS534W)" value={code} onChangeText={setCode} autoCapitalize="characters" autoCorrect={false} onSubmitEditing={join} />
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <View style={{ flex: 1 }}><Button title="Katıl" onPress={join} busy={busy} disabled={!code.trim()} /></View>
@@ -78,7 +79,7 @@ export default function ListsScreen() {
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
           {lists === null && !error && <ActivityIndicator color={t.tint} />}
           {lists?.length === 0 && (
-            <EmptyState icon="shopping-cart" title="Listen henüz boş" text="Bir menü planla, malzemeler otomatik gelsin; ya da yukarıdan ilk listeni oluştur."
+            <EmptyState icon="shopping-cart" title="Listeniz henüz boş" text="Bir menü planlayın, malzemeler otomatik gelsin; ya da yukarıdan ilk listenizi oluşturun."
               primary={{ title: 'Menü planla', onPress: () => router.push('/meals') }} secondary={{ title: 'Ürün ara', onPress: () => router.push('/search') }} />
           )}
           {lists?.map(l => (
@@ -91,12 +92,12 @@ export default function ListsScreen() {
                 {(l.member_count > 0 || l.owner_id !== user.id) && (
                   <Muted>Ortak liste{l.owner_id !== user.id && l.owner_name ? ` · sahibi ${l.owner_name}` : ''}</Muted>
                 )}
-                {l.status === 'completed' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 12 }}>Alışveriş tamamlandı</Text>}
-                {l.status === 'shopping' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 12 }}>Alışveriş sürüyor · {l.checked_count}/{l.item_count} alındı</Text>}
+                {l.status === 'completed' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 13 }}>Alışveriş tamamlandı</Text>}
+                {l.status === 'shopping' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 13 }}>Alışveriş sürüyor · {l.checked_count}/{l.item_count} alındı</Text>}
                 {l.estimated_total != null && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Muted>Tahmini: </Muted>
-                    <Text style={{ color: t.text, fontWeight: '800' }}>{num(l.estimated_total).toFixed(2)} ₺</Text>
+                    <Text style={{ color: t.text, fontWeight: '800' }}>{formatTL(num(l.estimated_total))} ₺</Text>
                     {l.top_market_id != null && <><MarketBadge id={l.top_market_id} size={18} /><Muted>en çok {marketById(l.top_market_id)?.name}</Muted></>}
                   </View>
                 )}

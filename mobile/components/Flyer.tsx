@@ -22,7 +22,7 @@ export default function Flyer({ title, subtitle, durationMs = 1300, onDone }: {
         <Animated.View style={{ transform: [{ scale }], backgroundColor: '#059669', borderRadius: 24, paddingVertical: 26, paddingHorizontal: 34, alignItems: 'center', gap: 6 }}>
           <Icon name="check-circle" size={52} color="#fff" />
           <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800' }}>{title}</Text>
-          {subtitle && <Text style={{ color: '#fff', opacity: 0.9, textAlign: 'center' }}>{subtitle}</Text>}
+          {subtitle && <Text style={{ color: '#fff', textAlign: 'center' }}>{subtitle}</Text>}
         </Animated.View>
       </View>
     </Modal>

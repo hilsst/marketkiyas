@@ -9,7 +9,7 @@ export default function NutritionCard({ nutrition, title, note }: { nutrition: N
   const cell = (value: string, label: string) => (
     <View key={label} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
       <Text style={{ color: t.text, fontWeight: '800', fontSize: 18 }}>{value}</Text>
-      <Muted style={{ fontSize: 12 }}>{label}</Muted>
+      <Muted style={{ fontSize: 13 }}>{label}</Muted>
     </View>
   );
   return (
@@ -21,7 +21,7 @@ export default function NutritionCard({ nutrition, title, note }: { nutrition: N
         {cell(`${nutrition.carbs_g} g`, 'Karbonhidrat')}
         {cell(`${nutrition.fat_g} g`, 'Yağ')}
       </View>
-      <Muted style={{ fontSize: 12 }}>{note ?? 'Yaklaşık değerlerdir; kullanılan ürüne ve porsiyona göre değişir.'}</Muted>
+      <Muted style={{ fontSize: 13 }}>{note ?? 'Yaklaşık değerlerdir; kullanılan ürüne ve porsiyona göre değişir.'}</Muted>
     </Card>
   );
 }

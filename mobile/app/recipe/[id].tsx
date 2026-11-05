@@ -49,7 +49,7 @@ export default function RecipeScreen() {
   };
   const badge = (key: string, label: string, color: string) => (
     <View key={key} style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: color }}>
-      <Text style={{ color, fontSize: 12, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color, fontSize: 13, fontWeight: '700' }}>{label}</Text>
     </View>
   );
 

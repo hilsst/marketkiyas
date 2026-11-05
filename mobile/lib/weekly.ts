@@ -16,10 +16,10 @@ export const WEEKLY_HOUR = 11;
 export function weeklyContent(total?: number | null) {
   const cost = total != null && total > 0
     ? `: ${Math.round(total).toLocaleString('tr-TR')} TL`
-    : '. Bütçene göre kur, en ucuza al.';
+    : '. Bütçenize göre kurun, en ucuza alın.';
   return {
     title: 'Ucuzu',
-    body: total != null && total > 0 ? `Bu haftanın menüsü hazır${cost}` : `Bu haftanın menüsünü kur${cost}`,
+    body: total != null && total > 0 ? `Bu haftanın menüsü hazır${cost}` : `Bu haftanın menüsünü kurun${cost}`,
     data: { url: '/meals' },
   };
 }

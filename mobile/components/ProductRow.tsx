@@ -5,6 +5,7 @@ import ProductImage from '@/components/ProductImage';
 import { Muted, useTheme } from '@/components/ui';
 import { formatSize, GroupSummary, MarketPrice, num } from '@/lib/api';
 import { useCatalog } from '@/lib/catalog';
+import { formatTL } from '@/lib/format';
 
 export const cheapestOf = (prices: MarketPrice[]) => [...prices].sort((a, b) => num(a.min_price) - num(b.min_price))[0];
 
@@ -30,15 +31,15 @@ export default function ProductRow({ group, prices, onPress }: {
         {cheapest && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <MarketBadge id={cheapest.market_id} size={20} />
-            <Muted style={{ fontSize: 12 }}>{marketById(cheapest.market_id)?.name} · en ucuz</Muted>
+            <Muted style={{ fontSize: 13 }}>{marketById(cheapest.market_id)?.name} · en ucuz</Muted>
           </View>
         )}
       </View>
       {cheapest && (
         <View style={{ alignItems: 'flex-end', gap: 4 }}>
-          <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 18, fontVariant: ['tabular-nums'] }}>{num(cheapest.min_price).toFixed(2)} ₺</Text>
+          <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 18, fontVariant: ['tabular-nums'] }}>{formatTL(num(cheapest.min_price))} ₺</Text>
           {cheapest.regular_price && (
-            <Text style={{ fontSize: 10, color: '#fff', backgroundColor: t.accent, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>İNDİRİM</Text>
+            <Text style={{ fontSize: 12, color: '#fff', backgroundColor: t.accent, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>İNDİRİM</Text>
           )}
         </View>
       )}

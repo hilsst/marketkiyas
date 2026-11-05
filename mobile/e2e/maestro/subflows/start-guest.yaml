@@ -3,8 +3,9 @@
 # (lib/auth.tsx, en fazla ~2 dk), bu yüzden misafirin hazır olduğunu bekleyen adım ayrı: wait-guest.yaml.
 appId: app.ucuzu
 ---
+- clearKeychain
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: "Bugün ne yapmak istersin?"
+    visible: "Bugün ne yapmak istersiniz?"
     timeout: 60000

@@ -4,9 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { api, num, PriceAlert } from '@/lib/api';
+import { formatTL } from '@/lib/format';
 
 /**
- * "Fiyatını takip et": fiyat düşünce ya da yazılan fiyatın altına inince Alarmlar sekmesinde haber verilir.
+ * "Fiyatını takip et": fiyat düşünce ya da yazılan fiyatın altına inince Takip sekmesinde haber verilir.
  * Ürün sayfasında bir satır seçiliyse (marka/market) yalnızca o ürün takip edilir, değilse en ucuzu.
  */
 export default function AlertSheet({ visible, onClose, groupId, groupName, cheapest, product, alert, onChange }: {
@@ -22,13 +23,13 @@ export default function AlertSheet({ visible, onClose, groupId, groupName, cheap
 
   const save = async (withTarget: boolean) => {
     const value = Number(target.replace(',', '.'));
-    if (withTarget && !(value > 0)) { setError('Geçerli bir fiyat yaz (örn. 30,00)'); return; }
+    if (withTarget && !(value > 0)) { setError('Geçerli bir fiyat yazın (örn. 30,00)'); return; }
     setBusy(true);
     setError(null);
     try {
       const all = await api.createAlert(groupId, withTarget ? value : null, product?.id ?? null);
       onChange(all.find(a => a.group_id === groupId) || null,
-        withTarget ? `Fiyat ${value.toFixed(2)} ₺ altına inince haber vereceğiz` : 'Fiyat düşünce haber vereceğiz');
+        withTarget ? `Fiyat ${formatTL(value)} ₺ altına inince haber vereceğiz` : 'Fiyat düşünce haber vereceğiz');
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
   const remove = async () => {
@@ -43,9 +44,9 @@ export default function AlertSheet({ visible, onClose, groupId, groupName, cheap
       <View style={{ backgroundColor: t.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 20 + insets.bottom, gap: 12 }}>
         <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>Fiyatını takip et</Text>
         {product ? (
-          <Muted>Seçtiğin ürün takip edilecek: <Text style={{ color: t.text, fontWeight: '700' }}>{product.label}</Text>, şu an {product.price.toFixed(2)} ₺. Fiyatı düşünce Alarmlar sekmesinde haber veririz.</Muted>
+          <Muted>Seçtiğiniz ürün takip edilecek: <Text style={{ color: t.text, fontWeight: '700' }}>{product.label}</Text>, şu an {formatTL(product.price)} ₺. Fiyatı düşünce Takip sekmesinde haber veririz.</Muted>
         ) : (
-          <Muted>{groupName} şu an en ucuz {cheapest != null ? `${cheapest.toFixed(2)} ₺` : '-'}. Hangi marka olursa olsun en ucuz fiyat düşünce haber veririz. Belli bir markayı takip etmek için önce listeden o satıra dokun.</Muted>
+          <Muted>{groupName} şu an en ucuz {cheapest != null ? `${formatTL(cheapest)} ₺` : '-'}. Hangi marka olursa olsun en ucuz fiyat düşünce haber veririz. Belli bir markayı takip etmek için önce listeden o satıra dokunun.</Muted>
         )}
 
         <Pressable onPress={() => save(false)} disabled={busy}

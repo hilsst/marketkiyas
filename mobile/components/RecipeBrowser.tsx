@@ -21,11 +21,11 @@ const RecipeCard = memo(function RecipeCard({ r, showCuisine }: { r: RecipeSumma
           {showCuisine && <FoodIcon name={cuisineGlyph(r.cuisine)} size={16} color={t.textMuted} />}
         </View>
         <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{r.name}</Text>
-        <Muted style={{ fontSize: 12 }}>
+        <Muted style={{ fontSize: 13 }}>
           {r.prep_minutes + r.cook_minutes > 0 ? `${r.prep_minutes + r.cook_minutes} dk` : 'Hazır'}
           {r.nutrition ? ` · ${r.nutrition.kcal} kcal` : ''}
         </Muted>
-        {(r.liked || r.like_count > 0) && <Muted style={{ fontSize: 12 }}>{r.like_count} beğeni</Muted>}
+        {(r.liked || r.like_count > 0) && <Muted style={{ fontSize: 13 }}>{r.like_count} beğeni</Muted>}
       </Card>
     </Pressable>
   );

@@ -37,7 +37,7 @@ export default function QuickMealScreen() {
       <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 16, gap: 16 }}>
           <Text style={{ color: t.text, fontWeight: '800', fontSize: 22, letterSpacing: -0.4 }}>Bugünün tabağı</Text>
-          <Muted style={{ marginTop: -8 }}>Restoran gibi sofra, market fiyatına. Menü kurmadan tek bir yemek: beğendiysen tarife bak, beğenmediysen başkasını iste.</Muted>
+          <Muted style={{ marginTop: -8 }}>Restoran gibi sofra, market fiyatına. Menü kurmadan tek bir yemek: beğendiyseniz tarife bakın, beğenmediyseniz başkasını isteyin.</Muted>
           {!dish ? (
             <Muted>Şu an gösterilecek tabak yok.</Muted>
           ) : (
@@ -64,7 +64,7 @@ export default function QuickMealScreen() {
                   <Pressable key={r.id} onPress={() => setIndex(i)}>
                     <Card style={{ width: 150, gap: 4, padding: 12 }}>
                       <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{r.name}</Text>
-                      <Muted style={{ fontSize: 12 }}>{minutes(r) > 0 ? `${minutes(r)} dk` : 'Hazır'}</Muted>
+                      <Muted style={{ fontSize: 13 }}>{minutes(r) > 0 ? `${minutes(r)} dk` : 'Hazır'}</Muted>
                     </Card>
                   </Pressable>
                 ))}

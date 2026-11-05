@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { Button, Card, Input, Muted, useTheme } from '@/components/ui';
 import { api, GroupProduct } from '@/lib/api';
 import { parseReportedPrice } from '@/lib/trust';
+import { formatTL } from '@/lib/format';
 
 /**
  * "Bu fiyat yanlış": kasada ya da rafta farklı fiyat görüldüyse bildirilir. Gösterilen fiyatı sunucu kendi
@@ -19,7 +20,7 @@ export default function PriceReport({ groupId, product, storeId, shown, onClose 
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const send = async () => {
-    if (price.trim() && parseReportedPrice(price) == null) { setMsg({ ok: false, text: 'Fiyatı sayı olarak yaz (örn. 45,50).' }); return; }
+    if (price.trim() && parseReportedPrice(price) == null) { setMsg({ ok: false, text: 'Fiyatı sayı olarak yazın (örn. 45,50).' }); return; }
     setBusy(true);
     try {
       const r = await api.reportPrice(groupId, {
@@ -32,7 +33,7 @@ export default function PriceReport({ groupId, product, storeId, shown, onClose 
   return (
     <Card style={{ gap: 8, margin: 12, borderColor: t.tint }}>
       <Text style={{ color: t.text, fontWeight: '700' }}>Bu fiyat yanlış mı?</Text>
-      <Muted>{product.brand || product.name}: uygulamada {shown.toFixed(2)} ₺ görünüyor. Gördüğün fiyatı yaz (isteğe bağlı).</Muted>
+      <Muted>{product.brand || product.name}: uygulamada {formatTL(shown)} ₺ görünüyor. Gördüğünüz fiyatı yazın (isteğe bağlı).</Muted>
       {msg?.ok ? <Text style={{ color: t.tint, fontWeight: '600' }}>{msg.text}</Text> : (
         <>
           <Input placeholder="Gördüğüm fiyat (₺)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" />

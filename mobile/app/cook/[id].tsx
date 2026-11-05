@@ -147,7 +147,7 @@ export default function CookScreen() {
   const big = (label: string, onPress: () => void, primary: boolean) => (
     <Pressable onPress={onPress} style={{ flex: 1, paddingVertical: 18, borderRadius: 18, alignItems: 'center',
       backgroundColor: primary ? t.tint : t.card, borderWidth: primary ? 0 : 1, borderColor: t.border }}>
-      <Text style={{ color: primary ? '#fff' : t.text, fontSize: 18, fontWeight: '800' }}>{label}</Text>
+      <Text style={{ color: primary ? t.onTint : t.text, fontSize: 18, fontWeight: '800' }}>{label}</Text>
     </Pressable>
   );
 
@@ -169,7 +169,7 @@ export default function CookScreen() {
               <Text style={{ color: run.done ? '#fff' : t.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 {run.done ? 'Bitti!' : clock(run.endsAt - now)}
               </Text>
-              <Text style={{ color: run.done ? '#fff' : t.textMuted, fontSize: 12 }}>Adım {key.split(':')[0]}</Text>
+              <Text style={{ color: run.done ? '#fff' : t.textMuted, fontSize: 13 }}>Adım {key.split(':')[0]}</Text>
             </Pressable>
           ))}
         </View>
@@ -181,7 +181,7 @@ export default function CookScreen() {
             <Text style={{ color: t.tint, fontWeight: '800' }}>HAZIRLIK · {total} ADIM</Text>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800' }}>Malzemeleri hazırla</Text>
             {people !== recipe.servings && <Muted>Ölçüler {people} kişiye göre ayarlandı.</Muted>}
-            <Muted>Hazırladığına dokun, işaretlensin.</Muted>
+            <Muted>Hazırladığınıza dokunun, işaretlensin.</Muted>
             {recipe.ingredients.map(i => {
               const done = ready.includes(i.name);
               return (
@@ -189,7 +189,7 @@ export default function CookScreen() {
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
                   <View style={{ width: 28, height: 28, borderRadius: 8, borderWidth: 2, borderColor: done ? t.tint : t.border,
                     backgroundColor: done ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                    {done && <Icon name="check" size={16} color="#fff" />}
+                    {done && <Icon name="check" size={16} color={t.onTint} />}
                   </View>
                   <Text style={{ color: done ? t.textMuted : t.text, fontSize: 19, flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>
                     {i.name}

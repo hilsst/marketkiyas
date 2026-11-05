@@ -9,6 +9,7 @@ import { Card, EmptyState, Muted, Screen, Title, useTheme } from '@/components/u
 import { api, Deal, formatSize, num } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
+import { formatTL } from '@/lib/format';
 
 /** Fırsatlar: son 30 güne göre ucuzlayan ya da kampanyadaki ürünler; market ve kategoriye göre süzülür. */
 export default function DealsScreen() {
@@ -35,7 +36,7 @@ export default function DealsScreen() {
       {label}
     </Pressable>
   );
-  const chipText = (active: boolean, text: string) => <Text style={{ color: active ? '#fff' : t.text, fontSize: 13, fontWeight: '600' }}>{text}</Text>;
+  const chipText = (active: boolean, text: string) => <Text style={{ color: active ? t.onTint : t.text, fontSize: 14, fontWeight: '600' }}>{text}</Text>;
 
   return (
     <Screen>
@@ -80,17 +81,17 @@ export default function DealsScreen() {
             onPress={() => router.push({ pathname: '/product/[id]', params: { id: String(d.group_id) } })}>
             <Card style={{ gap: 6, padding: 12, flex: 1 }}>
               <Text style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, backgroundColor: '#ef4444', color: '#fff',
-                fontSize: 11, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>%{d.discount_percent}</Text>
+                fontSize: 13, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>%{d.discount_percent}</Text>
               <View style={{ alignItems: 'center' }}><ProductImage uri={d.image_url} icon={categoryIcon(d.category_id)} size={70} /></View>
-              <Text style={{ color: t.text, fontSize: 13, fontWeight: '600', minHeight: 34 }} numberOfLines={2}>{d.group_name}</Text>
-              <Text style={{ color: t.textMuted, fontSize: 11 }} numberOfLines={1}>{[d.brand, formatSize(d.quantity, d.unit)].filter(Boolean).join(' · ')}</Text>
+              <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{d.group_name}</Text>
+              <Text style={{ color: t.textMuted, fontSize: 13 }} numberOfLines={1}>{[d.brand, formatSize(d.quantity, d.unit)].filter(Boolean).join(' · ')}</Text>
               <View style={{ marginTop: 'auto', gap: 2 }}>
-                <Text style={{ color: t.textMuted, fontSize: 11, textDecorationLine: 'line-through' }}>{num(d.previous_price).toFixed(2)} ₺</Text>
+                <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{formatTL(num(d.previous_price))} ₺</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <MarketBadge id={d.market_id} size={18} />
-                  <Text style={{ color: t.tint, fontWeight: '800', fontSize: 15 }}>{num(d.price).toFixed(2)} ₺</Text>
+                  <Text style={{ color: t.tint, fontWeight: '800', fontSize: 15 }}>{formatTL(num(d.price))} ₺</Text>
                 </View>
-                {d.is_campaign && <Text style={{ color: '#ea580c', fontSize: 10, fontWeight: '700' }}>KAMPANYA</Text>}
+                {d.is_campaign && <Text style={{ color: '#ea580c', fontSize: 12, fontWeight: '700' }}>KAMPANYA</Text>}
               </View>
             </Card>
           </Pressable>

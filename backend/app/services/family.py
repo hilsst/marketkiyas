@@ -166,7 +166,7 @@ async def remove_member(db: AsyncSession, user: User, member_id: int) -> None:
     """Kurucu herkesi çıkarabilir; diğerleri yalnızca kendini (ayrılma)."""
     family = await _family_of(db, user)
     if family is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bir ailede değilsin")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bir ailede değilsiniz")
     if member_id != user.id and family.owner_id != user.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Başka bir üyeyi yalnızca ailenin kurucusu çıkarabilir")
     member = next((m for m in family.members if m.user_id == member_id), None)

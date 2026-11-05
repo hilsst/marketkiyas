@@ -30,10 +30,10 @@ export default function WelcomeScreen() {
       })}>
       {primary ? (
         <>
-          <Icon name={icon} size={34} color="#fff" />
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', opacity: 0.9 }}>Ne pişireceğini seç, gerisini Ucuzu en ucuza yapsın</Text>
-          <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800', letterSpacing: -0.5 }}>{title}</Text>
-          <Text style={{ color: '#fff', fontSize: 14, opacity: 0.9 }}>{text}</Text>
+          <Icon name={icon} size={34} color={t.onTint} />
+          <Text style={{ color: t.onTint, fontSize: 15, fontWeight: '600' }}>Ne pişireceğinizi seçin, gerisini Ucuzu en ucuza yapsın</Text>
+          <Text style={{ color: t.onTint, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 }}>{title}</Text>
+          <Text style={{ color: t.onTint, fontSize: 14 }}>{text}</Text>
         </>
       ) : (
         <>
@@ -65,16 +65,16 @@ export default function WelcomeScreen() {
         <View style={{ gap: 4, marginBottom: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: t.tint, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="shopping-cart" size={22} color="#fff" />
+              <Icon name="shopping-cart" size={22} color={t.onTint} />
             </View>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>Ucuzu</Text>
           </View>
-          <Text style={{ color: t.text, fontSize: 22, fontWeight: '700', marginTop: 18 }}>{name ? `Hoş geldin ${name}!` : 'Hoş geldin!'}</Text>
-          <Muted style={{ fontSize: 15 }}>Bugün ne yapmak istersin?</Muted>
+          <Text style={{ color: t.text, fontSize: 22, fontWeight: '700', marginTop: 18 }}>{name ? `Hoş geldiniz ${name}!` : 'Hoş geldiniz!'}</Text>
+          <Muted style={{ fontSize: 15 }}>Bugün ne yapmak istersiniz?</Muted>
         </View>
-        {option('coffee', 'Yemek Planı', '1-14 günlük menü: bütçene, dolabındakilere göre; artan yemeği yarına sakla. Maliyetini gör, alışveriş listene aktar.', meals, true)}
-        {option('shopping-bag', 'Alışveriş', 'Ürün ara, fiyatları karşılaştır, listeni en ucuz marketlere göre planla.', shopping, false)}
-        {!user && <Muted style={{ textAlign: 'center', marginTop: 6 }}>Üye olmadan başlayabilirsin</Muted>}
+        {option('coffee', 'Yemek Planı', '1-14 günlük menü: bütçenize, dolabınızdakilere göre; artan yemeği yarına saklayın. Maliyetini görün, alışveriş listenize aktarın.', meals, true)}
+        {option('shopping-bag', 'Alışveriş', 'Ürün arayın, fiyatları karşılaştırın, listenizi en ucuz marketlere göre planlayın.', shopping, false)}
+        {!user && <Muted style={{ textAlign: 'center', marginTop: 6 }}>Üye olmadan başlayabilirsiniz</Muted>}
       </View>
       {asking && <PlanKindFlyer quickCount={quickCount} onPick={pick} onCancel={() => setAsking(false)} />}
     </SafeAreaView>

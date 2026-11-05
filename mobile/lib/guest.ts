@@ -6,11 +6,11 @@ export const isGuest = (user: User | null | undefined): boolean => !!user?.is_gu
 export type AccountReason = 'share' | 'join' | 'family' | 'save' | 'plan';
 
 export const ACCOUNT_REASON_TEXT: Record<AccountReason, string> = {
-  share: 'Listeni başkalarıyla paylaşmak için ücretsiz hesap aç. Listelerin ve planların olduğu gibi kalır.',
-  join: 'Ortak listeye katılmak için ücretsiz hesap aç. Şu anki listelerin ve planların kaybolmaz.',
-  family: 'Aile üyeleriyle liste paylaşmak için ücretsiz hesap aç. Listelerin ve planların olduğu gibi kalır.',
-  save: 'Tasarrufunu kaydetmek ve her ay görmek için ücretsiz hesap aç. Listelerin ve planların olduğu gibi kalır.',
-  plan: 'Planın bu telefonda duruyor. Hesap açarsan yeni telefonda da bulursun, başkasıyla paylaşabilirsin.',
+  share: 'Listenizi başkalarıyla paylaşmak için ücretsiz hesap açın. Listeleriniz ve planlarınız olduğu gibi kalır.',
+  join: 'Ortak listeye katılmak için ücretsiz hesap açın. Şu anki listeleriniz ve planlarınız kaybolmaz.',
+  family: 'Aile üyeleriyle liste paylaşmak için ücretsiz hesap açın. Listeleriniz ve planlarınız olduğu gibi kalır.',
+  save: 'Tasarrufunuzu kaydetmek ve her ay görmek için ücretsiz hesap açın. Listeleriniz ve planlarınız olduğu gibi kalır.',
+  plan: 'Planınız bu telefonda duruyor. Hesap açarsanız yeni telefonda da bulursunuz, başkasıyla paylaşabilirsiniz.',
 };
 
 /** Hesap gereken bir eylem öncesi: misafirse hesap açma ekranının adresini, değilse null döner. */

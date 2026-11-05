@@ -34,9 +34,9 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 20, paddingTop: 20 + insets.top, paddingBottom: 20 + insets.bottom }}>
         <Animated.View style={{ transform: [{ scale }], backgroundColor: t.background, borderRadius: 24, maxHeight: '88%', overflow: 'hidden' }}>
           <View style={{ backgroundColor: t.tint, paddingVertical: 18, paddingHorizontal: 20, gap: 4 }}>
-            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>{when} hangi mutfaklar?</Text>
-            <Text style={{ color: '#fff', opacity: 0.9 }}>
-              Bir ya da birkaç mutfak seç. Öğünler bunlara dengeli dağıtılır; her öğün tek mutfaktan gelir.
+            <Text style={{ color: t.onTint, fontSize: 22, fontWeight: '800' }}>{when} hangi mutfaklar?</Text>
+            <Text style={{ color: t.onTint }}>
+              Bir ya da birkaç mutfak seçin. Öğünler bunlara dengeli dağıtılır; her öğün tek mutfaktan gelir.
             </Text>
           </View>
 
@@ -53,21 +53,21 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>{c.name}</Text>
                     {empty ? (
-                      <Muted style={{ fontSize: 12 }}>Şu an marketlerde malzemesi bulunan tarif yok</Muted>
+                      <Muted style={{ fontSize: 13 }}>Şu an marketlerde malzemesi bulunan tarif yok</Muted>
                     ) : (
-                      <Muted style={{ fontSize: 12 }}>
+                      <Muted style={{ fontSize: 13 }}>
                         {c.recipe_count} tarif{c.examples.length ? ` · ${c.examples.join(', ')}` : ''}
                       </Muted>
                     )}
                   </View>
                   <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: active ? t.tint : t.border,
                     backgroundColor: active ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                    {active && <Icon name="check" size={16} color="#fff" />}
+                    {active && <Icon name="check" size={16} color={t.onTint} />}
                   </View>
                 </Pressable>
               );
             })}
-            <Muted style={{ fontSize: 12 }}>Malzemelerinden biri uygulamadaki marketlerde bulunmayan tarifler listede yer almaz.</Muted>
+            <Muted style={{ fontSize: 13 }}>Malzemelerinden biri uygulamadaki marketlerde bulunmayan tarifler listede yer almaz.</Muted>
             {error && <Text style={{ color: t.danger }}>{error}</Text>}
           </ScrollView>
 

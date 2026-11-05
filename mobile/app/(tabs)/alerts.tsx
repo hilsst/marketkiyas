@@ -8,6 +8,7 @@ import { Card, EmptyState, LoginPrompt, Muted, Screen, Title, useTheme } from '@
 import { api, formatSize, num, PriceAlert } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
+import { formatTL } from '@/lib/format';
 
 /**
  * Takip ettiğim ürünler: fiyatı düşenler üstte. Sekme açılınca yeni düşüşler "görüldü" sayılır.
@@ -40,14 +41,14 @@ export default function AlertsScreen() {
 
   return (
     <Screen>
-      <Title>Fiyat alarmları</Title>
+      <Title>Takip ettiklerim</Title>
       {!user ? <LoginPrompt what="Ürün takip etmek" /> : (
         <>
-          <Muted>Takip ettiğin ürünlerin fiyatı düşünce burada görünür. Ürün sayfasındaki Takip et ile ekleyebilirsin.</Muted>
+          <Muted>Takip ettiğiniz ürünlerin fiyatı düşünce burada görünür. Ürün sayfasındaki Takip et düğmesiyle ekleyebilirsiniz.</Muted>
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
           {alerts === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
           {alerts?.length === 0 && (
-            <EmptyState icon="bell" title="Henüz takip ettiğin ürün yok" text="Bir ürünü açıp Takip et'e dokun; fiyatı düşünce burada görürsün."
+            <EmptyState icon="bell" title="Henüz takip ettiğiniz ürün yok" text="Bir ürünü açıp Takip et'e dokunun; fiyatı düşünce burada görürsünüz."
               primary={{ title: 'Ürün ara', onPress: () => router.push('/search') }} />
           )}
           {alerts?.map(a => {
@@ -58,17 +59,17 @@ export default function AlertsScreen() {
                 <Card style={{ flexDirection: 'row', gap: 12, alignItems: 'center', borderColor: a.triggered ? t.tint : t.border, borderWidth: a.triggered ? 2 : 1 }}>
                   <ProductImage uri={a.image_url} icon={categoryIcon(a.category_id)} size={56} />
                   <View style={{ flex: 1, gap: 3 }}>
-                    {a.triggered && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '800' }}>FİYATI DÜŞTÜ{a.unread ? ' · YENİ' : ''}</Text>}
+                    {a.triggered && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '800' }}>FİYATI DÜŞTÜ{a.unread ? ' · YENİ' : ''}</Text>}
                     <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{a.group_name}</Text>
                     {a.product_id != null && <Muted>{a.brand || a.product_name}{a.current_market_id != null ? ` · ${marketById(a.current_market_id)?.name ?? ''}` : ''}</Muted>}
                     <Muted>
                       {formatSize(a.quantity, a.unit) ? `${formatSize(a.quantity, a.unit)} · ` : ''}
-                      {a.target_price != null ? `${num(a.target_price).toFixed(2)} ₺ altına inince` : threshold != null ? `${threshold.toFixed(2)} ₺ altına inince` : 'Fiyat düşünce'}
+                      {a.target_price != null ? `${formatTL(num(a.target_price))} ₺ altına inince` : threshold != null ? `${formatTL(threshold)} ₺ altına inince` : 'Fiyat düşünce'}
                     </Muted>
                     {current != null && (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         {a.current_market_id != null && <MarketBadge id={a.current_market_id} size={18} />}
-                        <Text style={{ color: a.triggered ? t.tint : t.text, fontWeight: '800' }}>Şu an {current.toFixed(2)} ₺</Text>
+                        <Text style={{ color: a.triggered ? t.tint : t.text, fontWeight: '800' }}>Şu an {formatTL(current)} ₺</Text>
                       </View>
                     )}
                   </View>

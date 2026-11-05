@@ -13,14 +13,15 @@ import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
 import { Coords, distanceKm, formatKm, getCoords, LocationResult } from '@/lib/location';
 import { accountRedirect } from '@/lib/guest';
+import { formatTL } from '@/lib/format';
 
 type Tab = 'items' | 'optimize';
 const SYNC_MS = 8000; // ortak listede diğer üyelerin değişiklikleri bu aralıkla çekilir
 const MODES: { key: PlanType; label: string }[] = [
-  { key: 'single_market', label: 'Tek Market' },
-  { key: 'nearby', label: 'Yakın' },
-  { key: 'combination', label: 'Kombinasyon' },
-  { key: 'opportunist', label: 'Fırsatçı' },
+  { key: 'single_market', label: 'Tek market' },
+  { key: 'nearby', label: 'En yakın' },
+  { key: 'combination', label: 'Birkaç market' },
+  { key: 'opportunist', label: 'En ucuz' },
 ];
 
 /** Geri alınamaz işlemler için onay (web önizlemesinde Alert yok, confirm kullanılır) */
@@ -46,7 +47,7 @@ export default function ListScreen() {
   const [detail, setDetail] = useState<ListDetail | null | undefined>(undefined);
   const [opt, setOpt] = useState<OptimizeResult | null>(null);
   const [tab, setTab] = useState<Tab>('items');
-  const [mode, setMode] = useState<PlanType>('single_market');
+  const [pickedMode, setMode] = useState<PlanType>('single_market');
   const [error, setError] = useState<string | null>(null);
   const [myPos, setMyPos] = useState<Coords | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
@@ -102,6 +103,10 @@ export default function ListScreen() {
   const update = (itemId: number, patch: ItemPatch) => mutate(() => api.updateItem(listId, itemId, patch), !('is_checked' in patch && Object.keys(patch).length === 1));
   const remove = (itemId: number) => mutate(() => api.removeItem(listId, itemId));
 
+  // "Birkaç market" yalnız markası seçilmiş ürün varsa anlamlı: markasızken "En ucuz" ile aynı sonucu verir
+  const hasBrandChoice = !!detail?.items.some(i => i.preferred_product_id != null || i.preferred_brand != null);
+  const mode: PlanType = pickedMode === 'combination' && !hasBrandChoice ? 'single_market' : pickedMode;
+  const modes = hasBrandChoice ? MODES : MODES.filter(m => m.key !== 'combination');
   const plan: Plan | null = opt ? (mode === 'single_market' ? opt.single_market.plan : mode === 'nearby' ? opt.nearby : mode === 'combination' ? opt.combination : opt.opportunist) : null;
   const comboLines = useMemo(() => new Map((opt?.combination.lines ?? []).map(l => [l.item_id, l])), [opt]);
 
@@ -116,6 +121,7 @@ export default function ListScreen() {
   if (detail === null) return <Screen safeTop={false}><Muted>Liste bulunamadı.</Muted></Screen>;
 
   const list = detail;
+  const onCard = mode === 'opportunist' ? '#fff' : t.onTint; // plan kartı: turuncuda beyaz, yeşilde (koyu temada açık yeşil) koyu yazı
   const total = list.items.length;
   const checked = list.items.filter(i => i.is_checked).length;
   const shopping = list.applied_plan != null;
@@ -136,7 +142,7 @@ export default function ListScreen() {
     if (applied) setTab('items');
   };
   const isOwner = list.owner_id === user?.id;
-  const deleteList = () => confirmAsk('Liste silinsin mi?', 'Kaydettiğin tasarruflar Profil sayfanda kalır.', async () => {
+  const deleteList = () => confirmAsk('Liste silinsin mi?', 'Kaydettiğiniz tasarruflar Profil sayfanızda kalır.', async () => {
     try { await api.deleteList(list.id); router.back(); } catch (e) { setError((e as Error).message); }
   });
   const leaveList = () => confirmAsk('Listeden ayrılınsın mı?', 'Liste sahibinde kalmaya devam eder.', async () => {
@@ -149,12 +155,12 @@ export default function ListScreen() {
     try {
       const code = list.share_code || (await api.shareList(list.id)).share_code;
       setDetail({ ...list, share_code: code });
-      await Share.share({ message: `"${list.name}" alışveriş listeme katıl! Ucuzu'da Listeler > "Kodla ortak listeye katıl" deyip bu kodu yaz: ${code}` });
+      await Share.share({ message: `"${list.name}" alışveriş listeme katılın! Ucuzu'da Listeler > "Kodla ortak listeye katıl" deyip bu kodu yazın: ${code}` });
     } catch (e) { setError((e as Error).message); }
   };
   const blocked = shopping
-    ? 'Plan uygulandı. Alışverişi Ürünler sekmesindeki "Alışverişi Bitir" ile tamamla.'
-    : total > 0 && checked === total ? 'Tüm ürünler alınmış görünüyor. Yeni alışveriş için işaretleri kaldır.' : null;
+    ? 'Plan uygulandı. Alışverişi Ürünler sekmesindeki "Alışverişi bitir" düğmesiyle tamamlayın.'
+    : total > 0 && checked === total ? 'Tüm ürünler alınmış görünüyor. Yeni alışveriş için işaretleri kaldırın.' : null;
   const applyDisabled = blocked != null || total === 0 || (mode === 'single_market' && !opt?.single_market.available) || (mode === 'nearby' && !opt?.nearby);
 
   const row = (it: ListItem, inShopping: boolean) => {
@@ -162,38 +168,42 @@ export default function ListScreen() {
     const locked = it.preferred_product_id != null || it.preferred_brand != null;
     const qty = num(it.quantity);
     return (
-      <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: t.border, opacity: it.is_checked ? 0.5 : 1 }}>
-        <Pressable onPress={() => update(it.id, { is_checked: !it.is_checked })} hitSlop={8} accessibilityRole="checkbox" accessibilityState={{ checked: it.is_checked }}
-          style={{ width: 26, height: 26, borderRadius: 9, borderWidth: 2, borderColor: it.is_checked ? t.tint : t.border, backgroundColor: it.is_checked ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-          {it.is_checked && <Icon name="check" size={16} color="#fff" />}
+      <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: t.border, opacity: it.is_checked ? 0.7 : 1 }}>
+        <Pressable onPress={() => update(it.id, { is_checked: !it.is_checked })} hitSlop={10} accessibilityRole="checkbox" accessibilityLabel={`${it.group_name} alındı`} accessibilityState={{ checked: it.is_checked }}
+          style={{ width: 32, height: 32, borderRadius: 10, borderWidth: 2, borderColor: it.is_checked ? t.tint : t.border, backgroundColor: it.is_checked ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+          {it.is_checked && <Icon name="check" size={20} color={t.onTint} />}
         </Pressable>
         <ProductImage uri={it.image_url} icon={categoryIcon(it.category_id)} size={40} />
-        <Pressable disabled={inShopping} onPress={() => setPickItem(it)} accessibilityRole="button" accessibilityLabel={`${it.group_name} için market ve marka seç`}
+        <Pressable disabled={inShopping} onPress={() => setPickItem(it)} accessibilityRole="button" accessibilityLabel={`${it.group_name} için market ve marka seçin`}
           style={{ flex: 1 }}>
           <Text style={{ color: t.text, fontWeight: '600', textDecorationLine: it.is_checked ? 'line-through' : 'none' }} numberOfLines={2}>{it.group_name}</Text>
           {it.added_by_id != null && it.added_by_id !== user?.id && it.added_by_name && (
-            <Text style={{ color: '#0284c7', fontSize: 11, fontWeight: '600' }}>{it.added_by_name} ekledi</Text>
+            <Text style={{ color: '#075985', fontSize: 14, fontWeight: '600' }}>{it.added_by_name} ekledi</Text>
           )}
           {inShopping ? (
             <Muted>{[it.assigned?.brand || it.assigned?.product_name, it.assigned?.store_name].filter(Boolean).join(' · ')} × {qty}</Muted>
           ) : (
-            <Text style={{ color: locked ? t.tintDark : t.textMuted, fontSize: 13, fontWeight: locked ? '700' : '400' }}>
-              {locked ? `Seçili: ${line?.brand || it.preferred_brand || 'seçili ürün'}` : 'Farketmez (en ucuzu)'}{line ? ` · ${num(line.unit_price).toFixed(2)} ₺` : ''}  ›
+            <Text style={{ color: locked ? t.tintDark : t.textMuted, fontSize: 14, fontWeight: locked ? '700' : '400' }}>
+              {locked ? `Seçili: ${line?.brand || it.preferred_brand || 'seçili ürün'}` : 'Farketmez (en ucuzu)'}{line ? ` · ${formatTL(num(line.unit_price))} ₺` : ''}  ›
             </Text>
           )}
         </Pressable>
         {inShopping ? (
-          <Text style={{ color: t.text, fontWeight: '800' }}>{(num(it.assigned?.unit_price) * qty).toFixed(2)} ₺</Text>
+          <Text style={{ color: t.text, fontWeight: '800' }}>{formatTL((num(it.assigned?.unit_price) * qty))} ₺</Text>
         ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Pressable onPress={() => (qty > 1 ? update(it.id, { quantity: qty - 1 }) : remove(it.id))} hitSlop={6}
-              style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: qty > 1 ? t.background : '#fee2e2', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name={qty > 1 ? 'minus' : 'trash-2'} size={15} color={qty > 1 ? t.text : '#dc2626'} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              onPress={() => (qty > 1 ? update(it.id, { quantity: qty - 1 })
+                : confirmAsk('Ürün listeden çıkarılsın mı?', `${it.group_name} listeden silinecek.`, () => { void remove(it.id); }))}
+              hitSlop={4} accessibilityRole="button" accessibilityLabel={qty > 1 ? `${it.group_name} adedini azalt` : `${it.group_name} ürününü listeden çıkar`}
+              style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: qty > 1 ? t.background : '#fee2e2', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={qty > 1 ? 'minus' : 'trash-2'} size={18} color={qty > 1 ? t.text : '#B91C1C'} />
             </Pressable>
-            <Text style={{ color: t.text, fontWeight: '700', minWidth: 18, textAlign: 'center' }}>{qty}</Text>
-            <Pressable onPress={() => qty < 99 && update(it.id, { quantity: qty + 1 })} hitSlop={6}
-              style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: t.background, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="plus" size={15} color={t.text} />
+            <Text style={{ color: t.text, fontWeight: '700', minWidth: 22, textAlign: 'center', fontSize: 16 }}>{qty}</Text>
+            <Pressable onPress={() => qty < 99 && update(it.id, { quantity: qty + 1 })} hitSlop={4}
+              accessibilityRole="button" accessibilityLabel={`${it.group_name} adedini artır`}
+              style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.background, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="plus" size={18} color={t.text} />
             </Pressable>
           </View>
         )}
@@ -212,8 +222,8 @@ export default function ListScreen() {
           onPress={() => at && Linking.openURL(Platform.OS === 'ios' ? `http://maps.apple.com/?ll=${at.lat},${at.lon}&q=${encodeURIComponent(s.name)}` : `https://www.google.com/maps/search/?api=1&query=${at.lat},${at.lon}`)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 4 }}>
           <Icon name="map-pin" size={14} color={t.tint} />
-          <Text style={{ color: t.textMuted, fontSize: 13, flex: 1 }} numberOfLines={1}>{s.name}{km != null ? ` · ${formatKm(km)}` : ''}</Text>
-          {at && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '700' }}>Haritada aç</Text>}
+          <Text style={{ color: t.textMuted, fontSize: 14, flex: 1 }} numberOfLines={1}>{s.name}{km != null ? ` · ${formatKm(km)}` : ''}</Text>
+          {at && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '700' }}>Haritada aç</Text>}
         </Pressable>
       );
     });
@@ -226,7 +236,7 @@ export default function ListScreen() {
     </ActionBar>
   ) : tab === 'items' && shopping ? (
     <ActionBar>
-      <Button title={finishing ? 'Kaydediliyor…' : 'Alışverişi Bitir ve Tasarrufu Kaydet'} onPress={finish} busy={finishing} />
+      <Button title={finishing ? 'Kaydediliyor…' : 'Alışverişi bitir'} onPress={finish} busy={finishing} />
       <Muted style={{ textAlign: 'center' }}>Bir liste haftada bir kez tasarruf kasasına eklenir.</Muted>
     </ActionBar>
   ) : tab === 'items' ? (
@@ -236,7 +246,7 @@ export default function ListScreen() {
     </ActionBar>
   ) : (
     <ActionBar>
-      <Button title="Bu planı alışveriş listeme uygula" onPress={apply} disabled={applyDisabled} />
+      <Button title="Bu planla alışverişe başla" onPress={apply} disabled={applyDisabled} />
       {blocked && <Muted style={{ textAlign: 'center' }}>{blocked}</Muted>}
     </ActionBar>
   );
@@ -244,11 +254,15 @@ export default function ListScreen() {
   return (
     <Screen safeTop={false} footer={footer}>
       <Stack.Screen options={{ title: list.name, headerRight: () => (
-        <View style={{ flexDirection: 'row', gap: 14, paddingHorizontal: 8 }}>
-          <Text onPress={() => setSharing(v => !v)} style={{ color: t.tint, fontWeight: '700' }}>Paylaş</Text>
-          {isOwner
-            ? <Text onPress={deleteList} style={{ color: t.danger, fontWeight: '600' }}>Sil</Text>
-            : <Text onPress={leaveList} style={{ color: t.danger, fontWeight: '600' }}>Ayrıl</Text>}
+        <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 4 }}>
+          <Pressable onPress={() => setSharing(v => !v)} accessibilityRole="button" accessibilityLabel="Listeyi paylaş"
+            style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}>
+            <Text style={{ color: t.tintDark, fontWeight: '700', fontSize: 16 }}>Paylaş</Text>
+          </Pressable>
+          <Pressable onPress={isOwner ? deleteList : leaveList} accessibilityRole="button" accessibilityLabel={isOwner ? 'Listeyi sil' : 'Listeden ayrıl'}
+            style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}>
+            <Text style={{ color: t.danger, fontWeight: '600', fontSize: 16 }}>{isOwner ? 'Sil' : 'Ayrıl'}</Text>
+          </Pressable>
         </View>
       ) }} />
       <Muted>{total} ürün · alınan {checked}/{total}{list.members.length > 0 || !isOwner ? ' · ortak liste' : ''}</Muted>
@@ -263,10 +277,10 @@ export default function ListScreen() {
           {isOwner && <Button title="Davet gönder (WhatsApp, SMS…)" onPress={shareInvite} />}
           <View style={{ gap: 4 }}>
             <Text style={{ color: t.text, fontWeight: '700' }}>Listedekiler</Text>
-            <Muted>{list.owner_name || 'Sahip'}{isOwner ? ' (sen)' : ''} · sahibi</Muted>
+            <Muted>{list.owner_name || 'Sahip'}{isOwner ? ' (siz)' : ''} · sahibi</Muted>
             {list.members.map(m => (
               <View key={m.user_id} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Muted>{m.name || 'Üye'}{m.user_id === user?.id ? ' (sen)' : ''}</Muted>
+                <Muted>{m.name || 'Üye'}{m.user_id === user?.id ? ' (siz)' : ''}</Muted>
                 {isOwner && <Text onPress={() => confirmAsk('Üye çıkarılsın mı?', `${m.name || 'Üye'} bu listeyi artık görmez.`, () => {
                   api.removeMember(list.id, m.user_id).then(load).catch(e => setError(e.message));
                 })} style={{ color: t.danger }}>Çıkar</Text>}
@@ -304,8 +318,8 @@ export default function ListScreen() {
       {!completed && tab === 'items' && shopping && (
         <>
           <Card style={{ backgroundColor: t.tint, borderColor: t.tint, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Alışveriş modu · {checked}/{total} alındı</Text>
-            <Text onPress={() => mutate(() => api.cancelPlan(list.id), false)} style={{ color: '#fff', fontWeight: '700', textDecorationLine: 'underline' }}>İptal Et</Text>
+            <Text style={{ color: t.onTint, fontWeight: '700' }}>Alışveriş modu · {checked}/{total} alındı</Text>
+            <Text onPress={() => mutate(() => api.cancelPlan(list.id), false)} style={{ color: t.onTint, fontWeight: '700', textDecorationLine: 'underline' }}>İptal Et</Text>
           </Card>
           {list.shopping_groups.filter(g => g.market_id != null).map(g => {
             const items = g.item_ids.map(i => itemById.get(i)).filter((i): i is ListItem => !!i);
@@ -315,7 +329,7 @@ export default function ListScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
                   <MarketBadge id={g.market_id} size={26} />
                   <Text style={{ color: t.text, fontWeight: '800', flex: 1 }}>{marketById(g.market_id)?.name}</Text>
-                  <Text style={{ color: t.text, fontWeight: '800' }}>{sum.toFixed(2)} ₺</Text>
+                  <Text style={{ color: t.text, fontWeight: '800' }}>{formatTL(sum)} ₺</Text>
                 </View>
                 <View style={{ paddingHorizontal: 12 }}>{storeInfo(items.map(i => i.assigned?.store_id).filter((x): x is number => x != null))}</View>
                 {items.map(i => row(i, true))}
@@ -328,7 +342,7 @@ export default function ListScreen() {
       {!completed && tab === 'items' && !shopping && (
         <>
           <Card style={{ padding: 0 }}>
-            {list.items.length === 0 && <Muted style={{ padding: 16 }}>Liste boş. Aşağıdan ürün ekle.</Muted>}
+            {list.items.length === 0 && <Muted style={{ padding: 16 }}>Liste boş. Aşağıdaki “+ Ürün ekle” düğmesine dokunun.</Muted>}
             {list.items.map(i => row(i, false))}
           </Card>
         </>
@@ -336,42 +350,42 @@ export default function ListScreen() {
 
       {!completed && tab === 'optimize' && (
         <>
-          <Segmented value={mode} onChange={setMode} options={MODES} />
+          <Segmented value={mode} onChange={setMode} options={modes} />
           {!opt && <ActivityIndicator color={t.tint} />}
           {opt && (
             <>
               {!(mode === 'nearby' && !opt.nearby) && <View style={{ borderRadius: 22, padding: 20, gap: 4, backgroundColor: mode === 'opportunist' ? t.accent : t.tint }}>
-                <Text style={{ color: '#fff', fontSize: 13, opacity: 0.92 }}>{mode === 'single_market' ? 'Tek markette, seçimlerinle' : mode === 'nearby' ? 'Sana en yakın marketlerden' : mode === 'combination' ? 'Seçtiğin markalarla, en ucuz marketlerden' : 'Marka fark etmeden, her ürünün en ucuzu'}</Text>
-                <Text style={{ color: '#fff', fontSize: 38, fontWeight: '800', letterSpacing: -1 }}>{plan ? `${num(plan.total).toFixed(2)} ₺` : '—'}</Text>
+                <Text style={{ color: onCard, fontSize: 14 }}>{mode === 'single_market' ? 'Tek markette, seçtiğiniz markalarla' : mode === 'nearby' ? 'Size en yakın marketlerden' : mode === 'combination' ? 'Seçtiğiniz markalarla, birkaç marketten en ucuza' : 'Marka fark etmeksizin, her ürünün en ucuzu'}</Text>
+                <Text style={{ color: onCard, fontSize: 38, fontWeight: '800', letterSpacing: -1 }}>{plan ? `${formatTL(num(plan.total))} ₺` : '—'}</Text>
                 {mode === 'nearby' && plan && (
-                  <Text style={{ color: '#fff', fontSize: 12, opacity: 0.92, marginTop: 2 }}>{"Başka bir markette ürün başına 1 ₺'den fazla ucuzsa orada alınır."}</Text>
+                  <Text style={{ color: onCard, fontSize: 13, marginTop: 2 }}>{"Başka bir markette ürün başına 1 ₺'den fazla ucuzsa orada alınır."}</Text>
                 )}
                 {mode === 'opportunist' && opt.nearby && num(opt.nearby_extra) > 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginTop: 4 }}>
-                    <Icon name="trending-up" size={16} color="#fff" />
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Yakın market planına göre {num(opt.nearby_extra).toFixed(2)} ₺ daha ucuz</Text>
+                    <Icon name="trending-up" size={16} color={onCard} />
+                    <Text style={{ color: onCard, fontWeight: '700', fontSize: 14 }}>En yakın market planına göre {formatTL(num(opt.nearby_extra))} ₺ daha ucuz</Text>
                   </View>
                 )}
                 {mode === 'opportunist' && num(opt.savings.weekly) > 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginTop: 4 }}>
-                    <Icon name="trending-up" size={16} color="#fff" />
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Seçimlerine göre {num(opt.savings.weekly).toFixed(2)} ₺ daha ucuz (yılda ~{num(opt.savings.yearly).toFixed(0)} ₺)</Text>
+                    <Icon name="trending-up" size={16} color={onCard} />
+                    <Text style={{ color: onCard, fontWeight: '700', fontSize: 14 }}>Seçimlerinize göre {formatTL(num(opt.savings.weekly))} ₺ daha ucuz (yılda ~{formatTL(num(opt.savings.yearly), 0)} ₺)</Text>
                   </View>
                 )}
               </View>}
               {mode === 'nearby' && !opt.nearby && (
                 <Card style={{ gap: 10 }}>
                   <Text style={{ color: t.text, fontWeight: '800' }}>
-                    {loc === 'asking' || loc === 'idle' ? 'Konumun alınıyor…'
+                    {loc === 'asking' || loc === 'idle' ? 'Konumunuz alınıyor…'
                       : loc === 'denied' ? 'Konum izni kapalı'
-                      : loc === 'outside' ? 'Konumun Türkiye dışında görünüyor'
+                      : loc === 'outside' ? 'Konumunuz Türkiye dışında görünüyor'
                       : loc === 'unavailable' ? 'Konum alınamadı'
-                      : 'Yakın market bulunamadı'}
+                      : 'Yakınınızda market bulunamadı'}
                   </Text>
                   <Muted>
                     {loc === 'ready'
-                      ? 'Profil sayfandan "çevremdeki marketler"i seç; Yakın Market planı seçtiğin şubelerin mesafesine göre hazırlanır.'
-                      : 'Yakın Market planı, sana en yakın marketten başlamak için konumunu kullanır. Konumun kaydedilmez.'}
+                      ? 'Profil sayfanızdan "çevremdeki marketler"i seçin; En yakın market planı seçtiğiniz şubelerin mesafesine göre hazırlanır.'
+                      : 'En yakın market planı, size en yakın marketten başlamak için konumunuzu kullanır. Konumunuz kaydedilmez.'}
                   </Muted>
                   {loc === 'asking' || loc === 'idle' ? <ActivityIndicator color={t.tint} /> : loc !== 'ready' && (
                     <Button title={loc === 'denied' ? 'Ayarlardan izin ver' : 'Tekrar dene'}
@@ -387,13 +401,13 @@ export default function ListScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <MarketBadge id={b.market_id} size={26} />
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 16, flex: 1 }}>{marketById(b.market_id)?.name}</Text>
-                    <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>{num(b.total).toFixed(2)} ₺</Text>
+                    <Text style={{ color: t.text, fontWeight: '800', fontSize: 17 }}>{formatTL(num(b.total))} ₺</Text>
                   </View>
                   {storeInfo(plan.lines.filter(l => b.item_ids.includes(l.item_id) && l.store_id != null).map(l => l.store_id as number))}
                   {plan.lines.filter(l => b.item_ids.includes(l.item_id)).map(l => (
                     <View key={l.item_id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, borderTopWidth: 1, borderTopColor: t.border, paddingVertical: 8 }}>
                       <Muted style={{ flex: 1 }}>{l.group_name} ({l.substituted ? l.product_name : l.brand || l.product_name}){l.substituted ? ' · benzeri alındı' : ''}</Muted>
-                      <Text style={{ color: t.text, fontWeight: '700', fontSize: 13 }}>{num(l.line_total).toFixed(2)} ₺</Text>
+                      <Text style={{ color: t.text, fontWeight: '700', fontSize: 14 }}>{formatTL(num(l.line_total))} ₺</Text>
                     </View>
                   ))}
                 </Card>
@@ -403,7 +417,7 @@ export default function ListScreen() {
                   <Muted style={{ fontWeight: '700' }}>MARKETLERE GÖRE</Muted>
                   {opt.single_market.markets.filter(m => m.found > 0).map(m => (
                     <Muted key={m.market_id} style={{ paddingVertical: 3 }}>
-                      {marketById(m.market_id)?.name}: {num(m.total).toFixed(2)} ₺{m.substituted ? ` · ${m.substituted} farklı marka` : ''}{m.missing ? ` · ${m.missing} ürün yok` : ''}
+                      {marketById(m.market_id)?.name}: {formatTL(num(m.total))} ₺{m.substituted ? ` · ${m.substituted} farklı marka` : ''}{m.missing ? ` · ${m.missing} ürün yok` : ''}
                     </Muted>
                   ))}
                 </Card>

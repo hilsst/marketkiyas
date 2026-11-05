@@ -50,11 +50,11 @@ export default function PantryScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: '700', fontSize: 16 }}>{item.name}</Text>
-                  <Muted style={{ fontSize: 12 }}>{item.expires_on ? `Son gün: ${dateLabel(item.expires_on)}` : 'Bozulmaz'}</Muted>
+                  <Muted style={{ fontSize: 13 }}>{item.expires_on ? `Son gün: ${dateLabel(item.expires_on)}` : 'Bozulmaz'}</Muted>
                 </View>
                 {item.quantity != null
                   ? <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>{formatSize(item.quantity, item.unit)}</Text>
-                  : <Muted style={{ fontSize: 13 }}>Miktar belirtilmedi</Muted>}
+                  : <Muted style={{ fontSize: 14 }}>Miktar belirtilmedi</Muted>}
               </View>
               {editing === item.id ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

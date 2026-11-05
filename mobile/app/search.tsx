@@ -64,8 +64,8 @@ export default function SearchScreen() {
       )}
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
       {results === null && q.trim() !== '' && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
-      {q.trim() === '' && <EmptyState icon="search" title="Ne arıyorsun?" text="Ürün adını yaz, yakınındaki marketlerin fiyatlarını karşılaştıralım." />}
-      {q.trim() !== '' && results?.length === 0 && <EmptyState icon="search" title="Sonuç bulunamadı" text="Farklı bir yazım ya da daha kısa bir kelime dene." />}
+      {q.trim() === '' && <EmptyState icon="search" title="Ne arıyorsunuz?" text="Ürün adını yazın, yakınınızdaki marketlerin fiyatlarını karşılaştıralım." />}
+      {q.trim() !== '' && results?.length === 0 && <EmptyState icon="search" title="Sonuç bulunamadı" text="Farklı bir yazım ya da daha kısa bir kelime deneyin." />}
       {/* Listeye ürün eklerken (listId) reklam gösterilmez: liste akışı temiz kalır */}
       {interleaveAds(visible, AD_EVERY, !params.listId && adsEnabled()).map(r => r.kind === 'ad'
         ? <AdSlot key={r.key} placement="product-list" />

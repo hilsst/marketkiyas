@@ -24,16 +24,16 @@ appId: app.ucuzu
     timeout: 20000
 - tapOn: "En ucuzunu bul"
 - scrollUntilVisible:
-    element: "Bu planı alışveriş listeme uygula"
-- tapOn: "Bu planı alışveriş listeme uygula"
+    element: "Bu planla alışverişe başla"
+- tapOn: "Bu planla alışverişe başla"
 - scrollUntilVisible:
-    element: "Alışverişi Bitir ve Tasarrufu Kaydet"
-- tapOn: "Alışverişi Bitir ve Tasarrufu Kaydet"
+    element: "Alışverişi bitir"
+- tapOn: "Alışverişi bitir"
 # Misafir: hesap açma ekranı gelir
 - runFlow: subflows/upgrade.yaml
 - scrollUntilVisible:
-    element: "Alışverişi Bitir ve Tasarrufu Kaydet"
-- tapOn: "Alışverişi Bitir ve Tasarrufu Kaydet"
+    element: "Alışverişi bitir"
+- tapOn: "Alışverişi bitir"
 - extendedWaitUntil:
     visible: "Alışveriş tamamlandı"
     timeout: 30000

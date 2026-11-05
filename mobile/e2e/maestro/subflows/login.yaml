@@ -5,7 +5,7 @@ appId: app.ucuzu
 ---
 - runFlow:
     when:
-      visible: "Bugün ne yapmak istersin?"
+      visible: "Bugün ne yapmak istersiniz?"
     commands:
       - tapOn: "Alışveriş"
 - runFlow: wait-guest.yaml
@@ -14,7 +14,7 @@ appId: app.ucuzu
 - tapOn:
     text: "Giriş yap"
     below: "Ucuzu"
-- assertVisible: "Dikkat: Var olan hesabına girersen.*"
+- assertVisible: "Dikkat: Var olan hesabınıza girerseniz.*"
 - tapOn: "E-posta"
 - inputText: "demo@marketkiyas.app"
 - tapOn: "Şifre (en az 8 karakter)"
