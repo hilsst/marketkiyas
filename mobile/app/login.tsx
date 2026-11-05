@@ -48,7 +48,7 @@ export default function LoginScreen() {
           ? ACCOUNT_REASON_TEXT[reason]
           : mode === 'login' ? 'Listelerin, tasarrufun ve marketlerin için giriş yap.' : 'Ücretsiz üye ol, alışverişte tasarrufunu takip et.'}</Muted>
         {guest && mode === 'login' && (
-          <Muted style={{ color: t.danger }}>Dikkat: Var olan hesabına girersen şu anki misafir planların ve listelerin bu hesaba taşınmaz. {'Onları korumak için "Üye ol" ile hesap aç.'}</Muted>
+          <Muted style={{ color: t.danger }}>Dikkat: Var olan hesabınıza girerseniz şu anki misafir planlarınız ve listeleriniz bu hesaba taşınmaz. {'Onları korumak için "Üye ol" ile hesap açın.'}</Muted>
         )}
 
         <View style={{ flexDirection: 'row', gap: 8 }}>

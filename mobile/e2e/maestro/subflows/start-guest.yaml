@@ -6,5 +6,5 @@ appId: app.ucuzu
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: "Bugün ne yapmak istersin?"
+    visible: "Bugün ne yapmak istersiniz?"
     timeout: 60000

@@ -169,7 +169,7 @@ export default function CookScreen() {
               <Text style={{ color: run.done ? '#fff' : t.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 {run.done ? 'Bitti!' : clock(run.endsAt - now)}
               </Text>
-              <Text style={{ color: run.done ? '#fff' : t.textMuted, fontSize: 12 }}>Adım {key.split(':')[0]}</Text>
+              <Text style={{ color: run.done ? '#fff' : t.textMuted, fontSize: 13 }}>Adım {key.split(':')[0]}</Text>
             </Pressable>
           ))}
         </View>
@@ -181,7 +181,7 @@ export default function CookScreen() {
             <Text style={{ color: t.tint, fontWeight: '800' }}>HAZIRLIK · {total} ADIM</Text>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800' }}>Malzemeleri hazırla</Text>
             {people !== recipe.servings && <Muted>Ölçüler {people} kişiye göre ayarlandı.</Muted>}
-            <Muted>Hazırladığına dokun, işaretlensin.</Muted>
+            <Muted>Hazırladığınıza dokunun, işaretlensin.</Muted>
             {recipe.ingredients.map(i => {
               const done = ready.includes(i.name);
               return (

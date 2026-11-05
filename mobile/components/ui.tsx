@@ -52,7 +52,7 @@ export function Title({ children }: { children: ReactNode }) {
 
 export function Muted({ children, style }: { children: ReactNode; style?: object }) {
   const t = useTheme();
-  return <Text style={[{ color: t.textMuted, fontSize: 13 }, style]}>{children}</Text>;
+  return <Text style={[{ color: t.textMuted, fontSize: 14 }, style]}>{children}</Text>;
 }
 
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
@@ -68,13 +68,14 @@ export function Button({
   const t = useTheme();
   const primary = kind === 'primary';
   return (
-    <Pressable onPress={onPress} disabled={busy || disabled} accessibilityRole="button"
+    <Pressable onPress={onPress} disabled={busy || disabled} accessibilityRole="button" accessibilityLabel={title}
+      accessibilityState={{ disabled: !!disabled, busy: !!busy }}
       style={({ pressed }) => [styles.button, {
         backgroundColor: primary ? t.tint : t.card, borderColor: primary ? t.tint : t.border,
         opacity: pressed || busy || disabled ? 0.6 : 1,
       }]}>
-      {busy ? <ActivityIndicator color={primary ? '#fff' : t.tint} />
-        : <Text style={{ color: primary ? '#fff' : t.text, fontWeight: '700', fontSize: 16 }}>{title}</Text>}
+      {busy ? <ActivityIndicator color={primary ? t.onTint : t.tint} accessibilityLabel="Yükleniyor" />
+        : <Text style={{ color: primary ? t.onTint : t.text, fontWeight: '700', fontSize: 17 }}>{title}</Text>}
     </Pressable>
   );
 }
@@ -103,9 +104,14 @@ export function LoginPrompt({ what }: { what: string }) {
 export function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   const t = useTheme();
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-      <Text style={{ color: t.text, fontWeight: '800', fontSize: 18, letterSpacing: -0.3 }}>{title}</Text>
-      {action && <Text onPress={onAction} style={{ color: t.tint, fontWeight: '700', fontSize: 14 }}>{action}</Text>}
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Text accessibilityRole="header" style={{ color: t.text, fontWeight: '800', fontSize: 19, letterSpacing: -0.3 }}>{title}</Text>
+      {action && (
+        <Pressable onPress={onAction} accessibilityRole="button" accessibilityLabel={`${title}: ${action}`} hitSlop={6}
+          style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
+          <Text style={{ color: t.tintDark, fontWeight: '700', fontSize: 15 }}>{action}</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -114,10 +120,10 @@ export function SectionHeader({ title, action, onAction }: { title: string; acti
 export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPress?: () => void }) {
   const t = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: !!on }}
-      style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, backgroundColor: on ? t.text : t.card,
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: !!on }}
+      style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? t.text : t.card,
         borderWidth: 1, borderColor: on ? t.text : t.border }}>
-      <Text style={{ color: on ? t.background : t.text, fontWeight: '600', fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: on ? t.background : t.text, fontWeight: '600', fontSize: 14 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -130,9 +136,10 @@ export function Segmented<K extends string>({ options, value, onChange }: {
   return (
     <View style={{ flexDirection: 'row', backgroundColor: t.border, borderRadius: 14, padding: 4 }}>
       {options.map(o => (
-        <Pressable key={o.key} onPress={() => onChange(o.key)} accessibilityRole="button"
-          style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 2, borderRadius: 11, alignItems: 'center', backgroundColor: value === o.key ? t.card : 'transparent' }}>
-          <Text numberOfLines={1} style={{ color: value === o.key ? t.tintDark : t.textMuted, fontWeight: '700', fontSize: options.length > 3 ? 12 : 13 }}>{o.label}</Text>
+        <Pressable key={o.key} onPress={() => onChange(o.key)} accessibilityRole="button" accessibilityLabel={o.label}
+          accessibilityState={{ selected: value === o.key }}
+          style={{ flex: 1, minHeight: 48, paddingVertical: 8, paddingHorizontal: 4, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: value === o.key ? t.card : 'transparent' }}>
+          <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={{ color: value === o.key ? t.tintDark : t.textMuted, fontWeight: '700', fontSize: options.length > 3 ? 13 : 14, textAlign: 'center' }}>{o.label}</Text>
         </Pressable>
       ))}
     </View>
@@ -151,7 +158,7 @@ export function EmptyState({ icon, title, text, primary, secondary }: {
         <Icon name={icon} size={48} color={t.tint} />
       </View>
       <Text style={{ color: t.text, fontWeight: '800', fontSize: 20, marginTop: 8 }}>{title}</Text>
-      {text && <Muted style={{ textAlign: 'center', maxWidth: 280, fontSize: 14 }}>{text}</Muted>}
+      {text && <Muted style={{ textAlign: 'center', maxWidth: 300, fontSize: 15 }}>{text}</Muted>}
       <View style={{ alignSelf: 'stretch', gap: 10, marginTop: 12 }}>
         {primary && <Button title={primary.title} onPress={primary.onPress} />}
         {secondary && <Button title={secondary.title} kind="secondary" onPress={secondary.onPress} />}

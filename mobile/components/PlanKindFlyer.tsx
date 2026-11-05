@@ -25,7 +25,7 @@ export default function PlanKindFlyer({ quickCount, onPick, onCancel }: {
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>{title}</Text>
-        <Muted style={{ fontSize: 13 }}>{note}</Muted>
+        <Muted style={{ fontSize: 14 }}>{note}</Muted>
       </View>
       <Icon name="chevron-right" size={20} color={t.textMuted} />
     </Pressable>
@@ -37,7 +37,7 @@ export default function PlanKindFlyer({ quickCount, onPick, onCancel }: {
         <Animated.View style={{ transform: [{ scale }], backgroundColor: t.background, borderRadius: 28, padding: 18, gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: t.text, fontSize: 22, fontWeight: '800', letterSpacing: -0.4 }}>Nasıl bir plan istersin?</Text>
+              <Text style={{ color: t.text, fontSize: 22, fontWeight: '800', letterSpacing: -0.4 }}>Nasıl bir plan istersiniz?</Text>
               <Muted>Hepsinde fiyat gerçek market fiyatı</Muted>
             </View>
             <Pressable onPress={onCancel} accessibilityRole="button" accessibilityLabel="Kapat" hitSlop={12}>
@@ -52,17 +52,17 @@ export default function PlanKindFlyer({ quickCount, onPick, onCancel }: {
                 <Icon name="clock" size={26} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 0.6, opacity: 0.85 }}>HIZLI AMA LEZZETLİ YEMEKLER</Text>
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800', letterSpacing: 0.6 }}>HIZLI AMA LEZZETLİ YEMEKLER</Text>
                 <Text style={{ color: '#fff', fontSize: 19, fontWeight: '800', letterSpacing: -0.3 }}>Restoran gibi sofra, market fiyatına.</Text>
               </View>
             </View>
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', opacity: 0.95 }}>
+            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
               Her malzemesi markette, 45 dakikada sofrada.{quickCount > 0 ? ` ${quickCount} yemek.` : ''}
             </Text>
           </Pressable>
 
-          {row('cuisine', 'globe', 'Mutfak seçerek kur', 'Türk, İtalyan, Uzak Doğu, Meksika')}
-          {row('pantry', 'archive', 'Dolabımdakilerle', 'Evdekini önce kullan, eksiği al')}
+          {row('cuisine', 'globe', 'Mutfak seçerek kurun', 'Türk, İtalyan, Uzak Doğu, Meksika')}
+          {row('pantry', 'archive', 'Dolabımdakilerle', 'Evdekini önce kullanın, eksiği alın')}
         </Animated.View>
       </View>
     </Modal>

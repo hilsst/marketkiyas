@@ -5,6 +5,7 @@ import { Alert, Platform, Pressable, Share, Text, View } from 'react-native';
 import FamilyInviteCard from '@/components/FamilyInviteCard';
 import { Button, Card, Input, Muted, useTheme } from '@/components/ui';
 import { api, MyFamily, num, User } from '@/lib/api';
+import { formatTL } from '@/lib/format';
 
 /**
  * Profil > Ailem. Aile üyeleri birbirinin bütün listelerini kod paylaşmadan görür ve düzenler.
@@ -43,7 +44,7 @@ export default function FamilySection({ user }: { user: User }) {
 
   const confirm = (message: string, onYes: () => void) => {
     if (Platform.OS === 'web') { if (globalThis.confirm?.(message)) onYes(); return; }
-    Alert.alert('Emin misin?', message, [{ text: 'Vazgeç', style: 'cancel' }, { text: 'Evet', style: 'destructive', onPress: onYes }]);
+    Alert.alert('Emin misiniz?', message, [{ text: 'Vazgeç', style: 'cancel' }, { text: 'Evet', style: 'destructive', onPress: onYes }]);
   };
 
   const family = data?.family;
@@ -57,7 +58,7 @@ export default function FamilySection({ user }: { user: User }) {
         {data.invites.map(inv => <FamilyInviteCard key={inv.id} invite={inv} onDone={setData} />)}
         <Card style={{ gap: 10 }}>
           {header}
-          <Muted>Aileni kur: eşin ve çocukların senin bütün listelerini görür, markette olsan bile listeye kod paylaşmadan ürün ekleyebilir.</Muted>
+          <Muted>Ailenizi kurun: eşiniz ve çocuklarınız tüm listelerinizi görür, markette olsanız bile listeye kod paylaşmadan ürün ekleyebilir.</Muted>
           {mode === null && (
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <View style={{ flex: 1 }}><Button title="Aile oluştur" onPress={() => { setMode('create'); setText(user.full_name ? `${user.full_name} ailesi` : ''); }} /></View>
@@ -87,7 +88,7 @@ export default function FamilySection({ user }: { user: User }) {
   const isOwner = family.owner_id === user.id;
   const full = family.members.length >= family.max_members;
   const shareCode = () => Share.share({
-    message: `Ucuzu'da "${family.name}" ailemize katıl! Listelerimizi birlikte kullanalım. Profil > Ailem > "Kodla katıl" deyip bu kodu yaz: ${family.invite_code}`,
+    message: `Ucuzu'da "${family.name}" ailemize katılın! Listelerimizi birlikte kullanalım. Profil > Ailem > "Kodla katıl" deyip bu kodu yazın: ${family.invite_code}`,
   });
 
   return (
@@ -95,13 +96,13 @@ export default function FamilySection({ user }: { user: User }) {
       {header}
       <Text style={{ color: t.text, fontWeight: '700' }}>{family.name}</Text>
       <Muted>Ailedeki herkes birbirinin bütün listelerini görür ve ürün ekleyebilir.</Muted>
-      <Text style={{ color: t.text }}>Bu ay ailece tasarruf: <Text style={{ fontWeight: '800', color: t.tint }}>{num(family.month_saved).toFixed(2)} ₺</Text></Text>
+      <Text style={{ color: t.text }}>Bu ay ailece tasarruf: <Text style={{ fontWeight: '800', color: t.tint }}>{formatTL(num(family.month_saved))} ₺</Text></Text>
 
       <Text style={{ color: t.text, fontWeight: '700', marginTop: 4 }}>Üyeler ({family.members.length}/{family.max_members})</Text>
       {family.members.map(m => (
         <View key={m.user_id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: t.text }}>
-            {m.name}{m.user_id === user.id ? ' (sen)' : ''}{m.is_owner ? ' · kurucu' : ''}
+            {m.name}{m.user_id === user.id ? ' (siz)' : ''}{m.is_owner ? ' · kurucu' : ''}
           </Text>
           {isOwner && m.user_id !== user.id && (
             <Pressable onPress={() => confirm(`${m.name} aileden çıkarılsın mı? Artık listelerinizi göremez.`,
@@ -119,7 +120,7 @@ export default function FamilySection({ user }: { user: User }) {
           <Muted>Aile kodu (bir kez girilir):</Muted>
           <Text selectable style={{ color: t.text, fontSize: 26, fontWeight: '900', letterSpacing: 4, textAlign: 'center' }}>{family.invite_code}</Text>
           <Button title="Kodu WhatsApp / SMS ile gönder" onPress={shareCode} />
-          <Muted>{"ya da Ucuzu'ya üye olan kişinin e-postasını yaz, uygulamada daveti görsün:"}</Muted>
+          <Muted>{"ya da Ucuzu'ya üye olan kişinin e-postasını yazın, uygulamada daveti görsün:"}</Muted>
           <Input placeholder="ornek@eposta.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
           <Button title="Davet gönder" kind="secondary" busy={busy} disabled={!email.includes('@')}
             onPress={() => run(async () => { const r = await api.inviteToFamily(email.trim()); setEmail(''); return r; }, 'Davet gönderildi. Kişi uygulamayı açınca kabul edebilir.')} />

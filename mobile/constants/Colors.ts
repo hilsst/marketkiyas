@@ -1,22 +1,23 @@
 // Ucuzu tasarım belirteçleri: derin zümrüt yeşil, turuncu yalnız indirim/fırsat için.
-const brand = '#0E8F63';
+const brand = '#0B7C56';
 
 export default {
   light: {
     text: '#0F1F19',
-    textMuted: '#6A7A73',
+    textMuted: '#55645D',
     background: '#F5F8F6',
     card: '#FFFFFF',
     border: '#E6ECE8',
     tint: brand,
-    tintDark: '#0A6E4C',
+    tintDark: '#085C40',
     tintSoft: '#E4F5EC',
-    accent: '#FF7A1A',
+    accent: '#B94E05',
     accentSoft: '#FFF0E3',
-    accentText: '#9A5A1F',
-    tabIconDefault: '#97A59E',
+    accentText: '#8A4A12',
+    tabIconDefault: '#6B7A73',
     tabIconSelected: brand,
-    danger: '#E5484D',
+    danger: '#C62828',
+    onTint: '#FFFFFF',
     shadow: '#0F1F19',
   },
   dark: {
@@ -28,12 +29,13 @@ export default {
     tint: '#34D399',
     tintDark: '#6EE7B7',
     tintSoft: '#12302440',
-    accent: '#FF9A4D',
+    accent: '#B94E05',
     accentSoft: '#3A2410',
     accentText: '#FFB878',
-    tabIconDefault: '#6B7A73',
+    tabIconDefault: '#8EA097',
     tabIconSelected: '#34D399',
     danger: '#F87171',
+    onTint: '#04251A',
     shadow: '#000000',
   },
 };

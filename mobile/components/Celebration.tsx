@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Dimensions, Easing, Modal, Pressable, Text, View } from 'react-native';
 import FoodIcon from '@/components/FoodIcon';
+import { formatTL } from '@/lib/format';
 
 const DURATION_MS = 4000; // kutlama ekranı bu kadar kalır, sonra onDone
 const CALM_DURATION_MS = 2500; // kazanç yoksa sakin ekran
@@ -67,13 +68,13 @@ export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, 
           {festive ? (
             <>
               <FoodIcon name="piggy-bank" size={80} color="#fff" />
-              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', opacity: 0.9, marginTop: 8 }}>
+              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginTop: 8 }}>
                 {savedAmount > 0 ? 'Tebrikler! Tasarruf kasana eklendi' : 'Tebrikler! Bu alışverişte kazancın'}
               </Text>
-              <Text style={{ color: '#fff', fontSize: 56, fontWeight: '900', marginVertical: 6 }}>{amount.toFixed(2)} ₺</Text>
-              {savedAmount <= 0 && <Text style={{ color: '#fff', opacity: 0.85, fontSize: 12 }}>ortalama raf fiyatlarına göre</Text>}
-              <Text style={{ color: '#fff', opacity: 0.9, marginTop: 6 }}>Kasandaki toplam: {vaultTotal.toFixed(2)} ₺</Text>
-              <Text style={{ color: '#fff', opacity: 0.75, fontSize: 12, marginTop: 4 }}>Bu tempoyla yılda yaklaşık {(amount * 52).toFixed(0)} ₺</Text>
+              <Text style={{ color: '#fff', fontSize: 56, fontWeight: '900', marginVertical: 6 }}>{formatTL(amount)} ₺</Text>
+              {savedAmount <= 0 && <Text style={{ color: '#fff', fontSize: 13 }}>ortalama raf fiyatlarına göre</Text>}
+              <Text style={{ color: '#fff', marginTop: 6 }}>Kasandaki toplam: {formatTL(vaultTotal)} ₺</Text>
+              <Text style={{ color: '#fff', fontSize: 13, marginTop: 4 }}>Bu tempoyla yılda yaklaşık {formatTL((amount * 52), 0)} ₺</Text>
             </>
           ) : (
             <>
@@ -81,9 +82,9 @@ export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, 
               <Text style={{ color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 8 }}>Alışveriş tamamlandı</Text>
             </>
           )}
-          {note && <Text style={{ color: '#fff', opacity: 0.75, fontSize: 12, marginTop: 10, textAlign: 'center' }}>{note}</Text>}
+          {note && <Text style={{ color: '#fff', fontSize: 13, marginTop: 10, textAlign: 'center' }}>{note}</Text>}
           <View style={{ height: 24 }} />
-          <Text style={{ color: '#fff', opacity: 0.6, fontSize: 11 }}>Ana sayfaya dönülüyor…</Text>
+          <Text style={{ color: '#fff', opacity: 0.6, fontSize: 13 }}>Ana sayfaya dönülüyor…</Text>
         </Animated.View>
       </Pressable>
     </Modal>

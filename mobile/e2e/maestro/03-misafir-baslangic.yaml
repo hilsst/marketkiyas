@@ -7,7 +7,7 @@ appId: app.ucuzu
 - tapOn: "Alışveriş"
 - assertVisible: "Ana Sayfa"
 - runFlow: subflows/wait-guest.yaml
-- assertVisible: "Hesapsız kullanıyorsun.*"
+- assertVisible: "Hesapsız kullanıyorsunuz.*"
 - assertVisible: "Hesap aç"
 # Misafirde "Çıkış yap" yok
 - assertNotVisible: "Çıkış yap"
@@ -18,7 +18,7 @@ appId: app.ucuzu
 - stopApp
 - launchApp
 - extendedWaitUntil:
-    visible: "Bugün ne yapmak istersin?"
+    visible: "Bugün ne yapmak istersiniz?"
     timeout: 60000
 - tapOn: "Alışveriş"
 - runFlow: subflows/wait-guest.yaml

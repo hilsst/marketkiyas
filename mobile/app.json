@@ -42,7 +42,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Ucuzu, alışverişini sana en yakın marketten planlamak için konumunu kullanır."
+          "locationWhenInUsePermission": "Ucuzu, alışverişinizi size en yakın marketten planlamak için konumunuzu kullanır."
         }
       ]
     ],

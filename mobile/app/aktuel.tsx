@@ -8,13 +8,14 @@ import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { Button, Card, Muted, useTheme } from '@/components/ui';
 import { AktuelItem, AktuelResponse, api, num } from '@/lib/api';
+import { formatTL } from '@/lib/format';
 
 // Bir bölümde ilk bu kadar ürün görünür, gerisi "Tümünü göster" ile açılır (yüzlerce ürün tek seferde çizilmesin)
 const PREVIEW = 6;
 
 type Section = { key: string; slug: string; label: string; note: string; upcoming: boolean; items: AktuelItem[] };
 
-const tl = (v: string | number | null) => `${num(v).toFixed(2)} ₺`;
+const tl = (v: string | number | null) => `${formatTL(num(v))} ₺`;
 
 function sectionNote(item: AktuelItem): string {
   if (item.upcoming) return 'Yakında mağazalarda';
@@ -65,7 +66,7 @@ export default function AktuelScreen() {
       {label}
     </Pressable>
   );
-  const chipText = (active: boolean, text: string) => <Text style={{ color: active ? '#fff' : t.text, fontSize: 13, fontWeight: '600' }}>{text}</Text>;
+  const chipText = (active: boolean, text: string) => <Text style={{ color: active ? '#fff' : t.text, fontSize: 14, fontWeight: '600' }}>{text}</Text>;
 
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
@@ -100,7 +101,7 @@ export default function AktuelScreen() {
                   <MarketBadge slug={section.slug} name={nameOf(section.slug)} size={30} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>{nameOf(section.slug)} · {section.label}</Text>
-                    <Text style={{ color: section.upcoming ? '#7c3aed' : t.textMuted, fontSize: 12, fontWeight: section.upcoming ? '700' : '400' }}>
+                    <Text style={{ color: section.upcoming ? '#7c3aed' : t.textMuted, fontSize: 13, fontWeight: section.upcoming ? '700' : '400' }}>
                       {section.note} · {section.items.length} ürün
                     </Text>
                   </View>
@@ -111,16 +112,16 @@ export default function AktuelScreen() {
                       <Card style={{ gap: 6, padding: 12, flex: 1 }}>
                         {item.old_price && (
                           <Text style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, backgroundColor: '#ef4444', color: '#fff',
-                            fontSize: 11, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>
+                            fontSize: 13, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>
                             %{Math.round((1 - num(item.price) / num(item.old_price)) * 100)}
                           </Text>
                         )}
                         <View style={{ alignItems: 'center' }}><ProductImage uri={item.image_url} icon="newspaper-variant-outline" size={96} /></View>
-                        {item.brand && <Text style={{ color: t.textMuted, fontSize: 11, fontWeight: '700' }} numberOfLines={1}>{item.brand}</Text>}
-                        <Text style={{ color: t.text, fontSize: 13, fontWeight: '600', minHeight: 34 }} numberOfLines={2}>{item.title}</Text>
-                        {item.quantity_text && <Text style={{ color: t.textMuted, fontSize: 11 }}>{item.quantity_text}</Text>}
+                        {item.brand && <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>{item.brand}</Text>}
+                        <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 34 }} numberOfLines={2}>{item.title}</Text>
+                        {item.quantity_text && <Text style={{ color: t.textMuted, fontSize: 13 }}>{item.quantity_text}</Text>}
                         <View style={{ marginTop: 'auto', gap: 2 }}>
-                          {item.old_price && <Text style={{ color: t.textMuted, fontSize: 11, textDecorationLine: 'line-through' }}>{tl(item.old_price)}</Text>}
+                          {item.old_price && <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{tl(item.old_price)}</Text>}
                           <Text style={{ color: t.tint, fontWeight: '800', fontSize: 15 }}>{tl(item.price)}</Text>
                         </View>
                       </Card>

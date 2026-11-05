@@ -44,7 +44,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
     <Pressable key={name} onPress={() => toggle(name)}
       style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
         borderColor: active ? t.tint : t.border, backgroundColor: active ? t.tint : t.card }}>
-      <Text style={{ color: active ? '#fff' : t.text, fontWeight: '600', fontSize: 13 }}>{name}</Text>
+      <Text style={{ color: active ? '#fff' : t.text, fontWeight: '600', fontSize: 14 }}>{name}</Text>
     </Pressable>
   );
 
@@ -53,8 +53,8 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
       <View style={{ flex: 1, backgroundColor: t.background }}>
         <View style={{ backgroundColor: t.tint, paddingTop: 16 + Math.max(insets.top, 32), paddingBottom: 16, paddingHorizontal: 20, gap: 4 }}>
           <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>Dolabımda ne var?</Text>
-          <Text style={{ color: '#fff', opacity: 0.9 }}>
-            Evde olanları seç. Dolabım’a da eklenir; bunları kullanan yemekler öne çıkar, alışveriş listesine eklenmez.
+          <Text style={{ color: '#fff' }}>
+            Evde olanları seçin. Dolabım’a da eklenir; bunları kullanan yemekler öne çıkar, alışveriş listesine eklenmez.
           </Text>
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }} keyboardShouldPersistTaps="handled">
@@ -74,7 +74,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
                   <View style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><FoodIcon name={courseGlyph(r.course_type)} size={22} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.text, fontWeight: '700' }}>{r.name}</Text>
-                    <Muted style={{ fontSize: 12 }}>
+                    <Muted style={{ fontSize: 13 }}>
                       {r.missing && r.missing.length ? `Eksik: ${r.missing.join(', ')}` : 'Hepsi evde var'}
                     </Muted>
                   </View>

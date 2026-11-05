@@ -13,6 +13,7 @@ import {
   RecipeSummary,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { formatTL } from '@/lib/format';
 
 const SLOTS: MealSlot[] = ['kahvalti', 'ogle', 'ara', 'aksam'];
 const COURSES: CourseType[] = ['corba', 'ana', 'yan', 'salata', 'tatli', 'icecek'];
@@ -99,7 +100,7 @@ export default function MealsScreen() {
     <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <View style={{ flex: 1 }}>
         <Text style={{ color: t.text, fontWeight: '700' }}>{title}</Text>
-        <Muted style={{ fontSize: 12 }}>{note}</Muted>
+        <Muted style={{ fontSize: 13 }}>{note}</Muted>
       </View>
       <Switch value={value} onValueChange={onChange} trackColor={{ true: t.tint }} />
     </View>
@@ -114,7 +115,7 @@ export default function MealsScreen() {
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
       <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 16, gap: 16 }}>
-          <Muted>1 ile 14 gün arası yemek planı yap; bütçeni, evdeki malzemeleri ve artan yemeği hesaba kat. Maliyet marketlerindeki en uygun fiyatla hesaplanır, istersen alışveriş listene aktar.</Muted>
+          <Muted>1 ile 14 gün arası yemek planı yapın; bütçenizi, evdeki malzemeleri ve artan yemeği hesaba katın. Maliyet marketlerinizdeki en uygun fiyatla hesaplanır, isterseniz alışveriş listenize aktarın.</Muted>
 
           {user ? (
             <Card style={{ gap: 14 }}>
@@ -138,8 +139,8 @@ export default function MealsScreen() {
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {COURSES.map(c => chip(c, courses.includes(c), COURSE_LABELS[c], () => toggleCourse(c)))}
                 </View>
-                {courses.includes('yan') && <Muted style={{ fontSize: 12 }}>Yanında: pilav, makarna, püre gibi, yalnız uyduğu ana yemekle önerilir (ör. kuru fasulyeye pilav; mantıya önerilmez).</Muted>}
-                {courses.includes('icecek') && <Muted style={{ fontSize: 12 }}>İçecek, ana yemekle uyumlu hazır içeceklerden seçilir (ör. kuru fasulyeye ayran).</Muted>}
+                {courses.includes('yan') && <Muted style={{ fontSize: 13 }}>Yanında: pilav, makarna, püre gibi, yalnız uyduğu ana yemekle önerilir (ör. kuru fasulyeye pilav; mantıya önerilmez).</Muted>}
+                {courses.includes('icecek') && <Muted style={{ fontSize: 13 }}>İçecek, ana yemekle uyumlu hazır içeceklerden seçilir (ör. kuru fasulyeye ayran).</Muted>}
               </View>
 
               <View style={{ gap: 6 }}>
@@ -155,7 +156,7 @@ export default function MealsScreen() {
                   {ALLERGENS.map(a => chip(a, avoid.includes(a), `${ALLERGEN_LABELS[a]} yok`, () => toggle(setAvoid, a)))}
                 </View>
                 {(diets.length > 0 || avoid.length > 0) && (
-                  <Muted style={{ fontSize: 12 }}>Paketli ürünlerin etiketini yine de kontrol edin; alerjen bilgisi tarifteki malzemelere göredir.</Muted>
+                  <Muted style={{ fontSize: 13 }}>Paketli ürünlerin etiketini yine de kontrol edin; alerjen bilgisi tarifteki malzemelere göredir.</Muted>
                 )}
               </View>
 
@@ -179,7 +180,7 @@ export default function MealsScreen() {
                     onChangeText={v => setBudget(v.replace(/[^0-9.,]/g, ''))} />
                   <Text style={{ color: t.text, fontWeight: '800', fontSize: 18 }}>₺</Text>
                 </View>
-                <Muted style={{ fontSize: 12 }}>Alışveriş tutarı bütçeyi aşarsa pahalı yemekler ucuzlarıyla değiştirilir; yetmezse içecek ve tatlı çıkarılır.</Muted>
+                <Muted style={{ fontSize: 13 }}>Alışveriş tutarı bütçeyi aşarsa pahalı yemekler ucuzlarıyla değiştirilir; yetmezse içecek ve tatlı çıkarılır.</Muted>
               </View>
 
               {option('leftovers', leftovers, setLeftovers, 'Bir pişir, iki ye',
@@ -192,15 +193,15 @@ export default function MealsScreen() {
                 <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="archive" size={22} color={t.tint} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: '700' }}>Dolabımda ne var?</Text>
-                  <Muted style={{ fontSize: 12 }} >
-                    {have.length ? have.join(', ') : 'Evdeki malzemeleri seç; onları kullanan yemekler öne çıkar, listeye eklenmez.'}
+                  <Muted style={{ fontSize: 13 }} >
+                    {have.length ? have.join(', ') : 'Evdeki malzemeleri seçin; onları kullanan yemekler öne çıkar, listeye eklenmez.'}
                   </Muted>
                 </View>
                 <Text style={{ color: t.tint, fontWeight: '700' }}>{have.length ? 'Düzenle' : 'Seç'} ›</Text>
               </Pressable>
 
               {error && !picking && <Text style={{ color: t.danger }}>{error}</Text>}
-              <Muted style={{ fontSize: 12, textAlign: 'center', marginTop: -6 }}>Sonraki adımda mutfakları seçeceksiniz (Türk, İtalyan, Uzak Doğu...)</Muted>
+              <Muted style={{ fontSize: 13, textAlign: 'center', marginTop: -6 }}>Sonraki adımda mutfakları seçeceksiniz (Türk, İtalyan, Uzak Doğu...)</Muted>
             </Card>
           ) : (
             <LoginPrompt what="Yemek planı yapmak" />
@@ -211,7 +212,7 @@ export default function MealsScreen() {
               <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}><Icon name="tag" size={22} color="#fff" /></View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: t.text, fontWeight: '800' }}>İndirimden menü</Text>
-                <Text style={{ color: t.accentText, fontSize: 12 }}>Bu hafta indirimdeki malzemeleri seç, menü onlarla kurulsun.</Text>
+                <Text style={{ color: t.accentText, fontSize: 13 }}>Bu hafta indirimdeki malzemeleri seçin, menü onlarla kurulsun.</Text>
               </View>
               <Icon name="chevron-right" size={20} color={t.accentText} />
             </View>
@@ -223,7 +224,7 @@ export default function MealsScreen() {
                 <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="package" size={22} color={t.tint} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: '700' }}>Dolabım: {stockCount} malzeme artmış</Text>
-                  <Muted style={{ fontSize: 12 }}>Önceki alışverişten artanlar; yeni plan önce bunları kullanır.</Muted>
+                  <Muted style={{ fontSize: 13 }}>Önceki alışverişten artanlar; yeni plan önce bunları kullanır.</Muted>
                 </View>
                 <Text style={{ color: t.tint, fontWeight: '700' }}>Gör ›</Text>
               </Card>
@@ -237,9 +238,9 @@ export default function MealsScreen() {
                 <Pressable key={p.id} onPress={() => router.push({ pathname: '/meals/[id]', params: { id: String(p.id) } })}>
                   <Card style={{ gap: 2 }}>
                     <Text style={{ color: t.text, fontWeight: '700' }}>{p.name}</Text>
-                    <Muted>{p.days} gün · {p.entry_count} öğün · {p.servings} kişilik{p.budget ? ` · ${Number(p.budget).toFixed(0)} ₺ bütçe` : ''}{p.exported_list_id ? ' · listeye aktarıldı' : ''}</Muted>
+                    <Muted>{p.days} gün · {p.entry_count} öğün · {p.servings} kişilik{p.budget ? ` · ${formatTL(Number(p.budget), 0)} ₺ bütçe` : ''}{p.exported_list_id ? ' · listeye aktarıldı' : ''}</Muted>
                     {(p.cuisines?.length ?? 0) > 0 && (
-                      <Muted style={{ fontSize: 12 }}>{p.cuisines.map(s => cuisineOf(s)?.name ?? s).join(', ')}</Muted>
+                      <Muted style={{ fontSize: 13 }}>{p.cuisines.map(s => cuisineOf(s)?.name ?? s).join(', ')}</Muted>
                     )}
                   </Card>
                 </Pressable>

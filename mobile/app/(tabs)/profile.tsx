@@ -8,6 +8,7 @@ import { api, num, SavingsVault } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { accountRedirect } from '@/lib/guest';
 import { disableWeekly, enableWeekly, isWeeklyOn, weeklySupported } from '@/lib/weekly';
+import { formatTL } from '@/lib/format';
 
 export default function ProfileScreen() {
   const t = useTheme();
@@ -58,19 +59,19 @@ export default function ProfileScreen() {
         <>
           <Card style={{ gap: 4 }}>
             <Text style={{ color: t.text, fontSize: 17, fontWeight: '700' }}>{user.is_guest ? 'Misafir' : user.full_name || 'Ucuzu üyesi'}</Text>
-            <Muted>{user.is_guest ? 'Hesapsız kullanıyorsun. Planların ve listelerin bu telefonda duruyor.' : user.email}</Muted>
+            <Muted>{user.is_guest ? 'Hesapsız kullanıyorsunuz. Planlarınız ve listeleriniz bu telefonda duruyor.' : user.email}</Muted>
           </Card>
           {user.is_guest && (
             <Card style={{ gap: 8, borderColor: t.tint }}>
               <Text style={{ color: t.text, fontWeight: '700' }}>Ücretsiz hesap aç</Text>
-              <Muted>Planlarını kaydet, listeni paylaş, tasarrufunu her ay gör. Şu anki verilerin olduğu gibi kalır.</Muted>
+              <Muted>Planlarınızı kaydedin, listenizi paylaşın, tasarrufunuzu her ay görün. Şu anki verileriniz olduğu gibi kalır.</Muted>
               <Button title="Hesap aç" onPress={() => { const to = accountRedirect(user, 'save'); if (to) router.push(to); }} />
             </Card>
           )}
           <View style={{ backgroundColor: t.tint, borderRadius: 16, padding: 18, gap: 4 }}>
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', opacity: 0.9 }}>TOPLAM TASARRUF</Text>
-            <Text style={{ color: '#fff', fontSize: 36, fontWeight: '900' }}>{num(vault?.total_saved).toFixed(2)} ₺</Text>
-            <Text style={{ color: '#fff', fontSize: 12, opacity: 0.85 }}>{vault?.record_count ?? 0} alışveriş</Text>
+            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>TOPLAM TASARRUF</Text>
+            <Text style={{ color: '#fff', fontSize: 36, fontWeight: '900' }}>{formatTL(num(vault?.total_saved))} ₺</Text>
+            <Text style={{ color: '#fff', fontSize: 13 }}>{vault?.record_count ?? 0} alışveriş</Text>
           </View>
           {weeklySupported && (
             <Card style={{ gap: 6 }}>
@@ -93,7 +94,7 @@ export default function ProfileScreen() {
           ) : (
             <Card style={{ gap: 10, borderColor: t.danger }}>
               <Text style={{ color: t.danger, fontWeight: '700' }}>Hesabın kalıcı olarak silinecek</Text>
-              <Muted>Listelerin, tasarruf kasan, alarmların ve marketlerin silinir. Bu işlem geri alınamaz.</Muted>
+              <Muted>Listeleriniz, tasarruf kasanız, takip ettiğiniz ürünler ve marketleriniz silinir. Bu işlem geri alınamaz.</Muted>
               {user.has_password && (
                 <Input placeholder="Onay için şifren" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" />
               )}

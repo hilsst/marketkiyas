@@ -17,8 +17,8 @@ export default function AdSlot({ placement }: { placement: AdPlacement }) {
     <View testID={`ad-${placement}`} accessibilityLabel="Reklam"
       style={{ borderRadius: 14, borderWidth: 1, borderStyle: 'dashed', borderColor: t.border, backgroundColor: t.card,
         padding: 12, gap: 2, minHeight: placement === 'home-top' ? 64 : 80, justifyContent: 'center' }}>
-      <Text style={{ color: t.textMuted, fontSize: 10, fontWeight: '700' }}>REKLAM · TEST</Text>
-      <Text style={{ color: t.textMuted, fontSize: 12 }}>Burada AppLovin MAX native reklamı gösterilecek.</Text>
+      <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '700' }}>REKLAM · TEST</Text>
+      <Text style={{ color: t.textMuted, fontSize: 13 }}>Burada AppLovin MAX native reklamı gösterilecek.</Text>
     </View>
   );
 }

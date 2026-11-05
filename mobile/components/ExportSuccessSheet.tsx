@@ -70,8 +70,8 @@ export default function ExportSuccessSheet({ result, onOpen, onClose }: {
                         <FoodIcon name={glyphFor(s.name)} size={19} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: t.text, fontWeight: '700', fontSize: 13 }}>{s.name}</Text>
-                        <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 13 }}>{formatSize(s.quantity, s.unit)}</Text>
+                        <Text style={{ color: t.text, fontWeight: '700', fontSize: 14 }}>{s.name}</Text>
+                        <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 14 }}>{formatSize(s.quantity, s.unit)}</Text>
                       </View>
                     </View>
                   ))}
@@ -82,7 +82,7 @@ export default function ExportSuccessSheet({ result, onOpen, onClose }: {
             {skipped.length > 0 && (
               <View style={{ backgroundColor: t.accentSoft, borderRadius: 14, padding: 12, flexDirection: 'row', gap: 9, alignItems: 'flex-start' }}>
                 <Icon name="alert-triangle" size={18} color={t.accentText} />
-                <Text style={{ flex: 1, color: t.accentText, fontWeight: '600', fontSize: 13 }}>
+                <Text style={{ flex: 1, color: t.accentText, fontWeight: '600', fontSize: 14 }}>
                   Marketlerinizde bulunamadığı için eklenmedi: {skipped.join(', ')}
                 </Text>
               </View>
@@ -104,7 +104,7 @@ function Stat({ n, label }: { n: number; label: string }) {
   return (
     <View style={{ flex: 1, backgroundColor: t.background, borderRadius: 16, paddingVertical: 12, alignItems: 'center' }}>
       <Text style={{ color: t.tintDark, fontSize: 24, fontWeight: '800' }}>{n}</Text>
-      <Muted style={{ fontSize: 12 }}>{label}</Muted>
+      <Muted style={{ fontSize: 13 }}>{label}</Muted>
     </View>
   );
 }

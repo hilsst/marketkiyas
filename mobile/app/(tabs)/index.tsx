@@ -13,7 +13,9 @@ import Icon from '@/components/Icon';
 import { Card, Muted, Screen, SectionHeader, Title, useTheme } from '@/components/ui';
 import { AktuelItem, api, MyFamily, num, SavingsVault, Store } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { loadFlag, saveFlag } from '@/lib/session';
 import { useCatalog } from '@/lib/catalog';
+import { formatTL } from '@/lib/format';
 
 type ShowcaseItem = { id: number; name: string; image: string | null; categoryId: number | null;
   marketId: number | null; price: number | null; previous: number | null; badge: string | null };
@@ -22,15 +24,20 @@ type ShowcaseItem = { id: number; name: string; image: string | null; categoryId
  * Ana sayfa, Kemal'in sırasıyla: arama, bu ayki tasarruf, hızlı erişim, kategoriler, fırsat ürünleri (yatay),
  * aktüel ürünler (yatay), yakındaki marketler. Tek reklam yeri: üst barın altı (ürün listelerinde ayrıca her 8 üründe bir).
  */
-// Karşılama ekranı uygulama her açıldığında bir kez gösterilir
+// Karşılama ekranı yalnız ilk kurulumda gösterilir (sonra Profil'den ya da üstteki düğmeyle açılır)
 let welcomed = false;
+const WELCOME_KEY = 'ucuzu.welcomed';
 
 export default function HomeScreen() {
   const t = useTheme();
   useEffect(() => {
     if (welcomed) return;
     welcomed = true;
-    router.push('/welcome');
+    loadFlag(WELCOME_KEY).then(seen => {
+      if (seen) return;
+      void saveFlag(WELCOME_KEY, '1');
+      router.push('/welcome');
+    }).catch(() => router.push('/welcome'));
   }, []);
   const { user } = useAuth();
   const { categories, categoryIcon } = useCatalog();
@@ -104,16 +111,16 @@ export default function HomeScreen() {
       {/* Üst: selamlama + alarm zili (alarmlar artık buradan da açılır) */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View>
-          <Muted style={{ fontSize: 14 }}>{user ? 'Merhaba' : 'Hoş geldin'}</Muted>
+          <Muted style={{ fontSize: 14 }}>{user ? 'Merhaba' : 'Hoş geldiniz'}</Muted>
           <Title>{user?.full_name?.split(' ')[0] || 'Ucuzu'}</Title>
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Pressable onPress={() => router.push('/welcome')} accessibilityRole="button" accessibilityLabel="Karşılama ekranı"
+        <Pressable onPress={() => router.push('/welcome')} accessibilityRole="button" accessibilityLabel="Ana menü"
           style={{ width: 46, height: 46, borderRadius: 16, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center',
             shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
           <Icon name="grid" size={22} />
         </Pressable>
-        <Pressable onPress={() => router.push('/alerts')} accessibilityRole="button" accessibilityLabel="Fiyat alarmları"
+        <Pressable onPress={() => router.push('/alerts')} accessibilityRole="button" accessibilityLabel="Fiyat takibi"
           style={{ width: 46, height: 46, borderRadius: 16, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center',
             shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
           <Icon name="bell" size={22} />
@@ -136,18 +143,18 @@ export default function HomeScreen() {
       {/* 2) Bu ayki tasarruf */}
       {user ? (
         <Pressable onPress={() => router.push('/profile')} style={{ backgroundColor: t.tint, borderRadius: 22, padding: 20, gap: 4 }}>
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', opacity: 0.9, letterSpacing: 0.5 }}>{monthName.toLocaleUpperCase('tr-TR')} AYI TASARRUFUN</Text>
-          <Text style={{ color: '#fff', fontSize: 40, fontWeight: '800', letterSpacing: -1 }}>{monthSaved.toFixed(2)} ₺</Text>
+          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700', letterSpacing: 0.5 }}>{monthName.toLocaleUpperCase('tr-TR')} AYI TASARRUFUN</Text>
+          <Text style={{ color: '#fff', fontSize: 40, fontWeight: '800', letterSpacing: -1 }}>{formatTL(monthSaved)} ₺</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Icon name="trending-up" size={16} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 13, opacity: 0.9 }}>
-              Toplam {num(vault?.total_saved).toFixed(2)} ₺ · {monthSaved > 0 ? 'Böyle devam!' : 'Bir liste oluştur, Fırsatçı planla başla'}
+            <Text style={{ color: '#fff', fontSize: 14 }}>
+              Toplam {formatTL(num(vault?.total_saved))} ₺ · {monthSaved > 0 ? 'Böyle devam!' : 'Bir liste oluşturun, "En ucuz" planıyla başlayın'}
             </Text>
           </View>
           {family?.family && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
               <Icon name="users" size={16} color="#fff" />
-              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Ailenin bu ayki tasarrufu: {num(family.family.month_saved).toFixed(2)} ₺</Text>
+              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Ailenin bu ayki tasarrufu: {formatTL(num(family.family.month_saved))} ₺</Text>
             </View>
           )}
         </Pressable>
@@ -155,7 +162,7 @@ export default function HomeScreen() {
         <Pressable onPress={() => router.push('/login')}>
           <Card style={{ gap: 4 }}>
             <Text style={{ color: t.text, fontWeight: '700' }}>Tasarrufunu takip et</Text>
-            <Muted>Giriş yap, her ay ne kadar kazandığını burada gör.</Muted>
+            <Muted>Giriş yapın, her ay ne kadar kazandığınızı burada görün.</Muted>
           </Card>
         </Pressable>
       )}
@@ -168,7 +175,7 @@ export default function HomeScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>Yemek Planı</Text>
-            <Muted>Menü kur, maliyeti gör, listene aktar.</Muted>
+            <Muted>Menü kurun, maliyeti görün, listenize aktarın.</Muted>
           </View>
           <Icon name="chevron-right" size={20} color={t.textMuted} />
         </Card>
@@ -180,7 +187,7 @@ export default function HomeScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>İndirimden menü</Text>
-            <Text style={{ color: t.accentText, fontSize: 13 }}>Bu hafta indirimdeki malzemelerle menü kur.</Text>
+            <Text style={{ color: t.accentText, fontSize: 14 }}>Bu hafta indirimdeki malzemelerle menü kur.</Text>
           </View>
           <Icon name="chevron-right" size={20} color={t.accentText} />
         </View>
@@ -196,18 +203,18 @@ export default function HomeScreen() {
                 <Card style={{ width: 140, gap: 6, padding: 12 }}>
                   {it.badge && (
                     <Text style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, backgroundColor: t.accent, color: '#fff',
-                      fontSize: 10, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>{it.badge}</Text>
+                      fontSize: 12, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>{it.badge}</Text>
                   )}
                   <View style={{ alignItems: 'center' }}><ProductImage uri={it.image} icon={categoryIcon(it.categoryId)} size={70} /></View>
-                  <Text style={{ color: t.text, fontSize: 12, fontWeight: '600', minHeight: 32 }} numberOfLines={2}>{it.name}</Text>
+                  <Text style={{ color: t.text, fontSize: 13, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{it.name}</Text>
                   {it.price != null && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       {it.marketId != null && <MarketBadge id={it.marketId} size={18} />}
-                      <Text style={{ color: t.tint, fontWeight: '800' }}>{it.price.toFixed(2)} ₺</Text>
+                      <Text style={{ color: t.tint, fontWeight: '800' }}>{formatTL(it.price)} ₺</Text>
                     </View>
                   )}
                   {it.previous != null && it.previous > (it.price ?? 0) && (
-                    <Text style={{ color: t.textMuted, fontSize: 11, textDecorationLine: 'line-through' }}>{it.previous.toFixed(2)} ₺</Text>
+                    <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{formatTL(it.previous)} ₺</Text>
                   )}
                 </Card>
               </Pressable>
@@ -225,7 +232,7 @@ export default function HomeScreen() {
               style={{ width: '23%', flexGrow: 1 }}>
               <Card style={{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, gap: 6 }}>
                 <FoodIcon name={categoryGlyph(c.slug)} size={28} />
-                <Text style={{ color: t.text, fontSize: 11, textAlign: 'center' }} numberOfLines={2}>{c.name}</Text>
+                <Text style={{ color: t.text, fontSize: 13, textAlign: 'center' }} numberOfLines={2}>{c.name}</Text>
               </Card>
             </Pressable>
           ))}
@@ -241,12 +248,12 @@ export default function HomeScreen() {
               <Pressable key={it.id} onPress={() => router.push({ pathname: '/aktuel', params: { market: it.market_slug } })}>
                 <Card style={{ width: 140, gap: 6, padding: 12 }}>
                   <View style={{ alignItems: 'center' }}><ProductImage uri={it.image_url} icon="newspaper-variant-outline" size={70} /></View>
-                  <Text style={{ color: t.text, fontSize: 12, fontWeight: '600', minHeight: 32 }} numberOfLines={2}>{it.title}</Text>
+                  <Text style={{ color: t.text, fontSize: 13, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{it.title}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <MarketBadge slug={it.market_slug} size={18} />
-                    <Text style={{ color: t.tint, fontWeight: '800' }}>{num(it.price).toFixed(2)} ₺</Text>
+                    <Text style={{ color: t.tint, fontWeight: '800' }}>{formatTL(num(it.price))} ₺</Text>
                   </View>
-                  <Text style={{ color: t.textMuted, fontSize: 10 }} numberOfLines={1}>{it.period_label}</Text>
+                  <Text style={{ color: t.textMuted, fontSize: 12 }} numberOfLines={1}>{it.period_label}</Text>
                 </Card>
               </Pressable>
             ))}
@@ -256,7 +263,7 @@ export default function HomeScreen() {
 
       {/* 7) Yakındaki marketler */}
       <View style={{ gap: 10 }}>
-        <SectionHeader title="Yakınındaki Marketler" action="Düzenle" onAction={() => router.push('/stores')} />
+        <SectionHeader title="Yakınınızdaki Marketler" action="Düzenle" onAction={() => router.push('/stores')} />
         {user && stores && stores.length > 0 ? (
           <Card style={{ padding: 0 }}>
             {stores.map((s, i) => (
@@ -271,7 +278,7 @@ export default function HomeScreen() {
           </Card>
         ) : (
           <Pressable onPress={() => router.push(user ? '/stores' : '/login')}>
-            <Card><Muted>Fiyatların senin şubelerine göre hesaplanması için yakınındaki marketleri seç ›</Muted></Card>
+            <Card><Muted>Fiyatların sizin şubelerinize göre hesaplanması için yakınınızdaki marketleri seçin ›</Muted></Card>
           </Pressable>
         )}
       </View>

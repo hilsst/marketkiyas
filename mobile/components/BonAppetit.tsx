@@ -47,7 +47,7 @@ export default function BonAppetit({ dish, onDone }: { dish: string; onDone: () 
             <FoodIcon name="silverware-fork-knife" size={68} color="#fff" />
           </View>
           <Text style={{ color: '#fff', fontSize: 44, fontWeight: '900', letterSpacing: -1, marginTop: 8 }}>Afiyet olsun!</Text>
-          <Text style={{ color: '#fff', opacity: 0.9, fontSize: 17, textAlign: 'center' }}>{dish} hazır. Elinize sağlık.</Text>
+          <Text style={{ color: '#fff', fontSize: 17, textAlign: 'center' }}>{dish} hazır. Elinize sağlık.</Text>
         </Animated.View>
       </Pressable>
     </Modal>

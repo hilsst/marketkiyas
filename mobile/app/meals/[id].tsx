@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth';
 import { ACCOUNT_REASON_TEXT, accountRedirect } from '@/lib/guest';
 import { rescheduleWeekly } from '@/lib/weekly';
 import { ALLERGEN_LABELS, api, COURSE_LABELS, formatSize, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealPlanExport, MealSlot, SLOT_COURSES } from '@/lib/api';
+import { formatTL } from '@/lib/format';
 
 const ORDINALS = ['Birinci', 'İkinci', 'Üçüncü', 'Dördüncü', 'Beşinci', 'Altıncı', 'Yedinci', 'Sekizinci', 'Dokuzuncu', 'Onuncu',
   'On birinci', 'On ikinci', 'On üçüncü', 'On dördüncü'];
@@ -98,7 +99,7 @@ export default function MealPlanScreen() {
           {user?.is_guest && (
             <Pressable onPress={() => { const to = accountRedirect(user, 'plan'); if (to) router.push(to); }}>
               <Card style={{ gap: 4, borderColor: t.tint }}>
-                <Text style={{ color: t.text, fontWeight: '700' }}>Planını kaydet</Text>
+                <Text style={{ color: t.text, fontWeight: '700' }}>Planınızı kaydedin</Text>
                 <Muted>{ACCOUNT_REASON_TEXT.plan} Ücretsiz hesap aç ›</Muted>
               </Card>
             </Pressable>
@@ -121,11 +122,11 @@ export default function MealPlanScreen() {
                 {plan.budget_status.within ? 'Bütçeye uyuyor' : 'Bütçe aşılıyor'}
               </Text>
               <Muted>
-                Bütçe {Number(plan.budget_status.budget).toFixed(2)} ₺ · Alışveriş {Number(plan.budget_status.total).toFixed(2)} ₺
-                {plan.budget_status.within ? '' : ` (${(Number(plan.budget_status.total) - Number(plan.budget_status.budget)).toFixed(2)} ₺ fazla)`}
+                Bütçe {formatTL(Number(plan.budget_status.budget))} ₺ · Alışveriş {formatTL(Number(plan.budget_status.total))} ₺
+                {plan.budget_status.within ? '' : ` (${formatTL((Number(plan.budget_status.total) - Number(plan.budget_status.budget)))} ₺ fazla)`}
               </Muted>
-              {plan.budget_status.swaps > 0 && <Muted style={{ fontSize: 12 }}>Bütçe için {plan.budget_status.swaps} yemek daha ucuzuyla değiştirildi ya da çıkarıldı.</Muted>}
-              {!plan.budget_status.within && <Muted style={{ fontSize: 12 }}>Kişi sayısını azaltmayı ya da tatlı ve içeceği çıkarmayı deneyin.</Muted>}
+              {plan.budget_status.swaps > 0 && <Muted style={{ fontSize: 13 }}>Bütçe için {plan.budget_status.swaps} yemek daha ucuzuyla değiştirildi ya da çıkarıldı.</Muted>}
+              {!plan.budget_status.within && <Muted style={{ fontSize: 13 }}>Kişi sayısını azaltmayı ya da tatlı ve içeceği çıkarmayı deneyin.</Muted>}
             </Card>
           )}
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
@@ -139,17 +140,17 @@ export default function MealPlanScreen() {
                 const missing = SLOT_COURSES[slot].filter(c => !entries.some(e => e.course === c) && (c !== 'yan' || hasMain));
                 return (
                   <View key={slot} style={{ gap: 8 }}>
-                    <Text style={{ color: t.tint, fontWeight: '800', fontSize: 13 }}>{MEAL_SLOT_LABELS[slot].toLocaleUpperCase('tr-TR')}</Text>
+                    <Text style={{ color: t.tint, fontWeight: '800', fontSize: 14 }}>{MEAL_SLOT_LABELS[slot].toLocaleUpperCase('tr-TR')}</Text>
                     {entries.map(e => (
                       <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Pressable style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}
                           onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(e.recipe.id), servings: String(plan.servings) } })}>
                           <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><FoodIcon name={courseGlyph(e.course)} size={20} /></View>
                           <View style={{ flex: 1 }}>
-                            <Muted style={{ fontSize: 12 }}>{COURSE_LABELS[e.course]}</Muted>
+                            <Muted style={{ fontSize: 13 }}>{COURSE_LABELS[e.course]}</Muted>
                             <Text style={{ color: t.text, fontWeight: '600' }}>{e.recipe.name}</Text>
-                            {e.leftover_of != null && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '600' }}>Dünden kalan, pişirmek yok</Text>}
-                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '600' }}>İki kat pişir, yarına kalsın</Text>}
+                            {e.leftover_of != null && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>Dünden kalan, pişirmek yok</Text>}
+                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>İki kat pişir, yarına kalsın</Text>}
                           </View>
                         </Pressable>
                         {changing === 'e' + e.id ? <ActivityIndicator color={t.tint} /> : (
@@ -158,7 +159,7 @@ export default function MealPlanScreen() {
                               hitSlop={6} accessibilityLabel="Başka öner"
                               style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, height: 34, borderRadius: 12, backgroundColor: t.tintSoft }}>
                               <Icon name="refresh-cw" size={15} color={t.tint} />
-                              <Text style={{ color: t.tint, fontWeight: '700', fontSize: 13 }}>Değiştir</Text>
+                              <Text style={{ color: t.tint, fontWeight: '700', fontSize: 14 }}>Değiştir</Text>
                             </Pressable>
                             <Pressable onPress={() => run('e' + e.id, () => api.removeMealEntry(planId, e.id))} disabled={changing != null}
                               hitSlop={6} accessibilityLabel={`${COURSE_LABELS[e.course]} istemiyorum`}
@@ -176,7 +177,7 @@ export default function MealPlanScreen() {
                             onPress={() => run(`a${day}${slot}${c}`, () => api.addMealEntry(planId, day, slot, c))}
                             style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderStyle: 'dashed', borderColor: t.border }}>
                             {changing === `a${day}${slot}${c}` ? <ActivityIndicator color={t.tint} />
-                              : <Text style={{ color: t.textMuted, fontSize: 12 }}>+ {COURSE_LABELS[c]}</Text>}
+                              : <Text style={{ color: t.textMuted, fontSize: 13 }}>+ {COURSE_LABELS[c]}</Text>}
                           </Pressable>
                         ))}
                       </View>
