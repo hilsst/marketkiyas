@@ -17,7 +17,17 @@ echo MarketKıyas açılıyor...
 "%PG%\pg_ctl.exe" -D "%MK%\data" status >nul 2>&1 || "%PG%\pg_ctl.exe" -D "%MK%\data" -l "%MK%\postgres.log" -o "-p 5432 -h localhost" -w start >nul
 
 cd /d "%~dp0backend"
-".venv\Scripts\alembic.exe" upgrade head >nul 2>&1
+rem Güncellemeyle yeni kütüphane gelmiş olabilir (ör. Pillow): eksik kalırsa sunucu hiç açılmaz ve giriş 500 verir
+".venv\Scripts\python.exe" -m pip install -q --disable-pip-version-check -r requirements.txt >"%MK%\pip.log" 2>&1 || (
+  echo !!! Kütüphaneler kurulamadı. %MK%\pip.log dosyasını Claude'a gönderin.
+  pause
+  exit /b 1
+)
+".venv\Scripts\alembic.exe" upgrade head >"%MK%\alembic.log" 2>&1 || (
+  echo !!! Veritabanı güncellenemedi. %MK%\alembic.log dosyasını Claude'a gönderin.
+  pause
+  exit /b 1
+)
 start "MK-API" /min cmd /c ".venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > "%MK%\api.log" 2>&1"
 rem marketfiyati.org.tr'den seçili şubelerin fiyatlarını 6 saatte bir günceller
 start "MK-WORKER" /min cmd /c ".venv\Scripts\python.exe -m app.cli sync-selected --every-hours 6 > "%MK%\worker.log" 2>&1"
