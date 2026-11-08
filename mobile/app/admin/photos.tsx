@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import AuthImage from '@/components/AuthImage';
 import { Button, Card, Muted, useTheme } from '@/components/ui';
-import { API_URL, api, getApiToken, RecipePhotoInfo } from '@/lib/api';
+import { API_URL, api, RecipePhotoInfo } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 /** Yönetici: onay bekleyen üye fotoğrafları. Onaylanan tarifte herkese görünür. */
@@ -32,7 +33,6 @@ export default function AdminPhotos() {
   };
 
   if (!user?.is_admin) return <SafeAreaView style={{ flex: 1, backgroundColor: t.background, padding: 16 }}><Muted>Bu sayfa yöneticilere özel.</Muted></SafeAreaView>;
-  const auth = { Authorization: `Bearer ${getApiToken() ?? ''}` };
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: t.background }}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
@@ -44,7 +44,7 @@ export default function AdminPhotos() {
             <Text style={{ color: t.text, fontWeight: '800' }}>{p.recipe_name}</Text>
             <Muted>{p.credit}</Muted>
             <View style={{ alignItems: 'center' }}>
-              <Image source={{ uri: `${API_URL}/recipe-photos/${p.id}/image`, headers: auth }} style={{ width: 240, height: 300, borderRadius: 12 }} resizeMode="cover" />
+              <AuthImage url={`${API_URL}/recipe-photos/${p.id}/image`} width={240} height={300} />
             </View>
             <Button title="Onayla" onPress={() => review(p, true)} busy={busy === p.id} />
             <Button title="Reddet" kind="secondary" onPress={() => review(p, false)} disabled={busy === p.id} />

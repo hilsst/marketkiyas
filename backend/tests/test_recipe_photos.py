@@ -75,6 +75,10 @@ async def test_upload_needs_approval_then_visible(client, auth_headers, tmp_path
 
     # yönetici olmayan onaylayamaz
     assert (await client.post(f"/api/admin/recipe-photos/{pid}/approve", headers=auth_headers)).status_code == 403
+    # yönetici bekleyen fotoğrafı da ham halini de görebilir
+    r = await client.get(f"/api/recipe-photos/{pid}/image", headers=admin)
+    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg" and len(r.content) > 1000
+    assert (await client.get(f"/api/recipe-photos/{pid}/image?original=1", headers=admin)).status_code == 200
     assert len((await client.get("/api/admin/recipe-photos", headers=admin)).json()) == 1
     assert (await client.post(f"/api/admin/recipe-photos/{pid}/approve", headers=admin)).status_code == 200
 
