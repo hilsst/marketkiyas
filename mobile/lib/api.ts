@@ -351,13 +351,22 @@ export const api = {
     const form = new FormData();
     form.append('file', { uri: fileUri, name: 'yemek.jpg', type: 'image/jpeg' } as unknown as Blob);
     form.append('share_name', String(shareName));
-    const res = await fetch(`${API_URL}/recipes/${id}/photos`, { method: 'POST', body: form,
-      headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      throw new ApiError(typeof data?.detail === 'string' ? data.detail : `Fotoğraf yüklenemedi (${res.status})`, res.status);
-    }
-    return res.json();
+    // Expo'nun fetch'i {uri,name,type} dosya biçimini desteklemez ("Unsupported FormDataPart"); XHR destekler
+    return new Promise<RecipePhotoInfo>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_URL}/recipes/${id}/photos`);
+      xhr.setRequestHeader('Accept', 'application/json');
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.timeout = 60000;
+      xhr.onload = () => {
+        let data: { detail?: unknown } | null = null;
+        try { data = JSON.parse(xhr.responseText); } catch { /* yoksay */ }
+        if (xhr.status >= 200 && xhr.status < 300) resolve(data as unknown as RecipePhotoInfo);
+        else reject(new ApiError(typeof data?.detail === 'string' ? data.detail : `Fotoğraf yüklenemedi (${xhr.status})`, xhr.status));
+      };
+      xhr.onerror = xhr.ontimeout = () => reject(new ApiError('Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.', 0));
+      xhr.send(form);
+    });
   },
   adminRecipePhotos: () => request<RecipePhotoInfo[]>('GET', '/admin/recipe-photos'),
   reviewRecipePhoto: (id: number, approve: boolean, reason?: string) =>
