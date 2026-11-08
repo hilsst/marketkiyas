@@ -48,6 +48,10 @@ services:
       ENVIRONMENT: production
       DATABASE_URL: postgresql+asyncpg://marketkiyas:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}@db:5432/marketkiyas
       TRUST_FORWARDED_FOR: "true"  # Caddy arkasında istemci IP'si X-Forwarded-For'dan okunur
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}  # yemek fotoğraflarını onaylayacak yöneticiler (virgülle)
+    volumes:  # üye fotoğrafları kalıcı olmalı
+      - photos:/app/media/recipe-photos
+      - photos_original:/app/media/recipe-photos-original
     entrypoint: []
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000",
               "--workers", "${API_WORKERS:-2}", "--proxy-headers", "--forwarded-allow-ips", "*"]
@@ -127,5 +131,7 @@ services:
 
 volumes:
   pgdata:
+  photos:
+  photos_original:
   caddy_data:
   caddy_config:

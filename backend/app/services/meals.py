@@ -70,6 +70,7 @@ from app.services.catalog import search_groups, search_groups_many
 from app.services.ingredient_match import grocery_like, name_matches, unit_compatible
 from app.services.normalize import normalize_text
 from app.services.pricing import PRICE_MAX_AGE
+from app.services.recipe_media import recipe_image_url
 
 log = logging.getLogger("marketkiyas.meals")
 
@@ -182,7 +183,8 @@ def recipe_summary(recipe: Recipe, liked: set[int] | None = None) -> RecipeSumma
         cook_minutes=recipe.cook_minutes,
         description=recipe.description,
         icon=recipe.icon,
-        image_url=recipe.image_url,
+        image_url=f"/recipe-photos/{recipe.photo_id}/image" if recipe.photo_id else recipe_image_url(recipe.slug, recipe.image_url),
+        photo_credit=recipe.photo_credit if recipe.photo_id else None,
         allergens=recipe.allergen_list,
         diets=recipe.diet_list,
         nutrition=nutrition_of(recipe),

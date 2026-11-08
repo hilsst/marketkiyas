@@ -16,7 +16,8 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${devHost}:300
 export type Money = string; // sunucu Decimal'leri metin gönderir: "32.50"
 export type Unit = 'ml' | 'g' | 'adet';
 
-export interface User { id: number; email: string | null; full_name: string | null; has_password: boolean; is_guest: boolean; }
+export interface RecipePhotoInfo { id: number; recipe_id: number; recipe_name: string | null; status: 'pending' | 'approved' | 'rejected'; credit: string; reject_reason: string | null; }
+export interface User { id: number; email: string | null; full_name: string | null; has_password: boolean; is_guest: boolean; is_admin?: boolean; }
 export interface AuthResponse { access_token: string; token_type: string; expires_in: number; user: User; }
 export interface Market { id: number; slug: string; name: string; color: string | null; logo_url: string | null; }
 export interface Category { id: number; slug: string; name: string; icon: string | null; parent_id: number | null; }
@@ -132,7 +133,7 @@ export interface Cuisine { slug: string; name: string; icon: string | null; is_d
 export interface RecipeSummary {
   id: number; slug: string; name: string; cuisine: string; course: string; course_type: CourseType; pairs_with: string[];
   meal_slots: MealSlot[]; servings: number;
-  prep_minutes: number; cook_minutes: number; description: string; icon: string | null; image_url: string | null;
+  prep_minutes: number; cook_minutes: number; description: string; icon: string | null; image_url: string | null; photo_credit?: string | null;
   allergens: Allergen[]; diets: Diet[]; nutrition: Nutrition | null; like_count: number; liked: boolean;
   /** "Dolabımda ne var" aramasında alınması gereken malzemeler */
   missing?: string[] | null;
@@ -197,6 +198,7 @@ let onUnauthorized: (() => void) | null = null;
 
 /** Oturum değişince auth katmanı çağırır; her istek bu anahtarı taşır. */
 export function setApiToken(value: string | null) { token = value; }
+export const getApiToken = () => token;
 export function setUnauthorizedHandler(fn: (() => void) | null) { onUnauthorized = fn; }
 
 const qs = (params: Record<string, string | number | null | undefined>) => {
@@ -342,6 +344,22 @@ export const api = {
     const base = qs({ cuisine });
     return request<RecipeSummary[]>('GET', '/recipes' + base + (filters ? (base ? '&' : '?') + filters : ''));
   },
+  /** Üye fotoğrafı: sunucu düzeltir ve yönetici onayına düşer */
+  uploadRecipePhoto: async (id: number, fileUri: string, shareName: boolean): Promise<RecipePhotoInfo> => {
+    const form = new FormData();
+    form.append('file', { uri: fileUri, name: 'yemek.jpg', type: 'image/jpeg' } as unknown as Blob);
+    form.append('share_name', String(shareName));
+    const res = await fetch(`${API_URL}/recipes/${id}/photos`, { method: 'POST', body: form,
+      headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new ApiError(typeof data?.detail === 'string' ? data.detail : `Fotoğraf yüklenemedi (${res.status})`, res.status);
+    }
+    return res.json();
+  },
+  adminRecipePhotos: () => request<RecipePhotoInfo[]>('GET', '/admin/recipe-photos'),
+  reviewRecipePhoto: (id: number, approve: boolean, reason?: string) =>
+    request<RecipePhotoInfo>('POST', `/admin/recipe-photos/${id}/${approve ? 'approve' : 'reject'}`, approve ? undefined : { reason: reason ?? null }),
   likeRecipe: (id: number, like: boolean) => request<void>(like ? 'PUT' : 'DELETE', `/recipes/${id}/like`),
   recipe: (id: number, servings?: number) => request<RecipeDetail>('GET', '/recipes/' + id + qs({ servings })),
   mealPlans: () => request<MealPlanSummary[]>('GET', '/meal-plans'),

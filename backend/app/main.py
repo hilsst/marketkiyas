@@ -3,11 +3,13 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.analytics_middleware import AnalyticsMiddleware
 from app.core.config import settings
+from app.services.recipe_media import RECIPE_MEDIA_DIR
 
 log = logging.getLogger("marketkiyas")
 
@@ -53,3 +55,6 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+# Tarif fotoğrafları: backend/media/recipes/<slug>.jpg
+app.mount("/api/media/recipes", StaticFiles(directory=RECIPE_MEDIA_DIR, check_dir=False), name="recipe-media")

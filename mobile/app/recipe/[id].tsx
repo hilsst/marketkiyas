@@ -1,17 +1,21 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { courseGlyph } from '@/lib/icons';
+import { pickPhoto } from '@/lib/userPhotos';
 import FoodIcon from '@/components/FoodIcon';
+import Icon from '@/components/Icon';
 import MealCostCard from '@/components/MealCostCard';
+import RecipeImage from '@/components/RecipeImage';
 import NutritionCard from '@/components/NutritionCard';
 import AddRecipeToList from '@/components/AddRecipeToList';
 import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
 import { ALLERGEN_LABELS, api, DIET_LABELS, MEAL_SLOT_LABELS, RecipeDetail } from '@/lib/api';
 import { scaleAmount } from '@/lib/amount';
 import { useAuth } from '@/lib/auth';
+import { accountRedirect } from '@/lib/guest';
 
 /** Tarif: malzemeler, yapılışı ve seçilen kişi sayısına göre maliyet */
 export default function RecipeScreen() {
@@ -60,15 +64,57 @@ export default function RecipeScreen() {
     </Pressable>
   );
 
+  const upload = async (from: 'camera' | 'library', shareName: boolean) => {
+    try {
+      const picked = await pickPhoto(from);
+      if (picked === 'cancel') return;
+      if (picked === 'denied') { Alert.alert('Kamera izni gerekli', 'Fotoğraf çekmek için ayarlardan kamera iznini açabilirsiniz. Galeriden seçmek için izin gerekmez.'); return; }
+      await api.uploadRecipePhoto(recipe.id, picked.uri, shareName);
+      Alert.alert('Teşekkürler!', 'Fotoğrafın yöneticiye gönderildi. Onaylanınca bu tarifte herkese görünecek.');
+    } catch (e) {
+      Alert.alert('Fotoğraf eklenemedi', e instanceof Error ? e.message : 'Lütfen tekrar deneyin.');
+    }
+  };
+  const photoMenu = () => {
+    if (user?.is_guest || !user) {
+      Alert.alert('Üye olmalısın', 'Fotoğraf eklemek için ücretsiz hesap açman gerekiyor.', [
+        { text: 'Hesap aç', onPress: () => { const to = accountRedirect(user, 'save'); if (to) router.push(to); } },
+        { text: 'Vazgeç', style: 'cancel' },
+      ]);
+      return;
+    }
+    const withName = (from: 'camera' | 'library') => Alert.alert('Adın görünsün mü?',
+      'Fotoğraf onaylanınca tüm kullanıcılara görünür. Altına adın yazılabilir ("' + (user.full_name?.split(' ')[0] || 'Adın') + ' tarafından eklendi"); istemezsen "Bir kullanıcı tarafından eklendi" yazar. Fotoğrafın konum bilgisi silinir.', [
+        { text: 'Adım görünsün', onPress: () => upload(from, true) },
+        { text: 'Adsız ekle', onPress: () => upload(from, false) },
+        { text: 'Vazgeç', style: 'cancel' },
+      ]);
+    Alert.alert('Yemek fotoğrafı ekle', 'Fotoğrafın otomatik düzeltilir ve yönetici onayından sonra herkese görünür.', [
+      { text: 'Fotoğraf çek', onPress: () => withName('camera') },
+      { text: 'Galeriden seç', onPress: () => withName('library') },
+      { text: 'Vazgeç', style: 'cancel' },
+    ]);
+  };
+
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: t.background }}>
       <Stack.Screen options={{ title: recipe.name }} />
       <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 16, gap: 16 }}>
           <View style={{ alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <FoodIcon name={courseGlyph(recipe.course_type)} size={60} />
-            </View>
+            {recipe.image_url ? (
+              <RecipeImage uri={recipe.image_url} icon={courseGlyph(recipe.course_type)} width={320} height={400} radius={16} iconSize={60} />
+            ) : (
+              <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
+                <FoodIcon name={courseGlyph(recipe.course_type)} size={60} />
+              </View>
+            )}
+            {recipe.photo_credit && <Muted style={{ fontSize: 13, fontStyle: 'italic' }}>{recipe.photo_credit}</Muted>}
+            <Pressable onPress={photoMenu} hitSlop={8} accessibilityLabel="Fotoğraf ekle"
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Icon name="camera" size={16} color={t.tint} />
+              <Text style={{ color: t.tint, fontWeight: '700' }}>Fotoğraf ekle</Text>
+            </Pressable>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5, marginTop: 6 }}>{recipe.name}</Text>
             <Muted style={{ textAlign: 'center' }}>{recipe.description}</Muted>
             <Muted>

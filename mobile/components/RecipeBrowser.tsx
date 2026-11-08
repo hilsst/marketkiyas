@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import FoodIcon from '@/components/FoodIcon';
+import RecipeImage from '@/components/RecipeImage';
 import { Card, Chip, Muted, useTheme } from '@/components/ui';
 import { COURSE_LABELS, CourseType, Cuisine, RecipeSummary } from '@/lib/api';
 import { courseGlyph, cuisineGlyph } from '@/lib/icons';
@@ -15,9 +16,7 @@ const RecipeCard = memo(function RecipeCard({ r, showCuisine }: { r: RecipeSumma
     <Pressable onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(r.id) } })}>
       <Card style={{ width: 132, gap: 4, padding: 12 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <FoodIcon name={courseGlyph(r.course_type)} size={22} />
-          </View>
+          <RecipeImage uri={r.image_url} icon={courseGlyph(r.course_type)} width={42} radius={10} iconSize={22} />
           {showCuisine && <FoodIcon name={cuisineGlyph(r.cuisine)} size={16} color={t.textMuted} />}
         </View>
         <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{r.name}</Text>

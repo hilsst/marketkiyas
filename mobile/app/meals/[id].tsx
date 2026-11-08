@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ExportSuccessSheet from '@/components/ExportSuccessSheet';
 import ListPicker from '@/components/ListPicker';
+import RecipeImage from '@/components/RecipeImage';
 import MealCostCard from '@/components/MealCostCard';
 import NutritionCard from '@/components/NutritionCard';
 import { ActionBar, Button, Card, Muted, useTheme } from '@/components/ui';
@@ -145,7 +146,7 @@ export default function MealPlanScreen() {
                       <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Pressable style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}
                           onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(e.recipe.id), servings: String(plan.servings) } })}>
-                          <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><FoodIcon name={courseGlyph(e.course)} size={20} /></View>
+                          <RecipeImage uri={e.recipe.image_url} icon={courseGlyph(e.course)} width={48} radius={10} iconSize={20} />
                           <View style={{ flex: 1 }}>
                             <Muted style={{ fontSize: 13 }}>{COURSE_LABELS[e.course]}</Muted>
                             <Text style={{ color: t.text, fontWeight: '600' }}>{e.recipe.name}</Text>

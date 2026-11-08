@@ -8,6 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BonAppetit from '@/components/BonAppetit';
 import Icon from '@/components/Icon';
+import RecipeImage from '@/components/RecipeImage';
+import { courseGlyph } from '@/lib/icons';
 import { Muted, useTheme } from '@/components/ui';
 import { scaleAmount } from '@/lib/amount';
 import { api, RecipeDetail } from '@/lib/api';
@@ -183,6 +185,7 @@ export default function CookScreen() {
       <ScrollView contentContainerStyle={{ padding: 20, gap: 18, flexGrow: 1 }}>
         {step === 0 ? (
           <>
+            <RecipeImage uri={recipe.image_url} icon={courseGlyph(recipe.course_type)} width={320} height={200} radius={16} />
             <Text style={{ color: t.tint, fontWeight: '800' }}>HAZIRLIK · {total} ADIM</Text>
             <Text style={{ color: t.text, fontSize: 26, fontWeight: '800' }}>Malzemeleri hazırla</Text>
             {people !== recipe.servings && <Muted>Ölçüler {people} kişiye göre ayarlandı.</Muted>}

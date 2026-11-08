@@ -58,3 +58,15 @@ async def get_optional_user(
 
 
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]
+
+
+async def get_admin_user(user: AccountUser) -> User:
+    """Yönetici: e-postası ADMIN_EMAILS listesinde olan üye."""
+    from app.core.config import settings
+
+    if not user.email or user.email.lower() not in settings.admin_email_list:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Bu işlem için yönetici olmalısın")
+    return user
+
+
+AdminUser = Annotated[User, Depends(get_admin_user)]

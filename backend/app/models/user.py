@@ -33,6 +33,12 @@ class User(TimestampMixin, Base):
     )
 
     @property
+    def is_admin(self) -> bool:
+        from app.core.config import settings
+
+        return bool(self.email) and self.email.lower() in settings.admin_email_list
+
+    @property
     def has_password(self) -> bool:
         return self.password_hash is not None
 

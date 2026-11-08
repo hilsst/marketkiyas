@@ -32,6 +32,7 @@ class UserOut(BaseModel):
     full_name: str | None
     created_at: datetime
     has_password: bool = True  # Google/Apple ile girenin şifresi yok (hesap silmede şifre sorulmaz)
+    is_admin: bool = False  # yemek fotoğraflarını onaylayabilir (ADMIN_EMAILS)
     is_guest: bool = False  # hesapsız başladı; kaydetme/paylaşma anında hesap açması istenir
 
 

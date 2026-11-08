@@ -5,6 +5,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    @property
+    def admin_email_list(self) -> list[str]:
+        return [e.strip().lower() for e in self.admin_emails.split(",") if e.strip()]
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "MarketKıyas API"
@@ -32,6 +36,9 @@ class Settings(BaseSettings):
     scraper_min_interval_seconds: float = 3.0
     # Boşsa Playwright'ın kendi indirdiği Chromium kullanılır; hazır kurulu bir Chromium için yolunu verin
     chromium_executable_path: str | None = None
+
+    # Yönetici e-postaları (virgülle): yemek fotoğraflarını onaylayabilir
+    admin_emails: str = ""
 
     # Next.js frontend adresleri, virgülle ayrılmış
     cors_origins: str = "http://localhost:3000"
