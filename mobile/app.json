@@ -38,6 +38,7 @@
       ],
       "expo-secure-store",
       "expo-audio",
+      ["expo-image-picker", { "cameraPermission": "Yemeklerinize kendi fotoğrafınızı eklemek için kamera kullanılır. Fotoğraf yalnızca telefonunuzda saklanır.", "photosPermission": false, "microphonePermission": false }],
       "expo-notifications",
       [
         "expo-location",

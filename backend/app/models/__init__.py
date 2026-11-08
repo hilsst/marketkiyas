@@ -26,6 +26,7 @@ from app.models.reports import PriceReport
 from app.models.savings import SavingsRecord
 from app.models.stores import Store, StorePrice, UserStore
 from app.models.shopping import ListMember, ShoppingList, ShoppingListItem
+from app.models.recipe_photo import RecipePhoto
 from app.models.user import PasswordReset, User
 
 __all__ = [
@@ -46,6 +47,7 @@ __all__ = [
     "Recipe",
     "RecipeIngredient",
     "RecipeLike",
+    "RecipePhoto",
     "Allergen",
     "Diet",
     "Family",

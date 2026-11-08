@@ -100,6 +100,9 @@ class Recipe(Base):
     steps: Mapped[str] = mapped_column(Text)  # her satır bir adım
     icon: Mapped[str | None] = mapped_column(String(16))
     image_url: Mapped[str | None] = mapped_column(String(1024))
+    # Yönetici onaylı kullanıcı fotoğrafı (varsa varsayılan görselin önüne geçer): sunucuya göreli yol + altyazı
+    photo_id: Mapped[int | None] = mapped_column(Integer)
+    photo_credit: Mapped[str | None] = mapped_column(String(120))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     # Alerjenler (Allergen, virgülle) ve uyduğu diyetler (vejetaryen, vegan; glutensiz alerjenden çıkar)
     allergens: Mapped[str] = mapped_column(String(128), default="", server_default="")

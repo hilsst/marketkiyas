@@ -42,6 +42,7 @@ class RecipeSummary(BaseModel):
     description: str
     icon: str | None
     image_url: str | None
+    photo_credit: str | None = None  # "Ayşe tarafından eklendi" (kullanıcı fotoğrafı varsa)
     allergens: list[Allergen]
     diets: list[Diet]
     nutrition: Nutrition | None  # kişi başı bir porsiyon, yaklaşık
