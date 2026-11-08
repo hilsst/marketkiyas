@@ -134,7 +134,7 @@ export default function HomeScreen() {
         style={{ borderRadius: 16, backgroundColor: t.card, padding: 15, flexDirection: 'row', alignItems: 'center', gap: 10,
           shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
         <Icon name="search" size={20} color={t.textMuted} />
-        <Muted style={{ fontSize: 15 }}>Ürün ara (örn. süt, ekmek, deterjan)</Muted>
+        <Muted style={{ fontSize: 15 }}>Ürün ya da tarif ara</Muted>
       </Pressable>
 
       <AdSlot placement="home-top" />

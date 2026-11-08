@@ -42,10 +42,12 @@ async def list_recipes(
     course: CourseType | None = None, diet: Annotated[list[Diet] | None, Query()] = None,
     avoid: Annotated[list[Allergen] | None, Query()] = None,
     have: Annotated[list[str] | None, Query(max_length=60)] = None,
+    q: Annotated[str | None, Query(max_length=100)] = None,
 ) -> list[RecipeSummary]:
     """En sevilen tarifler önce. diet=vegan&avoid=gluten: yalnız uyanlar. have=Nohut&have=Pirinç
-    ("Dolabımda ne var"): bu malzemeleri kullananlar, en az eksiği olan önce (eksikler `missing`'de)."""
-    return await svc.list_recipes(db, cuisine, slot, course, diet, avoid, user.id if user else None, have)
+    ("Dolabımda ne var"): bu malzemeleri kullananlar, en az eksiği olan önce (eksikler `missing`'de).
+    q=kofte: tarif adında ya da malzemesinde geçenler (aksan/büyük-küçük harf fark etmez); adı eşleşenler önce."""
+    return await svc.list_recipes(db, cuisine, slot, course, diet, avoid, user.id if user else None, have, q)
 
 
 @router.get("/ingredients", response_model=list[IngredientChoice])
