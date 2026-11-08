@@ -4,15 +4,19 @@ EXIF (konum dahil) temizlenir. Yapay zeka kullanılmaz: yemeğin kendisini deği
 import io
 
 from fastapi import HTTPException
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps, UnidentifiedImageError
 
 MAX_BYTES = 8 * 1024 * 1024
 MIN_SIDE = 600
 OUT_SIZE = (1200, 1500)  # 4:5 dikey
-Image.MAX_IMAGE_PIXELS = 60_000_000
 
 
 def enhance_photo(data: bytes) -> bytes:
+    # Pillow burada yüklenir: eksik kuruluysa yalnız fotoğraf yükleme çalışmaz, tüm sunucu çökmez
+    try:
+        from PIL import Image, ImageEnhance, ImageFilter, ImageOps, UnidentifiedImageError
+    except ImportError:
+        raise HTTPException(503, "Fotoğraf işleme şu an kullanılamıyor") from None
+    Image.MAX_IMAGE_PIXELS = 60_000_000
     if len(data) > MAX_BYTES:
         raise HTTPException(413, "Fotoğraf en fazla 8 MB olabilir")
     try:
