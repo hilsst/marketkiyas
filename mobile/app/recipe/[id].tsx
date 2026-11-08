@@ -70,26 +70,26 @@ export default function RecipeScreen() {
       if (picked === 'cancel') return;
       if (picked === 'denied') { Alert.alert('Kamera izni gerekli', 'Fotoğraf çekmek için ayarlardan kamera iznini açabilirsiniz. Galeriden seçmek için izin gerekmez.'); return; }
       await api.uploadRecipePhoto(recipe.id, picked.uri, shareName);
-      Alert.alert('Teşekkürler!', 'Fotoğrafın yöneticiye gönderildi. Onaylanınca bu tarifte herkese görünecek.');
+      Alert.alert('Teşekkürler!', 'Fotoğrafınız yöneticiye gönderildi. Onaylanınca bu tarifte herkese görünecek.');
     } catch (e) {
       Alert.alert('Fotoğraf eklenemedi', e instanceof Error ? e.message : 'Lütfen tekrar deneyin.');
     }
   };
   const photoMenu = () => {
     if (user?.is_guest || !user) {
-      Alert.alert('Üye olmalısın', 'Fotoğraf eklemek için ücretsiz hesap açman gerekiyor.', [
+      Alert.alert('Üye olmalısınız', 'Fotoğraf eklemek için ücretsiz hesap açmanız gerekiyor.', [
         { text: 'Hesap aç', onPress: () => { const to = accountRedirect(user, 'save'); if (to) router.push(to); } },
         { text: 'Vazgeç', style: 'cancel' },
       ]);
       return;
     }
-    const withName = (from: 'camera' | 'library') => Alert.alert('Adın görünsün mü?',
-      'Fotoğraf onaylanınca tüm kullanıcılara görünür. Altına adın yazılabilir ("' + (user.full_name?.split(' ')[0] || 'Adın') + ' tarafından eklendi"); istemezsen "Bir kullanıcı tarafından eklendi" yazar. Fotoğrafın konum bilgisi silinir.', [
+    const withName = (from: 'camera' | 'library') => Alert.alert('Adınız görünsün mü?',
+      'Fotoğraf onaylanınca tüm kullanıcılara görünür. Altına adınız yazılabilir ("' + (user.full_name?.split(' ')[0] || 'Adınız') + ' tarafından eklendi"); istemezseniz "Bir kullanıcı tarafından eklendi" yazar. Fotoğrafın konum bilgisi silinir. Sonraki ekranda fotoğrafı seçip sağ üstteki KIRP\'a dokunduğunuzda fotoğraf gönderilir.', [
         { text: 'Adım görünsün', onPress: () => upload(from, true) },
         { text: 'Adsız ekle', onPress: () => upload(from, false) },
         { text: 'Vazgeç', style: 'cancel' },
       ]);
-    Alert.alert('Yemek fotoğrafı ekle', 'Fotoğrafın otomatik düzeltilir ve yönetici onayından sonra herkese görünür.', [
+    Alert.alert('Yemek fotoğrafı ekle', 'Fotoğrafınız otomatik düzeltilir ve yönetici onayından sonra herkese görünür.', [
       { text: 'Fotoğraf çek', onPress: () => withName('camera') },
       { text: 'Galeriden seç', onPress: () => withName('library') },
       { text: 'Vazgeç', style: 'cancel' },
