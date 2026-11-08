@@ -12,7 +12,7 @@ import enum
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -80,6 +80,12 @@ class Cuisine(Base):
 
 class Recipe(Base):
     __tablename__ = "recipes"
+    __table_args__ = (
+        Index(
+            "ix_recipes_search_text_trgm", "search_text",
+            postgresql_using="gin", postgresql_ops={"search_text": "gin_trgm_ops"},
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     cuisine_id: Mapped[int] = mapped_column(ForeignKey("cuisines.id", ondelete="CASCADE"), index=True)
@@ -121,6 +127,8 @@ class Recipe(Base):
     missing_ingredients: Mapped[str | None] = mapped_column(String(512))
     # Özel dönemler (virgülle): "ramazan" = iftar/sahur menülerinde önerilir
     tags: Mapped[str] = mapped_column(String(64), default="", server_default="")
+    # Arama için: normalize edilmiş tarif adı + malzeme adları (meals.refresh_search_text doldurur)
+    search_text: Mapped[str] = mapped_column(Text, default="", server_default="")
 
     cuisine: Mapped[Cuisine] = relationship(back_populates="recipes")
     ingredients: Mapped[list["RecipeIngredient"]] = relationship(

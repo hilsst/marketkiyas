@@ -15,6 +15,12 @@ describe('guest and trust endpoints', () => {
     }) as unknown as typeof fetch;
   });
 
+  it('searches recipes with an encoded query', async () => {
+    await api.searchRecipes('köfte & nohut');
+    expect(calls[0].url).toMatch(/\/recipes\?q=k%C3%B6fte%20%26%20nohut$/);
+    expect(calls[0].init.method).toBe('GET');
+  });
+
   it('starts a guest without credentials', async () => {
     await api.guest();
     expect(calls[0].url).toMatch(/\/auth\/guest$/);

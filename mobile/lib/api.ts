@@ -344,6 +344,8 @@ export const api = {
     const base = qs({ cuisine });
     return request<RecipeSummary[]>('GET', '/recipes' + base + (filters ? (base ? '&' : '?') + filters : ''));
   },
+  /** Tarif arama: ad ya da malzemede geçenler (aksan/büyük-küçük harf fark etmez), adı eşleşenler önce */
+  searchRecipes: (q: string) => request<RecipeSummary[]>('GET', '/recipes' + qs({ q })),
   /** Üye fotoğrafı: sunucu düzeltir ve yönetici onayına düşer */
   uploadRecipePhoto: async (id: number, fileUri: string, shareName: boolean): Promise<RecipePhotoInfo> => {
     const form = new FormData();

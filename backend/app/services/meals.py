@@ -202,7 +202,7 @@ async def liked_ids(db: AsyncSession, user_id: int | None) -> set[int]:
 async def list_recipes(
     db: AsyncSession, cuisine: str | None, slot: MealSlot | None, course: CourseType | None = None,
     diets: list[Diet] | None = None, avoid: list[Allergen] | None = None, user_id: int | None = None,
-    have: list[str] | None = None,
+    have: list[str] | None = None, q: str | None = None,
 ) -> list[RecipeSummary]:
     """En sevilenler önce (başlangıç puanı + kullanıcı beğenileri).
 
@@ -214,12 +214,24 @@ async def list_recipes(
     )
     if cuisine:
         stmt = stmt.where(Cuisine.slug == cuisine)
+    words = normalize_text(q or "").split()
+    for word in words:  # her sözcük tarif adında ya da malzemelerinde geçmeli (trigram GIN indeksi)
+        stmt = stmt.where(Recipe.search_text.contains(word))
     recipes = [
         r for r in (await db.scalars(stmt.order_by(Recipe.id))).all()
         if (slot is None or slot in r.slots) and (course is None or r.course_type is course)
         and r.suits(diets or [], avoid or [])
     ]
-    recipes.sort(key=lambda r: (-r.score, r.id))
+    if words:
+        phrase = " ".join(words)
+
+        def rank(r: Recipe) -> int:  # 0: ad bu ifadeyle başlıyor, 1: adda geçiyor, 2: yalnız malzemede
+            name = normalize_text(r.name)
+            return 0 if name.startswith(phrase) else 1 if all(w in name for w in words) else 2
+
+        recipes.sort(key=lambda r: (rank(r), -r.score, r.id))
+    else:
+        recipes.sort(key=lambda r: (-r.score, r.id))
     liked = await liked_ids(db, user_id)
     home = have_set(have or [])
     if not home:
@@ -536,12 +548,27 @@ async def _has_catalog(db: AsyncSession) -> bool:
     ) > 0
 
 
+async def refresh_search_text(db: AsyncSession) -> int:
+    """Tarif adı + malzeme adlarını (aksansız, küçük harf) recipes.search_text'e yazar; tarif aramasının
+    dayandığı sütun. Yeni ya da değişen tarifler için API açılışında ve bulunabilirlik kontrolünde çalışır."""
+    recipes = (await db.scalars(select(Recipe).options(selectinload(Recipe.ingredients)))).all()
+    changed = 0
+    for r in recipes:
+        text_ = normalize_text(" ".join([r.name, *(i.name for i in r.ingredients)]))
+        if r.search_text != text_:
+            r.search_text = text_
+            changed += 1
+    await db.commit()
+    return changed
+
+
 async def refresh_availability(db: AsyncSession) -> dict[str, int]:
     """Her tarifin malzemelerini uygulamadaki bütün marketlerin kataloğunda arar; bulunamayanları
     recipes.missing_ingredients'a yazar. Eksiği olan tarif planlarda ve listelerde görünmez.
 
     Evde var sayılan (tuz, karabiber gibi) malzemelere bakılmaz. Katalog boşsa (henüz senkronizasyon
     yapılmamış) hiçbir tarif gizlenmez. Fiyat senkronizasyonundan sonra ve API açılışında çalışır."""
+    await refresh_search_text(db)
     recipes = (await db.scalars(
         select(Recipe).where(Recipe.is_active).options(selectinload(Recipe.ingredients)).order_by(Recipe.id)
     )).all()
