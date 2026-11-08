@@ -8,12 +8,13 @@ import Flyer from '@/components/Flyer';
 import ListPicker from '@/components/ListPicker';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
-import { Button, Card, Muted, Screen, useTheme } from '@/components/ui';
+import { Button, Card, Chip, Muted, Screen, useTheme } from '@/components/ui';
 import { api, formatSize, GroupDetail, GroupSummary, num, PriceAlert } from '@/lib/api';
 import PriceReport from '@/components/PriceReport';
 import { useAuth } from '@/lib/auth';
 import { priceFreshness } from '@/lib/trust';
 import { useCatalog } from '@/lib/catalog';
+import { Coords, formatKm, getCoords } from '@/lib/location';
 import { formatTL } from '@/lib/format';
 
 /**
@@ -37,9 +38,14 @@ export default function ProductScreen() {
   const [alertNote, setAlertNote] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
 
+  // Fiyatlar varsayılan olarak en yakın şubeden uzağa dizilir; "En ucuz" bir seçenektir
+  const [at, setAt] = useState<Coords | null | undefined>(undefined);
+  const [byPrice, setByPrice] = useState(false);
+  useEffect(() => { getCoords().then(r => setAt(r.coords)); }, []);
   useEffect(() => {
-    api.productGroup(Number(id)).then(setGroup).catch(() => setGroup(null));
-  }, [id]);
+    if (at === undefined) return;
+    api.productGroup(Number(id), at).then(setGroup).catch(() => setGroup(null));
+  }, [id, at]);
   const [similar, setSimilar] = useState<GroupSummary[]>([]);
   useEffect(() => {
     if (!user) return;
@@ -57,9 +63,16 @@ export default function ProductScreen() {
   const offers = useMemo(() => (group?.products ?? [])
     .filter(p => p.price != null)
     .flatMap(p => p.store_prices.length
-      ? p.store_prices.map(sp => ({ key: `${p.id}-${sp.store_id}`, product: p, store: sp.store_name as string | null, storeId: sp.store_id as number | null, price: num(sp.price), fresh: priceFreshness(sp.updated_at) }))
-      : [{ key: String(p.id), product: p, store: p.store_name, storeId: p.store_id, price: num(p.price), fresh: priceFreshness(p.price_updated_at) }])
+      ? p.store_prices.map(sp => ({ key: `${p.id}-${sp.store_id}`, product: p, store: sp.store_name as string | null, storeId: sp.store_id as number | null, price: num(sp.price), fresh: priceFreshness(sp.updated_at), km: sp.distance_km ?? null }))
+      : [{ key: String(p.id), product: p, store: p.store_name, storeId: p.store_id, price: num(p.price), fresh: priceFreshness(p.price_updated_at), km: p.distance_km ?? null }])
     .sort((a, b) => a.price - b.price), [group]);
+  const hasDistance = offers.some(o => o.km != null);
+  const nearFirst = hasDistance && !byPrice;
+  // Yakınlık sırası: konumu bilinmeyen şube sona; eşit uzaklıkta ucuz olan önce
+  const shownOffers = useMemo(() => nearFirst
+    ? [...offers].sort((a, b) => (a.km == null ? 1 : 0) - (b.km == null ? 1 : 0) || (a.km ?? 0) - (b.km ?? 0) || a.price - b.price)
+    : offers, [offers, nearFirst]);
+  const cheapestKey = offers[0]?.key;
 
   const addTo = async (target: number) => {
     const updated = await api.addItem(target, Number(id), selected);
@@ -102,8 +115,14 @@ export default function ProductScreen() {
         <Text style={{ color: t.text, fontWeight: '700', padding: 14 }}>
           {new Set(offers.map(o => o.product.market_id)).size} markette bulundu
         </Text>
+        {hasDistance && (
+          <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingBottom: 10 }}>
+            <Chip label="En yakın" on={!byPrice} onPress={() => setByPrice(false)} />
+            <Chip label="En ucuz" on={byPrice} onPress={() => setByPrice(true)} />
+          </View>
+        )}
         <ScrollView>
-        {offers.map((o, i) => (
+        {shownOffers.map((o, i) => (
           <Pressable key={o.key} onPress={() => setSelected(selected === o.product.id ? null : o.product.id)}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderTopWidth: 1, borderTopColor: t.border,
               backgroundColor: selected === o.product.id ? t.tint + '22' : 'transparent' }}>
@@ -120,8 +139,9 @@ export default function ProductScreen() {
               )}
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: i === 0 ? t.tint : t.text, fontWeight: '800', fontSize: 16 }}>{formatTL(o.price)} ₺</Text>
-              {i === 0 && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '700' }}>EN UCUZ</Text>}
+              <Text style={{ color: byPrice && o.key === cheapestKey ? t.tint : t.text, fontWeight: '800', fontSize: 17 }}>{formatTL(o.price)} ₺</Text>
+              {o.km != null && <Text style={{ color: t.textMuted, fontSize: 13 }}>{formatKm(o.km)}</Text>}
+              {byPrice && o.key === cheapestKey && <Text style={{ color: t.tint, fontSize: 12, fontWeight: '700' }}>EN UCUZ</Text>}
             </View>
           </Pressable>
         ))}

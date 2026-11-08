@@ -6,10 +6,14 @@ import { Muted, useTheme } from '@/components/ui';
 import { formatSize, GroupSummary, MarketPrice, num } from '@/lib/api';
 import { useCatalog } from '@/lib/catalog';
 import { formatTL } from '@/lib/format';
+import { formatKm } from '@/lib/location';
 
 export const cheapestOf = (prices: MarketPrice[]) => [...prices].sort((a, b) => num(a.min_price) - num(b.min_price))[0];
 
-/** Arama ve kategori listelerindeki ürün satırı: fotoğraf, ad, boyut, en ucuz market ve fiyat */
+/**
+ * Arama ve kategori listelerindeki ürün satırı: fotoğraf, ad, boyut, market ve fiyat.
+ * Konum varsa en yakın şube ve oradaki fiyat gösterilir; yoksa (misafir, şube seçmemiş) en düşük fiyat, "en ucuz" yazmadan.
+ */
 export default function ProductRow({ group, prices, onPress }: {
   group: GroupSummary; prices?: MarketPrice[]; onPress?: () => void;
 }) {
@@ -17,6 +21,12 @@ export default function ProductRow({ group, prices, onPress }: {
   const { marketById, categoryIcon } = useCatalog();
   const shown = prices ?? group.market_prices; // market filtresi açıksa yalnız o marketler
   const cheapest = cheapestOf(shown);
+  // Market filtresi açıksa yakın şube bilgisi yalnız o market için geçerlidir
+  const near = group.nearest_price != null && group.nearest_market_id != null && shown.some(m => m.market_id === group.nearest_market_id)
+    ? group : null;
+  const marketId = near ? near.nearest_market_id! : cheapest?.market_id;
+  const price = near ? num(near.nearest_price) : cheapest ? num(cheapest.min_price) : null;
+  const regular = near ? shown.find(m => m.market_id === marketId)?.regular_price : cheapest?.regular_price;
   return (
     <Pressable onPress={onPress} accessibilityRole="button"
       style={({ pressed }) => ({
@@ -28,17 +38,19 @@ export default function ProductRow({ group, prices, onPress }: {
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={{ color: t.text, fontWeight: '700', fontSize: 15 }} numberOfLines={2}>{group.name}</Text>
         <Muted>{[formatSize(group.quantity, group.unit), shown.length + ' market'].filter(Boolean).join(' · ')}</Muted>
-        {cheapest && (
+        {marketId != null && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MarketBadge id={cheapest.market_id} size={20} />
-            <Muted style={{ fontSize: 13 }}>{marketById(cheapest.market_id)?.name} · en ucuz</Muted>
+            <MarketBadge id={marketId} size={22} />
+            <Muted style={{ fontSize: 14, flexShrink: 1 }}>
+              {near ? `${near.nearest_store_name ?? marketById(marketId)?.name}${near.nearest_distance_km != null ? ` · ${formatKm(near.nearest_distance_km)}` : ''}` : marketById(marketId)?.name}
+            </Muted>
           </View>
         )}
       </View>
-      {cheapest && (
+      {price != null && (
         <View style={{ alignItems: 'flex-end', gap: 4 }}>
-          <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 18, fontVariant: ['tabular-nums'] }}>{formatTL(num(cheapest.min_price))} ₺</Text>
-          {cheapest.regular_price && (
+          <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 18, fontVariant: ['tabular-nums'] }}>{formatTL(price)} ₺</Text>
+          {regular && (
             <Text style={{ fontSize: 12, color: '#fff', backgroundColor: t.accent, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>İNDİRİM</Text>
           )}
         </View>

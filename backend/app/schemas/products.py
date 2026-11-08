@@ -25,6 +25,11 @@ class GroupSummary(BaseModel):
     min_price: Decimal | None
     market_prices: list[MarketPrice]  # her marketteki en ucuz fiyat
     brands: list[str]  # sağa kaydırınca kilitlenebilecek markalar
+    # Konum gönderildiyse kullanıcının seçili şubeleri arasında bu ürünü satan EN YAKIN şube ve oradaki fiyat
+    nearest_store_name: str | None = None
+    nearest_market_id: int | None = None
+    nearest_distance_km: float | None = None
+    nearest_price: Decimal | None = None
 
 
 class PricePoint(BaseModel):
@@ -39,6 +44,7 @@ class ProductStorePrice(BaseModel):
     store_name: str
     price: Decimal
     updated_at: datetime | None = None  # fiyatın kaynakta güncellendiği an
+    distance_km: float | None = None  # konum gönderildiyse kullanıcıya uzaklık
 
 
 class GroupProduct(BaseModel):
@@ -55,7 +61,8 @@ class GroupProduct(BaseModel):
     price_history: list[PricePoint]  # sparkline
     # Gösterilen fiyatın kaynakta en son görüldüğü an ("Fiyat bugün 09:15 güncellendi" etiketi)
     price_updated_at: datetime | None = None
-    store_prices: list[ProductStorePrice] = []  # seçili şubelerin hepsi, ucuzdan pahalıya
+    store_prices: list[ProductStorePrice] = []  # seçili şubelerin hepsi; konum varsa yakından uzağa, yoksa ucuzdan pahalıya
+    distance_km: float | None = None  # bu ürünü satan en yakın seçili şubeye uzaklık
 
 
 class GroupDetail(GroupSummary):

@@ -33,13 +33,19 @@ async def search_products(
     limit: Annotated[int, Query(ge=1, le=100)] = 30,
     sort: Annotated[str, Query(pattern="^(name|popular)$")] = "name",
     subcategory_id: int | None = None,
+    lat: Annotated[float | None, Query(ge=35, le=43)] = None,  # Türkiye sınırları; yakından uzağa sıralama için
+    lon: Annotated[float | None, Query(ge=25, le=45)] = None,
 ) -> list[GroupSummary]:
-    """Ürün grubu araması (pg_trgm). Her grup için market bazında en ucuz fiyat ve markalar döner.
+    """Ürün grubu araması: aranan kelimeler ürün adında geçmeli (tam kelime > kelime başı > kelime içi, Türkçe
+    harfler fark etmez). Her grup için market bazında en ucuz fiyat ve markalar döner.
+    Konum (lat/lon) ve şube seçimi varsa sonuçlar en yakın şubesi en yakın olandan başlar (fiyata göre değil);
+    nearest_* alanları o şubeyi ve oradaki fiyatı verir. Konum ya da şube yoksa ada göre sıralanır.
 
     Giriş yapmış ve şube seçmiş kullanıcıya yalnızca seçtiği şubelerin fiyatları gösterilir.
     Arama yokken sort=popular temel ürünleri öne alır."""
     return await catalog.search_groups(
-        db, q, category_id, limit, user.id if user else None, sort, subcategory_id
+        db, q, category_id, limit, user.id if user else None, sort, subcategory_id,
+        strict=True, lat=lat, lon=lon,
     )
 
 
@@ -101,8 +107,15 @@ async def similar_products(
 
 
 @router.get("/{group_id}", response_model=GroupDetail)
-async def get_product_group(group_id: int, db: DbSession, user: OptionalUser) -> GroupDetail:
-    detail = await catalog.get_group_detail(db, group_id, user.id if user else None)
+async def get_product_group(
+    group_id: int,
+    db: DbSession,
+    user: OptionalUser,
+    lat: Annotated[float | None, Query(ge=35, le=43)] = None,
+    lon: Annotated[float | None, Query(ge=25, le=45)] = None,
+) -> GroupDetail:
+    """Konum varsa ürünler ve şube fiyatları en yakın şubeden uzağa dizilir; yoksa ucuzdan pahalıya."""
+    detail = await catalog.get_group_detail(db, group_id, user.id if user else None, lat, lon)
     if detail is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ürün grubu bulunamadı")
     return detail
