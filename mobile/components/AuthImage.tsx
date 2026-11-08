@@ -11,8 +11,6 @@ export default function AuthImage({ url, width, height }: { url: string; width: 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSrc(null);
-    setError(null);
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url);
     xhr.responseType = 'blob';

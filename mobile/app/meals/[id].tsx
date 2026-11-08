@@ -1,5 +1,4 @@
 import { courseGlyph } from '@/lib/icons';
-import FoodIcon from '@/components/FoodIcon';
 import Icon from '@/components/Icon';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
