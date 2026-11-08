@@ -37,10 +37,10 @@ export function stepTimers(text: string): number[] {
 }
 
 /** Bir adımın sayacı: key = "adım:sıra"; endsAt boşsa henüz başlamadı */
-interface Run { endsAt: number; done: boolean; }
+interface Run { endsAt: number; done: boolean; total?: number; }
 
 function startRun(seconds: number): Run {
-  return { endsAt: Date.now() + seconds * 1000, done: false };
+  return { endsAt: Date.now() + seconds * 1000, done: false, total: seconds };
 }
 
 const label = (seconds: number) => seconds >= 3600 && seconds % 3600 === 0 ? `${seconds / 3600} sa`
@@ -132,6 +132,11 @@ export default function CookScreen() {
   const total = recipe.steps.length;
   const text = step > 0 ? recipe.steps[step - 1] : '';
   const timers = stepTimers(text);
+  // Adımda süre yazmıyorsa (tariflerin çoğu): kullanıcı kendi sayacını kurar. Sayaç kurulunca anahtar "adım:m" olur.
+  const manualKey = `${step}:m`;
+  const manualRun = timers.length === 0 && step > 0 ? runs[manualKey] : undefined;
+  const items: { key: string; seconds: number }[] = timers.map((seconds, i) => ({ key: `${step}:${i}`, seconds }));
+  if (manualRun) items.push({ key: manualKey, seconds: manualRun.total ?? 60 });
   const start = (key: string, seconds: number) => {
     const run = startRun(seconds);
     delete beeped.current[key];
@@ -203,10 +208,23 @@ export default function CookScreen() {
           <>
             <Text style={{ color: t.tint, fontWeight: '800' }}>ADIM {step} / {total}</Text>
             <Text style={{ color: t.text, fontSize: 28, lineHeight: 40, fontWeight: '600' }}>{text}</Text>
-            {timers.length > 0 && (
+            {timers.length === 0 && !manualRun && (
+              <View style={{ gap: 10, paddingVertical: 8 }}>
+                <Text style={{ color: t.textMuted, fontSize: 16, fontWeight: '700' }}>Sayaç kur</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {[5, 10, 15, 20, 30].map(min => (
+                    <Pressable key={min} onPress={() => start(manualKey, min * 60)} accessibilityRole="button" accessibilityLabel={`${min} dakikalık sayaç kur`}
+                      style={{ minHeight: 52, minWidth: 72, paddingHorizontal: 18, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: t.card, borderWidth: 1, borderColor: t.border }}>
+                      <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>{min} dk</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+            {items.length > 0 && (
               <View style={{ flex: 1, justifyContent: 'center', gap: 16, paddingVertical: 12 }}>
-                {timers.map((seconds, i) => {
-                  const key = `${step}:${i}`;
+                {items.map(({ key, seconds }) => {
                   const run = runs[key];
                   const left = run ? Math.max(0, run.endsAt - now) : seconds * 1000;
                   const urgent = !!run && !run.done && Math.ceil(left / 1000) <= 5;
@@ -225,12 +243,12 @@ export default function CookScreen() {
                         <View style={{ height: 8, width: `${run ? Math.min(100, ((seconds * 1000 - left) / (seconds * 1000)) * 100) : 0}%`, backgroundColor: accent }} />
                       </View>
                       {/* Sayaç çalışırken düğme kalkar; süre dolunca yalnız "Kapat" görünür */}
-                      {(!run || run.done) && (
+                      {(!run || run.done || key === manualKey) && (
                         <Pressable onPress={() => run ? clear(key) : start(key, seconds)}
                           style={{ paddingHorizontal: 28, paddingVertical: 14, borderRadius: 999, backgroundColor: run ? 'transparent' : t.tint,
                             borderWidth: run ? 2 : 0, borderColor: accent }}>
                           <Text style={{ color: run ? accent : '#fff', fontSize: 18, fontWeight: '800' }}>
-                            {run ? 'Kapat' : 'Sayacı başlat'}
+                            {run ? (run.done ? 'Kapat' : 'İptal et') : 'Sayacı başlat'}
                           </Text>
                         </Pressable>
                       )}
