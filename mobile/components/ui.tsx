@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
 import { ReactNode } from 'react';
-import {
-  ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import { Text } from './Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors from '@/constants/Colors';
+import { HEADING_FONT, NEW_LOOK } from '@/constants/Look';
 import { useColorScheme } from '@/components/useColorScheme';
 import Icon, { IconName } from '@/components/Icon';
 
@@ -75,7 +75,7 @@ export function Button({
         opacity: pressed || busy || disabled ? 0.6 : 1,
       }]}>
       {busy ? <ActivityIndicator color={primary ? t.onTint : t.tint} accessibilityLabel="Yükleniyor" />
-        : <Text style={{ color: primary ? t.onTint : t.text, fontFamily: 'DMSans_700Bold', fontSize: 17 }}>{title}</Text>}
+        : <Text style={{ color: primary ? t.onTint : t.text, fontWeight: '700', fontSize: 17 }}>{title}</Text>}
     </Pressable>
   );
 }
@@ -105,11 +105,11 @@ export function SectionHeader({ title, action, onAction }: { title: string; acti
   const t = useTheme();
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Text accessibilityRole="header" style={{ color: t.text, fontFamily: 'Fraunces_700Bold', fontSize: 21 }}>{title}</Text>
+      <Text accessibilityRole="header" style={{ color: t.text, fontFamily: HEADING_FONT, fontWeight: NEW_LOOK ? undefined : '800', fontSize: 21 }}>{title}</Text>
       {action && (
         <Pressable onPress={onAction} accessibilityRole="button" accessibilityLabel={`${title}: ${action}`} hitSlop={6}
           style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
-          <Text style={{ color: t.tintDark, fontFamily: 'DMSans_700Bold', fontSize: 15 }}>{action}</Text>
+          <Text style={{ color: t.tintDark, fontWeight: '700', fontSize: 15 }}>{action}</Text>
         </Pressable>
       )}
     </View>
@@ -123,7 +123,7 @@ export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPr
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: !!on }}
       style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? t.text : t.card,
         borderWidth: 1, borderColor: on ? t.text : t.border }}>
-      <Text style={{ color: on ? t.background : t.text, fontFamily: 'DMSans_700Bold', fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: on ? t.background : t.text, fontWeight: '600', fontSize: 14 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -157,7 +157,7 @@ export function EmptyState({ icon, title, text, primary, secondary }: {
       <View style={{ width: 112, height: 112, borderRadius: 56, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name={icon} size={48} color={t.tint} />
       </View>
-      <Text style={{ color: t.text, fontFamily: 'Fraunces_700Bold', fontSize: 22, marginTop: 8 }}>{title}</Text>
+      <Text style={{ color: t.text, fontFamily: HEADING_FONT, fontWeight: NEW_LOOK ? undefined : '800', fontSize: 22, marginTop: 8 }}>{title}</Text>
       {text && <Muted style={{ textAlign: 'center', maxWidth: 300, fontSize: 15 }}>{text}</Muted>}
       <View style={{ alignSelf: 'stretch', gap: 10, marginTop: 12 }}>
         {primary && <Button title={primary.title} onPress={primary.onPress} />}
@@ -169,8 +169,8 @@ export function EmptyState({ icon, title, text, primary, secondary }: {
 
 const styles = StyleSheet.create({
   body: { padding: 18, gap: 16 },
-  title: { fontSize: 30, fontFamily: 'Fraunces_700Bold' },
+  title: { fontSize: 30, fontFamily: HEADING_FONT, fontWeight: NEW_LOOK ? undefined : '800' },
   card: { borderRadius: 20, padding: 16, shadowOpacity: 0.07, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   button: { borderRadius: 16, borderWidth: 1, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', minHeight: 52 },
-  input: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
+  input: { fontFamily: NEW_LOOK ? 'DMSans_400Regular' : undefined, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
 });

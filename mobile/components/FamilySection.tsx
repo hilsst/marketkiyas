@@ -1,6 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Platform, Pressable, Share, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, Share, View } from 'react-native';
+import { Text } from './Text';
 
 import FamilyInviteCard from '@/components/FamilyInviteCard';
 import { Button, Card, Input, Muted, useTheme } from '@/components/ui';

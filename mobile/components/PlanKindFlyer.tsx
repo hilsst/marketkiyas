@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Animated, Modal, Pressable, Text, View } from 'react-native';
+import { Animated, Modal, Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import Icon, { IconName } from '@/components/Icon';
 import { Muted, useTheme } from '@/components/ui';

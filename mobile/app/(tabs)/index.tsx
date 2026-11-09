@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { categoryGlyph } from '@/lib/icons';
 import FoodIcon from '@/components/FoodIcon';
@@ -9,6 +10,7 @@ import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
 import { cheapestOf } from '@/components/ProductRow';
 import FamilyInviteCard from '@/components/FamilyInviteCard';
+import { HEADING_FONT, NEW_LOOK } from '@/constants/Look';
 import Icon from '@/components/Icon';
 import { Card, Muted, Screen, SectionHeader, Title, useTheme } from '@/components/ui';
 import { AktuelItem, api, MyFamily, num, SavingsVault, Store } from '@/lib/api';
@@ -143,19 +145,18 @@ export default function HomeScreen() {
 
       {/* 2) Bu ayki tasarruf */}
       {user ? (
-        <Pressable onPress={() => router.push('/profile')} style={{ backgroundColor: t.tint, borderRadius: 22, padding: 20, gap: 4 }}>
-          <Text style={{ color: t.onTint, fontSize: 13, fontWeight: '700', letterSpacing: 0.5 }}>{monthName.toLocaleUpperCase('tr-TR')} AYI TASARRUFUNUZ</Text>
-          <Text style={{ color: t.onTint, fontSize: 40, fontWeight: '800', letterSpacing: -1 }}>{formatTL(monthSaved)} ₺</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Icon name="trending-up" size={16} color={t.onTint} />
-            <Text style={{ color: t.onTint, fontSize: 14 }}>
-              Toplam {formatTL(num(vault?.total_saved))} ₺ · {monthSaved > 0 ? 'Böyle devam!' : 'Bir liste oluşturun, "En ucuz" planıyla başlayın'}
-            </Text>
+        <Pressable onPress={() => router.push('/profile')} style={{ backgroundColor: t.sage, borderRadius: 26, padding: 18, gap: 6 }}>
+          <View style={{ alignSelf: 'flex-start', backgroundColor: NEW_LOOK ? t.card : 'rgba(255,255,255,0.2)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text style={{ color: NEW_LOOK ? t.sageText : t.onTint, fontSize: 11, fontWeight: '700' }}>{monthName.toLocaleUpperCase('tr-TR')} AYI</Text>
           </View>
+          <Text style={{ color: NEW_LOOK ? t.text : t.onTint, fontSize: 24, fontFamily: HEADING_FONT, fontWeight: HEADING_FONT ? undefined : '800' }}>Tasarrufunuz {formatTL(monthSaved)} ₺</Text>
+          <Text style={{ color: t.sageText, fontSize: 14 }}>
+            Toplam {formatTL(num(vault?.total_saved))} ₺ · {monthSaved > 0 ? 'Böyle devam!' : 'Bir liste oluşturun, "En ucuz" planıyla başlayın'}
+          </Text>
           {family?.family && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
-              <Icon name="users" size={16} color={t.onTint} />
-              <Text style={{ color: t.onTint, fontSize: 14, fontWeight: '700' }}>Ailenin bu ayki tasarrufu: {formatTL(num(family.family.month_saved))} ₺</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              <Icon name="users" size={16} color={t.sageText} />
+              <Text style={{ color: t.sageText, fontSize: 14, fontWeight: '700' }}>Ailenin bu ayki tasarrufu: {formatTL(num(family.family.month_saved))} ₺</Text>
             </View>
           )}
         </Pressable>

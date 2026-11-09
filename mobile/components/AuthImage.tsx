@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Text, View } from 'react-native';
+import { ActivityIndicator, Image, View } from 'react-native';
+import { Text } from './Text';
 
 import { useTheme } from '@/components/ui';
 import { getApiToken } from '@/lib/api';

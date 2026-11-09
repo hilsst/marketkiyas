@@ -1,6 +1,8 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Dimensions, Easing, Modal, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Dimensions, Easing, Modal, Pressable, View } from 'react-native';
+import { Text } from './Text';
+import { useTheme } from '@/components/ui';
 
 import FoodIcon from '@/components/FoodIcon';
 
@@ -24,6 +26,7 @@ function Spark({ glyph, delay, x }: { glyph: string; delay: number; x: number })
 
 /** Pişirme bitince tam ekran "Afiyet olsun!" kartı; birkaç saniye sonra ya da dokununca onDone */
 export default function BonAppetit({ dish, onDone }: { dish: string; onDone: () => void }) {
+  const t = useTheme();
   const [pop] = useState(() => new Animated.Value(0));
   const [reduced, setReduced] = useState(false);
   const done = useRef(onDone);
@@ -40,7 +43,7 @@ export default function BonAppetit({ dish, onDone }: { dish: string; onDone: () 
 
   return (
     <Modal visible animationType="fade" statusBarTranslucent onRequestClose={() => done.current()}>
-      <Pressable onPress={() => done.current()} style={{ flex: 1, backgroundColor: '#047857', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <Pressable onPress={() => done.current()} style={{ flex: 1, backgroundColor: t.celebrate, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         {!reduced && PIECES.map((g, i) => <Spark key={i} glyph={g} delay={i * 220} x={((i * 53) % 100) / 100 * (width - 40)} />)}
         <Animated.View style={{ alignItems: 'center', gap: 10, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }}>
           <View style={{ width: 124, height: 124, borderRadius: 62, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>

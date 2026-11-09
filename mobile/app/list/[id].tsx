@@ -1,6 +1,7 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, Share, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import Celebration from '@/components/Celebration';
 import MarketBadge from '@/components/MarketBadge';
