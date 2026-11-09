@@ -1,4 +1,5 @@
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import FoodIcon from '@/components/FoodIcon';

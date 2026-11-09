@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
+import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Input, Muted, useTheme } from '@/components/ui';

@@ -1,7 +1,9 @@
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Dimensions, Easing, Modal, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Dimensions, Easing, Modal, Pressable, View } from 'react-native';
+import { Text } from './Text';
+import { useTheme } from '@/components/ui';
 import FoodIcon from '@/components/FoodIcon';
 import { formatTL } from '@/lib/format';
 
@@ -35,6 +37,7 @@ function Piece({ glyph, delay, x }: { glyph: string; delay: number; x: number })
 export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, note, onDone }: {
   savedAmount: number; shoppingSavings: number; vaultTotal: number; note: string | null; onDone: () => void;
 }) {
+  const t = useTheme();
   const amount = savedAmount > 0 ? savedAmount : shoppingSavings;
   const festive = amount > 0;
   const player = useAudioPlayer(require('@/assets/sounds/coin.wav'));
@@ -62,7 +65,7 @@ export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, 
 
   return (
     <Modal visible animationType="fade" onRequestClose={() => done.current()}>
-      <Pressable onPress={() => done.current()} style={{ flex: 1, backgroundColor: festive ? '#047857' : '#111827', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <Pressable onPress={() => done.current()} style={{ flex: 1, backgroundColor: festive ? t.celebrate : '#111827', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         {festive && !reduced && pieces.map((p, i) => <Piece key={i} {...p} />)}
         <Animated.View style={{ alignItems: 'center', transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }}>
           {festive ? (

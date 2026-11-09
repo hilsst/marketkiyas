@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Fragment, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import AdSlot from '@/components/AdSlot';
 import { AD_EVERY, adsEnabled, interleaveAds } from '@/lib/ads';

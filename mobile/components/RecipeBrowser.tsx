@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { memo } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import { Text } from './Text';
 
 import FoodIcon from '@/components/FoodIcon';
 import RecipeImage from '@/components/RecipeImage';

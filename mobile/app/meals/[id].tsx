@@ -2,7 +2,8 @@ import { courseGlyph } from '@/lib/icons';
 import Icon from '@/components/Icon';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ExportSuccessSheet from '@/components/ExportSuccessSheet';

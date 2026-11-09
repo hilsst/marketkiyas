@@ -3,7 +3,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Vibration, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BonAppetit from '@/components/BonAppetit';

@@ -1,7 +1,8 @@
 import Icon from '@/components/Icon';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CuisinePicker from '@/components/CuisinePicker';

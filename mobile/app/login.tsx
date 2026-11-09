@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
