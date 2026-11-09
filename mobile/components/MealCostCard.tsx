@@ -10,7 +10,7 @@ import { formatTL } from '@/lib/format';
 const tl = (v: string | number | null) => `${formatTL(num(v))} ₺`;
 const CHIPS_SHOWN = 10;
 
-/** Plan / tarif maliyeti: rakamlar, kısa özet, açılır "dolabından" bölümü ve alınacak ürünler */
+/** Plan / tarif maliyeti: rakamlar, kısa özet, açılır "kilerinden" bölümü ve alınacak ürünler */
 export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cost: MealCost; title?: string }) {
   const t = useTheme();
   const [open, setOpen] = useState(false);
@@ -59,7 +59,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
           <Pressable onPress={() => setOpen(o => !o)} accessibilityRole="button" accessibilityState={{ expanded: open }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.tintSoft, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11 }}>
             <Icon name="package" size={18} color={t.tintDark} />
-            <Text style={{ color: t.tintDark, fontWeight: '700', fontSize: 14, flex: 1 }}>Dolabınızdan kullanılanlar</Text>
+            <Text style={{ color: t.tintDark, fontWeight: '700', fontSize: 14, flex: 1 }}>Kilerinizden kullanılanlar</Text>
             <View style={{ backgroundColor: t.card, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 1 }}>
               <Text style={{ color: t.tintDark, fontSize: 13, fontWeight: '700' }}>{homeCount}</Text>
             </View>
@@ -83,7 +83,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
               )}
               {have.length > 0 && (
                 <View style={{ gap: 6 }}>
-                  <Muted style={{ fontSize: 13 }}>Dolabınızda olduğu için alınmayacak</Muted>
+                  <Muted style={{ fontSize: 13 }}>Kilerinizde olduğu için alınmayacak</Muted>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{have.map((h, i) => chip(`h${i}`, h))}</View>
                 </View>
               )}

@@ -48,7 +48,7 @@ class RecipeSummary(BaseModel):
     nutrition: Nutrition | None  # kişi başı bir porsiyon, yaklaşık
     like_count: int
     liked: bool  # giriş yapan kullanıcı beğendi mi
-    # "Dolabımda ne var" aramasında: evde olmayan (alınması gereken) malzemeler; aramada değilse None
+    # "Kilerimde ne var" aramasında: evde olmayan (alınması gereken) malzemeler; aramada değilse None
     missing: list[str] | None = None
 
 
@@ -73,7 +73,7 @@ class MatchedGroup(BaseModel):
 
 
 class StockUse(BaseModel):
-    """Dolaptan (önceki alışverişlerden artan) kullanılan miktar."""
+    """Kilerden (önceki alışverişlerden artan) kullanılan miktar."""
 
     name: str
     quantity: Decimal
@@ -82,7 +82,7 @@ class StockUse(BaseModel):
 
 class CostLine(BaseModel):
     name: str
-    key: str = ""  # malzemenin arama ifadesi (normalize); dolapta bu anahtarla tutulur
+    key: str = ""  # malzemenin arama ifadesi (normalize); kilerde bu anahtarla tutulur
     needed_quantity: Decimal  # plan için gereken toplam (temel birim)
     unit: Unit
     is_pantry: bool
@@ -103,15 +103,15 @@ class CostOut(BaseModel):
     include_pantry: bool
     lines: list[CostLine]
     pantry: list[str]  # evde var sayılan (maliyete katılmayan) malzemeler
-    have: list[str] = []  # kullanıcının "dolabımda var" dediği, maliyete katılmayan malzemeler
-    # Dolaptan (önceki planlardan artan paketlerden) karşılanan miktarlar; yalnız eksik kısım alınır
+    have: list[str] = []  # kullanıcının "kilerimde var" dediği, maliyete katılmayan malzemeler
+    # Kilerden (önceki planlardan artan paketlerden) karşılanan miktarlar; yalnız eksik kısım alınır
     from_stock: list[StockUse] = []
     # Alınan paketlerden yemeklere girmeyip artan kısmın değeri (alışveriş - kullanılan)
     leftover_value: Decimal = Decimal(0)
 
 
 class IngredientChoice(BaseModel):
-    """"Dolabımda ne var" seçicisi: tariflerde geçen (evde var sayılmayan) malzemeler."""
+    """"Kilerimde ne var" seçicisi: tariflerde geçen (evde var sayılmayan) malzemeler."""
 
     name: str
     recipe_count: int  # bu malzemeyi kullanan tarif sayısı
@@ -154,7 +154,7 @@ class MealPlanCreate(BaseModel):
     leftovers: bool = False  # bir pişir iki ye
     low_waste: bool = False  # malzemesi ortak tarifler
     from_deals: bool = False  # indirimden menü: şu an indirimde olan malzemeleri kullanan tarifler öne çıkar
-    have: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(default_factory=list, max_length=60)  # dolabımda olanlar (malzeme adları)
+    have: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(default_factory=list, max_length=60)  # kilerimde olanlar (malzeme adları)
     # İndirimden menü: bu malzemeleri kullanan tarifler öne çıkar (maliyete normal girer)
     prefer: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(default_factory=list, max_length=60)
     cuisine: str | None = Field(default=None, max_length=32)  # eski istemciler: tek mutfak
@@ -290,7 +290,7 @@ class ExportOut(BaseModel):
     list: ListDetail
     added: int  # listeye eklenen / miktarı artan kalem
     skipped: list[str]  # bulunamadığı için eklenemeyen malzemeler
-    # Paketlerden artıp dolaba kaydedilen malzemeler (sonraki planlar önce bunları kullanır)
+    # Paketlerden artıp kilere kaydedilen malzemeler (sonraki planlar önce bunları kullanır)
     stored: list[StockUse] = []
 
 
@@ -303,4 +303,4 @@ class PantryItemOut(BaseModel):
 
 
 class PantryItemUpdate(BaseModel):
-    quantity: Decimal = Field(ge=0, le=100_000)  # 0 = dolaptan çıkar
+    quantity: Decimal = Field(ge=0, le=100_000)  # 0 = kilerden çıkar

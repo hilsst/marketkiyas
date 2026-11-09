@@ -23,11 +23,11 @@ const ALLERGENS: Allergen[] = ['gluten', 'sut', 'yumurta', 'kuruyemis', 'susam',
 // Plan süresi (gün); 14'e kadar, ör. maaş gününe kadar 10 gün
 const LENGTHS = [1, 2, 3, 5, 7, 10, 14];
 
-/** Yemek planlayıcı: 1-14 günlük plan oluştur (bütçe, kalan yemek, dolaptakiler), planlarım ve tarifler */
+/** Yemek planlayıcı: 1-14 günlük plan oluştur (bütçe, kalan yemek, kilerdekiler), planlarım ve tarifler */
 export default function MealsScreen() {
   const t = useTheme();
   const { user } = useAuth();
-  // Karşılamadaki pencereden gelen seçim: pantry = dolabımdakilerle
+  // Karşılamadaki pencereden gelen seçim: pantry = kilerimdekilerle
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
@@ -192,7 +192,7 @@ export default function MealsScreen() {
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, backgroundColor: t.background, borderWidth: have.length ? 1.5 : 0, borderColor: t.tint }}>
                 <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="archive" size={22} color={t.tint} /></View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: t.text, fontWeight: '700' }}>Dolabımda ne var?</Text>
+                  <Text style={{ color: t.text, fontWeight: '700' }}>Kilerimde ne var?</Text>
                   <Muted style={{ fontSize: 13 }} >
                     {have.length ? have.join(', ') : 'Evdeki malzemeleri seçin; onları kullanan yemekler öne çıkar, listeye eklenmez.'}
                   </Muted>
@@ -223,7 +223,7 @@ export default function MealsScreen() {
               <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="package" size={22} color={t.tint} /></View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: t.text, fontWeight: '700' }}>Dolabım: {stockCount} malzeme artmış</Text>
+                  <Text style={{ color: t.text, fontWeight: '700' }}>Kilerim: {stockCount} malzeme artmış</Text>
                   <Muted style={{ fontSize: 13 }}>Önceki alışverişten artanlar; yeni plan önce bunları kullanır.</Muted>
                 </View>
                 <Text style={{ color: t.tint, fontWeight: '700' }}>Gör ›</Text>

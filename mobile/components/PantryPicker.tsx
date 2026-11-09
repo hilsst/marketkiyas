@@ -13,7 +13,7 @@ const normalize = (s: string) => s.toLocaleLowerCase('tr-TR')
   .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').trim();
 
 /**
- * "Dolabımda ne var": evdeki malzemeleri seç. Seçilenler planın maliyetine ve alışveriş listesine
+ * "Kilerimde ne var": evdeki malzemeleri seç. Seçilenler planın maliyetine ve alışveriş listesine
  * girmez, bunları kullanan tarifler öne çıkar. Altta bu malzemelerle yapılabilecek tarifler ve
  * eksikleri görünür.
  */
@@ -52,9 +52,9 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
     <Modal visible animationType="slide" onRequestClose={() => onClose(have)}>
       <View style={{ flex: 1, backgroundColor: t.background }}>
         <View style={{ backgroundColor: t.tint, paddingTop: 16 + Math.max(insets.top, 32), paddingBottom: 16, paddingHorizontal: 20, gap: 4 }}>
-          <Text style={{ color: t.onTint, fontSize: 22, fontWeight: '800' }}>Dolabımda ne var?</Text>
+          <Text style={{ color: t.onTint, fontSize: 22, fontWeight: '800' }}>Kilerimde ne var?</Text>
           <Text style={{ color: t.onTint }}>
-            Evde olanları seçin. Dolabım’a da eklenir; bunları kullanan yemekler öne çıkar, alışveriş listesine eklenmez.
+            Evde olanları seçin. Kilerim’e da eklenir; bunları kullanan yemekler öne çıkar, alışveriş listesine eklenmez.
           </Text>
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }} keyboardShouldPersistTaps="handled">

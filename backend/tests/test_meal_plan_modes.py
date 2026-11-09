@@ -1,4 +1,4 @@
-"""Esnek süre, hafta içi, bütçe, bir pişir iki ye, az israf ve "dolabımda ne var"."""
+"""Esnek süre, hafta içi, bütçe, bir pişir iki ye, az israf ve "kilerimde ne var"."""
 
 import random
 from collections import Counter
@@ -100,7 +100,7 @@ async def test_have_items_excluded_from_cost_and_preferred(client, auth_headers,
     assert ingredients[0]["recipe_count"] >= ingredients[-1]["recipe_count"]
     assert "Kırmızı mercimek" in names
 
-    # Dolabımda ne var: mercimek ve soğan; mercimek kullanan tarifler başta, eksikleri yazılı
+    # Kilerimde ne var: mercimek ve soğan; mercimek kullanan tarifler başta, eksikleri yazılı
     found = (await client.get("/api/recipes", params={"have": ["Kırmızı mercimek", "Kuru soğan"]})).json()
     assert found and all(r["missing"] is not None for r in found)
     misses = [len(r["missing"]) for r in found]
@@ -113,7 +113,7 @@ async def test_have_items_excluded_from_cost_and_preferred(client, auth_headers,
         client, auth_headers, period="daily", meal_slots=["aksam"], courses=["corba"], have=["Kırmızı mercimek"],
     )
     assert plan["have"] == ["Kırmızı mercimek"]
-    # Dolaptaki malzemeyi kullanan bir çorba (mercimek, ezogelin...)
+    # Kilerdeki malzemeyi kullanan bir çorba (mercimek, ezogelin...)
     uses_lentil = {r["slug"] for r in found if r["course_type"] == "corba" and "Kırmızı mercimek" not in r["missing"]}
     assert plan["entries"][0]["recipe"]["slug"] in uses_lentil
     lines = {line["name"] for line in plan["cost"]["lines"]}
@@ -181,8 +181,8 @@ async def test_budget_swaps_expensive_dishes(client, auth_headers, kitchen):
 
 
 async def test_leftover_packages_go_to_pantry_and_next_plan(client, auth_headers, kitchen):
-    """Mercimek çorbası 2 kişi: 100 g mercimek; 500 g'lık paket alınır, 400 g dolaba kalır. Sonraki
-    plan önce dolaptakini kullanır, yalnız eksik kısım için paket alır."""
+    """Mercimek çorbası 2 kişi: 100 g mercimek; 500 g'lık paket alınır, 400 g kilere kalır. Sonraki
+    plan önce kilerdekini kullanır, yalnız eksik kısım için paket alır."""
     soup = (await _recipes(client))["mercimek-corbasi"]
 
     async def soup_plan():
@@ -207,14 +207,14 @@ async def test_leftover_packages_go_to_pantry_and_next_plan(client, auth_headers
     # Sebze (soğan) dayanma süresiyle kaydedilir
     assert pantry["Kuru soğan"]["expires_on"] is not None
 
-    # Aktarılmış planın maliyeti kendi artanıyla değişmez; tekrar aktarmak dolabı değiştirmez
+    # Aktarılmış planın maliyeti kendi artanıyla değişmez; tekrar aktarmak kileri değiştirmez
     again = (await client.get(f"/api/meal-plans/{first['id']}", headers=auth_headers)).json()
     assert again["cost"]["from_stock"] == [] and again["cost"]["purchase_total"] == first["cost"]["purchase_total"]
     await client.post(f"/api/meal-plans/{first['id']}/to-list", headers=auth_headers, json={})
     pantry2 = {p["name"]: p for p in (await client.get("/api/pantry", headers=auth_headers)).json()}
     assert D(pantry2["Kırmızı mercimek"]["quantity"]) == 400
 
-    # Yeni plan: mercimek dolaptan, alınmaz
+    # Yeni plan: mercimek kilerden, alınmaz
     second = await soup_plan()
     used = {s["name"]: s for s in second["cost"]["from_stock"]}
     assert D(used["Kırmızı mercimek"]["quantity"]) == 100
@@ -249,12 +249,12 @@ async def test_expired_pantry_items_drop(client, auth_headers, db):
 
 
 async def test_export_when_stock_runs_out_and_package_leftover(client, auth_headers, kitchen, db):
-    """Dolaptaki miktar bitip üstüne yeni paket alınınca (aynı malzeme silinip yeniden eklenir) 500 olmamalı."""
+    """Kilerdeki miktar bitip üstüne yeni paket alınınca (aynı malzeme silinip yeniden eklenir) 500 olmamalı."""
     from app.models import PantryItem, Unit, User
     from sqlalchemy import select
 
     user = await db.scalar(select(User))
-    # Mercimek çorbası 4 kişi: 200 g mercimek; dolapta 50 g var -> 150 g için 500 g paket, 350 g artar
+    # Mercimek çorbası 4 kişi: 200 g mercimek; kilerde 50 g var -> 150 g için 500 g paket, 350 g artar
     db.add(PantryItem(user_id=user.id, key="kirmizi mercimek", name="Kırmızı mercimek", quantity=D(50), unit=Unit.G))
     await db.commit()
     soup = (await _recipes(client))["mercimek-corbasi"]
@@ -277,7 +277,7 @@ async def test_have_items_saved_to_pantry_without_quantity(client, auth_headers,
     pantry = {p["name"]: p for p in (await client.get("/api/pantry", headers=auth_headers)).json()}
     assert pantry["Kırmızı mercimek"]["quantity"] is None and pantry["Kırmızı mercimek"]["expires_on"] is None
 
-    # Sonraki plan "dolabımda ne var" seçilmeden de mercimeği dolaptan sayar, almaz
+    # Sonraki plan "kilerimde ne var" seçilmeden de mercimeği kilerden sayar, almaz
     nxt = await _create(client, auth_headers, period="daily", meal_slots=["aksam"], courses=["corba"])
     entry = nxt["entries"][0]
     nxt = (await client.patch(

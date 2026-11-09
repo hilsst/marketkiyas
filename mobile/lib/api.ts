@@ -9,6 +9,7 @@
 import Constants from 'expo-constants';
 
 import { getDeviceId, initDeviceId } from '@/lib/device';
+import { getCoords } from '@/lib/location';
 
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${devHost}:3000/api`;
@@ -138,10 +139,10 @@ export interface RecipeSummary {
   meal_slots: MealSlot[]; servings: number;
   prep_minutes: number; cook_minutes: number; description: string; icon: string | null; image_url: string | null; photo_credit?: string | null;
   allergens: Allergen[]; diets: Diet[]; nutrition: Nutrition | null; like_count: number; liked: boolean;
-  /** "Dolabımda ne var" aramasında alınması gereken malzemeler */
+  /** "Kilerimde ne var" aramasında alınması gereken malzemeler */
   missing?: string[] | null;
 }
-/** "Dolabımda ne var" seçicisi */
+/** "Kilerimde ne var" seçicisi */
 export interface IngredientChoice { name: string; recipe_count: number; }
 /** Kişi başı yaklaşık değerler */
 export interface Nutrition { kcal: number; protein_g: number; carbs_g: number; fat_g: number; }
@@ -153,8 +154,8 @@ export interface MealCostLine {
 export interface MealCost {
   purchase_total: Money; used_total: Money; per_serving: Money | null; portions: number; missing_count: number;
   include_pantry: boolean; lines: MealCostLine[]; pantry: string[];
-  /** dolabımda var denen, maliyete girmeyenler */ have?: string[];
-  /** önceki alışverişlerden artan, dolaptan kullanılanlar */ from_stock?: StockUse[];
+  /** kilerimde var denen, maliyete girmeyenler */ have?: string[];
+  /** önceki alışverişlerden artan, kilerden kullanılanlar */ from_stock?: StockUse[];
   /** alınan paketlerden artan kısmın değeri */ leftover_value?: Money;
 }
 export interface RecipeDetail extends RecipeSummary {
@@ -188,7 +189,7 @@ export interface DealIngredient {
 }
 export interface PriceReportResult { id: number; shown_price: Money | null; reported_price: Money | null; detail: string; }
 export interface StockUse { name: string; quantity: Money; unit: Unit; }
-/** Dolabım: alınan paketlerden artanlar; expires_on boş = bozulmaz */
+/** Kilerim: alınan paketlerden artanlar; expires_on boş = bozulmaz */
 export interface PantryItem { id: number; name: string; /** boş = miktar belirtilmedi */ quantity: Money | null; unit: Unit; expires_on: string | null; }
 export interface MealPlanExport { list: ListDetail; added: number; skipped: string[]; stored?: StockUse[]; }
 
@@ -203,6 +204,14 @@ let onUnauthorized: (() => void) | null = null;
 export function setApiToken(value: string | null) { token = value; }
 export const getApiToken = () => token;
 export function setUnauthorizedHandler(fn: (() => void) | null) { onUnauthorized = fn; }
+
+/** Yemek planı fiyatları seçili marketlerin en yakınından alınsın diye konum (lat/lon) yola eklenir; konum yoksa
+ * (izin verilmedi, Türkiye dışı) eklenmez ve en ucuz market kullanılır. Konum sunucuda saklanmaz. */
+const withAt = async (path: string) => {
+  const { coords } = await getCoords();
+  const q = coords ? `lat=${coords.lat}&lon=${coords.lon}` : '';
+  return q ? path + (path.includes('?') ? '&' : '?') + q : path;
+};
 
 const qs = (params: Record<string, string | number | null | undefined>) => {
   const parts = Object.entries(params)
@@ -375,22 +384,25 @@ export const api = {
   reviewRecipePhoto: (id: number, approve: boolean, reason?: string) =>
     request<RecipePhotoInfo>('POST', `/admin/recipe-photos/${id}/${approve ? 'approve' : 'reject'}`, approve ? undefined : { reason: reason ?? null }),
   likeRecipe: (id: number, like: boolean) => request<void>(like ? 'PUT' : 'DELETE', `/recipes/${id}/like`),
-  recipe: (id: number, servings?: number) => request<RecipeDetail>('GET', '/recipes/' + id + qs({ servings })),
+  recipe: async (id: number, servings?: number) => request<RecipeDetail>('GET', await withAt('/recipes/' + id + qs({ servings }))),
   mealPlans: () => request<MealPlanSummary[]>('GET', '/meal-plans'),
-  mealPlan: (id: number, includePantry = false) =>
-    request<MealPlanDetail>('GET', '/meal-plans/' + id + qs({ include_pantry: includePantry ? 'true' : null })),
-  createMealPlan: (body: MealPlanCreate) => request<MealPlanDetail>('POST', '/meal-plans', body, SLOW_REQUEST_TIMEOUT_MS),
-  updateMealPlan: (id: number, patch: { name?: string; servings?: number }) => request<MealPlanDetail>('PATCH', '/meal-plans/' + id, patch),
+  mealPlan: async (id: number, includePantry = false) =>
+    request<MealPlanDetail>('GET', await withAt('/meal-plans/' + id + qs({ include_pantry: includePantry ? 'true' : null }))),
+  createMealPlan: async (body: MealPlanCreate) =>
+    request<MealPlanDetail>('POST', await withAt('/meal-plans'), body, SLOW_REQUEST_TIMEOUT_MS),
+  updateMealPlan: async (id: number, patch: { name?: string; servings?: number }) =>
+    request<MealPlanDetail>('PATCH', await withAt('/meal-plans/' + id), patch),
   // recipeId boş: "Başka öner"
-  changeMealEntry: (planId: number, entryId: number, recipeId?: number | null) =>
-    request<MealPlanDetail>('PATCH', `/meal-plans/${planId}/entries/${entryId}`, { recipe_id: recipeId ?? null }),
+  changeMealEntry: async (planId: number, entryId: number, recipeId?: number | null) =>
+    request<MealPlanDetail>('PATCH', await withAt(`/meal-plans/${planId}/entries/${entryId}`), { recipe_id: recipeId ?? null }),
   // Öğünde istenmeyen yemeği kaldır / kaldırılanı geri ekle (tarif boşsa önerilir)
-  removeMealEntry: (planId: number, entryId: number) => request<MealPlanDetail>('DELETE', `/meal-plans/${planId}/entries/${entryId}`),
-  addMealEntry: (planId: number, day_index: number, slot: MealSlot, course: CourseType) =>
-    request<MealPlanDetail>('POST', `/meal-plans/${planId}/entries`, { day_index, slot, course }),
+  removeMealEntry: async (planId: number, entryId: number) =>
+    request<MealPlanDetail>('DELETE', await withAt(`/meal-plans/${planId}/entries/${entryId}`)),
+  addMealEntry: async (planId: number, day_index: number, slot: MealSlot, course: CourseType) =>
+    request<MealPlanDetail>('POST', await withAt(`/meal-plans/${planId}/entries`), { day_index, slot, course }),
   deleteMealPlan: (id: number) => request<void>('DELETE', '/meal-plans/' + id),
-  exportRecipe: (id: number, body: { list_id?: number | null; list_name?: string | null; servings?: number | null }) =>
-    request<MealPlanExport>('POST', `/recipes/${id}/to-list`, body),
-  exportMealPlan: (id: number, body: { list_id?: number | null; list_name?: string | null; include_pantry?: boolean }) =>
-    request<MealPlanExport>('POST', `/meal-plans/${id}/to-list`, body),
+  exportRecipe: async (id: number, body: { list_id?: number | null; list_name?: string | null; servings?: number | null }) =>
+    request<MealPlanExport>('POST', await withAt(`/recipes/${id}/to-list`), body),
+  exportMealPlan: async (id: number, body: { list_id?: number | null; list_name?: string | null; include_pantry?: boolean }) =>
+    request<MealPlanExport>('POST', await withAt(`/meal-plans/${id}/to-list`), body),
 };

@@ -74,6 +74,8 @@ from app.services.recipe_media import recipe_image_url
 
 log = logging.getLogger("marketkiyas.meals")
 
+Origin = tuple[float, float]  # kullanıcının (enlem, boylam) konumu; istek boyunca kullanılır, saklanmaz
+
 SLOT_ORDER = {MealSlot.BREAKFAST: 0, MealSlot.LUNCH: 1, MealSlot.SNACK: 2, MealSlot.DINNER: 3}
 COURSE_ORDER = {
     CourseType.SOUP: 0, CourseType.MAIN: 1, CourseType.SIDE: 2, CourseType.SALAD: 3, CourseType.DESSERT: 4,
@@ -206,7 +208,7 @@ async def list_recipes(
 ) -> list[RecipeSummary]:
     """En sevilenler önce (başlangıç puanı + kullanıcı beğenileri).
 
-    have ("Dolabımda ne var"): yalnız bu malzemelerden en az birini kullanan tarifler; en az eksiği
+    have ("Kilerimde ne var"): yalnız bu malzemelerden en az birini kullanan tarifler; en az eksiği
     olan önce, her tarifte alınması gereken (evde var sayılmayan) eksik malzemeler `missing`'de."""
     stmt = (
         select(Recipe).join(Cuisine).where(Recipe.is_active, Cuisine.is_active, _available())
@@ -250,7 +252,7 @@ async def list_recipes(
 
 
 async def ingredient_choices(db: AsyncSession) -> list[IngredientChoice]:
-    """"Dolabımda ne var" seçicisi için tariflerde geçen malzemeler (tuz, baharat gibi evde var
+    """"Kilerimde ne var" seçicisi için tariflerde geçen malzemeler (tuz, baharat gibi evde var
     sayılanlar hariç); en çok tarifte geçen önce."""
     recipes = (await db.scalars(
         select(Recipe).join(Cuisine).where(Recipe.is_active, Cuisine.is_active, _available())
@@ -291,8 +293,10 @@ async def get_recipe(db: AsyncSession, recipe_id: int) -> Recipe:
     return recipe
 
 
-async def recipe_detail(db: AsyncSession, recipe: Recipe, servings: int, user_id: int | None) -> RecipeDetail:
-    cost = await compute_cost(db, [(recipe, Decimal(servings) / recipe.servings)], servings, user_id)
+async def recipe_detail(
+    db: AsyncSession, recipe: Recipe, servings: int, user_id: int | None, origin: Origin | None = None
+) -> RecipeDetail:
+    cost = await compute_cost(db, [(recipe, Decimal(servings) / recipe.servings)], servings, user_id, origin=origin)
     return RecipeDetail(
         **recipe_summary(recipe, await liked_ids(db, user_id)).model_dump(),
         steps=[s for s in recipe.steps.split("\n") if s.strip()],
@@ -317,8 +321,8 @@ class _Need:
     is_pantry: bool
     quantity: Decimal = Decimal(0)
     recipes: list[str] = field(default_factory=list)
-    names: set[str] = field(default_factory=set)  # tariflerdeki adları (normalize), "dolabımda var" için
-    key: str = ""  # normalize arama ifadesi; dolaptaki artanlar bu anahtar + birimle eşleşir
+    names: set[str] = field(default_factory=set)  # tariflerdeki adları (normalize), "kilerimde var" için
+    key: str = ""  # normalize arama ifadesi; kilerdeki artanlar bu anahtar + birimle eşleşir
 
 
 @dataclass(frozen=True)
@@ -333,6 +337,10 @@ class _Pick:
 
 
 def _cheapest_market(group: GroupSummary) -> tuple[Decimal, int | None] | None:
+    """Konum biliniyorsa seçili marketlerin en yakınındaki şubenin fiyatı (en yakından uzağa; ürünü o şube
+    satmıyorsa sıradaki yakın şube); konum yoksa en ucuz market."""
+    if group.nearest_price is not None:
+        return group.nearest_price, group.nearest_market_id
     if not group.market_prices:
         return (group.min_price, None) if group.min_price is not None else None
     best = min(group.market_prices, key=lambda m: (m.min_price, m.market_id))
@@ -376,7 +384,8 @@ def _category_ok(group: GroupSummary, need: _Need, categories: dict[str, int]) -
 
 
 async def _groups_for(
-    db: AsyncSession, term: str, need: _Need, user_id: int | None, categories: dict[str, int], cache: dict | None
+    db: AsyncSession, term: str, need: _Need, user_id: int | None, categories: dict[str, int], cache: dict | None,
+    origin: Origin | None = None,
 ) -> list[GroupSummary]:
     """Arama ifadesine uyan, malzeme olabilecek ürün grupları. cache: aynı istekte (ör. bütçeye uydururken
     planın maliyeti defalarca hesaplanır) aynı arama tekrar yapılmasın."""
@@ -385,7 +394,8 @@ async def _groups_for(
         return cache[key]
     found = cache.get(("raw", term, user_id)) if cache is not None else None
     if found is None:
-        found = await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id)
+        lat, lon = origin or (None, None)
+        found = await search_groups(db, term, None, MATCH_CANDIDATES, user_id=user_id, lat=lat, lon=lon)
     groups = [
         g for g in found
         if _category_ok(g, need, categories)
@@ -399,7 +409,8 @@ async def _groups_for(
 
 
 async def _match(
-    db: AsyncSession, need: _Need, user_id: int | None, categories: dict[str, int], cache: dict | None = None
+    db: AsyncSession, need: _Need, user_id: int | None, categories: dict[str, int], cache: dict | None = None,
+    origin: Origin | None = None,
 ) -> _Pick | None:
     """Gereken miktarı en ucuza karşılayan grup. Ürün adı arama ifadesinin malzemesi olmalıdır
     (bkz. ingredient_match: "limon" için "Limonlu Popkek", "pul biber" için "Sivri Biber" sayılmaz);
@@ -408,7 +419,7 @@ async def _match(
     for term in (t.strip() for t in need.search_term.split("|")):
         if not term:
             continue
-        for group in await _groups_for(db, term, need, user_id, categories, cache):
+        for group in await _groups_for(db, term, need, user_id, categories, cache, origin):
             if group.id in picks:
                 continue
             pick = _price_for(group, need)
@@ -450,11 +461,13 @@ async def compute_cost(
     cache: dict | None = None,
     categories: dict[str, int] | None = None,
     stock: dict[tuple[str, Unit], Decimal] | None = None,
+    origin: Origin | None = None,
 ) -> CostOut:
     """uses: (tarif, çarpan) — çarpan = plan kişi sayısı / tarifin kişi sayısı, her öğün için ayrı.
     have: kullanıcının evde olduğunu söylediği malzemeler (normalize adlar); maliyete katılmaz.
-    stock: dolaptaki artan miktarlar ((anahtar, birim) -> miktar); önce bunlar kullanılır, yalnız
-    eksik kısım için paket alınır."""
+    stock: kilerdeki artan miktarlar ((anahtar, birim) -> miktar); önce bunlar kullanılır, yalnız
+    eksik kısım için paket alınır. origin: kullanıcının (lat, lon) konumu; varsa her malzeme seçili marketlerin
+    en yakınındaki şubenin fiyatından hesaplanır (konum kaydedilmez)."""
     lines: list[CostLine] = []
     pantry: list[str] = []
     at_home: list[str] = []
@@ -476,7 +489,7 @@ async def compute_cost(
         if t and ("raw", t, user_id) not in cache
     ]
     if terms:
-        for t, groups in (await search_groups_many(db, terms, MATCH_CANDIDATES, user_id)).items():
+        for t, groups in (await search_groups_many(db, terms, MATCH_CANDIDATES, user_id, *(origin or (None, None)))).items():
             cache[("raw", t, user_id)] = groups
     for need in all_needs:
         if need.is_pantry and not include_pantry:
@@ -492,7 +505,7 @@ async def compute_cost(
             from_stock.append(StockUse(name=need.name, quantity=_qty(take), unit=need.unit))
             if need.quantity <= 0:
                 continue
-        pick = await _match(db, need, user_id, categories, cache)
+        pick = await _match(db, need, user_id, categories, cache, origin)
         lines.append(
             CostLine(
                 name=need.name,
@@ -714,7 +727,7 @@ def _detach(entry: MealPlanEntry) -> None:
         entry.leftover_of = None
 
 
-# --- Tercihler: az israf, dolabımda olanlar, bütçe ------------------------------------------
+# --- Tercihler: az israf, kilerimde olanlar, bütçe ------------------------------------------
 
 
 def _terms(recipe: Recipe) -> set[str]:
@@ -739,7 +752,7 @@ class _Prefs:
         stock_terms: set[str] | None = None, deal_terms: set[str] | None = None,
     ):
         self.terms = {r.id: _terms(r) for r in recipes}
-        # Dolapta olanlar: kullanıcının seçtikleri + önceki alışverişlerden artanlar
+        # Kilerde olanlar: kullanıcının seçtikleri + önceki alışverişlerden artanlar
         self.have_terms = {
             normalize_text(i.search_term) for r in recipes for i in r.ingredients
             if not i.is_pantry and normalize_text(i.name) in have
@@ -779,7 +792,7 @@ def _choose(
     exclude: int | None = None, prefs: _Prefs | None = None,
 ) -> Recipe:
     """Çeşitlilik: aynı gün tekrar etmesin, mümkünse dünkü yemekler gelmesin, en az kullanılan önce;
-    eşitlerde tercihler (az israf, dolaptakiler, bütçe), sonra sevilen tarif (puanı yüksek) daha büyük
+    eşitlerde tercihler (az israf, kilerdekiler, bütçe), sonra sevilen tarif (puanı yüksek) daha büyük
     olasılıkla seçilir."""
     pool = [r for r in candidates if r.id != exclude] or candidates
 
@@ -799,7 +812,7 @@ async def create_plan(
     diets: list[Diet] | None = None, avoid: list[Allergen] | None = None, rng: random.Random | None = None,
     days: int | None = None, weekdays: list[int] | None = None, budget: Decimal | None = None,
     leftovers: bool = False, low_waste: bool = False, have: list[str] | None = None,
-    from_deals: bool = False, prefer: list[str] | None = None,
+    from_deals: bool = False, prefer: list[str] | None = None, origin: Origin | None = None,
 ) -> tuple[MealPlan, int]:
     """Planı oluşturur; (plan, bütçe için değiştirilen yemek sayısı) döner."""
     rng = rng or random.Random()
@@ -832,10 +845,10 @@ async def create_plan(
     categories = await _category_ids(db)
     prices = None
     if budget is not None:
-        prices = {r.id: await _estimate(db, r, servings, user.id, have_names, cache, categories) for r in recipes}
+        prices = {r.id: await _estimate(db, r, servings, user.id, have_names, cache, categories, origin) for r in recipes}
     await remember_have(db, user, have_names)
     stock = await load_stock(db, user.id)
-    # İndirimden menü: seçilen malzemeler (prefer) dolaptakiler gibi öne çıkar; from_deals ise katalogda indirimde
+    # İndirimden menü: seçilen malzemeler (prefer) kilerdekiler gibi öne çıkar; from_deals ise katalogda indirimde
     # olan bütün malzemeler küçük bir ağırlıkla (deal_terms) öne çıkar
     prefer_names = have_set(prefer or [])
     prefer_terms = {
@@ -924,7 +937,7 @@ async def create_plan(
 
     swaps = 0
     if budget is not None:
-        swaps = await _fit_budget(db, plan, recipes, budget, prices, user.id, have_names, cache, categories, rng)
+        swaps = await _fit_budget(db, plan, recipes, budget, prices, user.id, have_names, cache, categories, rng, origin)
     db.add(plan)
     await db.commit()
     return await get_plan(db, user, plan.id), swaps
@@ -932,12 +945,13 @@ async def create_plan(
 
 async def _estimate(
     db: AsyncSession, recipe: Recipe, servings: int, user_id: int, have: set[str], cache: dict,
-    categories: dict[str, int],
+    categories: dict[str, int], origin: Origin | None = None,
 ) -> Decimal:
     """Tarifin plan kişi sayısı için kullanılan malzeme değeri (bütçe karşılaştırması için). Fiyatı
     bulunamayan malzeme bedava sayılmasın: bulunanların ortalaması kadar eklenir."""
     cost = await compute_cost(
-        db, [(recipe, Decimal(servings) / recipe.servings)], 1, user_id, have=have, cache=cache, categories=categories
+        db, [(recipe, Decimal(servings) / recipe.servings)], 1, user_id, have=have, cache=cache, categories=categories,
+        origin=origin,
     )
     priced = [line.used_cost for line in cost.lines if line.used_cost is not None]
     average = sum(priced, Decimal(0)) / len(priced) if priced else MISSING_PRICE
@@ -957,6 +971,7 @@ OPTIONAL_COURSES = (CourseType.DRINK, CourseType.DESSERT, CourseType.SALAD, Cour
 async def _fit_budget(
     db: AsyncSession, plan: MealPlan, recipes: list[Recipe], budget: Decimal, prices: dict[int, Decimal],
     user_id: int, have: set[str], cache: dict, categories: dict[str, int], rng: random.Random,
+    origin: Origin | None = None,
 ) -> int:
     """Alışveriş tutarı bütçeyi aşıyorsa en pahalı yemekler aynı öğüne uygun daha ucuz bir tarifle
     değiştirilir (kalanları da onu izler). Ucuzu kalmadıysa içecek, tatlı, salata, çorba çıkarılır.
@@ -965,7 +980,7 @@ async def _fit_budget(
 
     async def total() -> Decimal:
         uses = [(by_id[e.recipe_id], Decimal(plan.servings) / by_id[e.recipe_id].servings) for e in plan.entries]
-        cost = await compute_cost(db, uses, 1, user_id, have=have, cache=cache, categories=categories)
+        cost = await compute_cost(db, uses, 1, user_id, have=have, cache=cache, categories=categories, origin=origin)
         return cost.purchase_total
 
     steps = 0
@@ -1176,20 +1191,22 @@ def meal_count(plan: MealPlan) -> int:
     return len({(e.day_index, e.slot) for e in plan.entries})
 
 
-async def plan_cost(db: AsyncSession, plan: MealPlan, user_id: int, include_pantry: bool = False) -> CostOut:
-    """Listeye aktarılmamış plan dolabın güncel hâlini kullanır; aktarılmış plan, aktarıldığı anda
-    dolaptan ne kullandıysa onu (yoksa kendi artanlarını kendi maliyetinden düşerdi)."""
+async def plan_cost(
+    db: AsyncSession, plan: MealPlan, user_id: int, include_pantry: bool = False, origin: Origin | None = None
+) -> CostOut:
+    """Listeye aktarılmamış plan kilerin güncel hâlini kullanır; aktarılmış plan, aktarıldığı anda
+    kilerden ne kullandıysa onu (yoksa kendi artanlarını kendi maliyetinden düşerdi)."""
     if plan.stock_used is not None:
         stock = {(u["key"], Unit(u["unit"])): Decimal(u["quantity"]) for u in json.loads(plan.stock_used)}
     else:
         stock = await load_stock(db, user_id)
     return await compute_cost(
         db, _uses(plan), meal_count(plan) * plan.servings, user_id, include_pantry, have=have_set(plan.have_list),
-        stock=stock,
+        stock=stock, origin=origin,
     )
 
 
-# --- Dolap: alınan paketlerden artanlar -----------------------------------------------------
+# --- Kiler: alınan paketlerden artanlar -----------------------------------------------------
 
 # Ana kategoriye göre açılmış paketin buzdolabında dayanacağı gün; listede olmayanlar (bakliyat, un,
 # yağ, baharat, konserve) bozulmaz sayılır
@@ -1202,7 +1219,7 @@ def shelf_life(categories: tuple[str, ...]) -> int | None:
 
 
 async def _pantry_rows(db: AsyncSession, user_id: int) -> list[PantryItem]:
-    """Kullanıcının dolabı; son kullanma günü geçenler silinir."""
+    """Kullanıcının kileri; son kullanma günü geçenler silinir."""
     rows = (await db.scalars(
         select(PantryItem).where(PantryItem.user_id == user_id).order_by(PantryItem.name)
     )).all()
@@ -1221,7 +1238,7 @@ async def _pantry_rows(db: AsyncSession, user_id: int) -> list[PantryItem]:
 async def load_stock(db: AsyncSession, user_id: int | None) -> dict[tuple[str, Unit], Decimal]:
     if user_id is None:
         return {}
-    # Miktarı belirsiz olan ("dolabımda var" diye seçilen) gereken her miktarı karşılar
+    # Miktarı belirsiz olan ("kilerimde var" diye seçilen) gereken her miktarı karşılar
     return {
         (r.key, r.unit): Decimal(r.quantity) if r.quantity is not None else UNLIMITED
         for r in await _pantry_rows(db, user_id)
@@ -1232,7 +1249,7 @@ UNLIMITED = Decimal("Infinity")
 
 
 async def remember_have(db: AsyncSession, user: User, have: set[str]) -> None:
-    """"Dolabımda ne var"da seçilen malzemeler Dolabım'a miktarsız ("var") yazılır; dolapta miktarıyla
+    """"Kilerimde ne var"da seçilen malzemeler Kilerim'e miktarsız ("var") yazılır; kilerde miktarıyla
     zaten varsa dokunulmaz. Bozulabilenlere bugünden itibaren dayanma süresi verilir."""
     if not have:
         return
@@ -1262,10 +1279,10 @@ async def pantry(db: AsyncSession, user: User) -> list[PantryItemOut]:
 
 
 async def update_pantry_item(db: AsyncSession, user: User, item_id: int, quantity: Decimal | None) -> None:
-    """Miktarı düzelt; 0 ya da None = dolaptan çıkar."""
+    """Miktarı düzelt; 0 ya da None = kilerden çıkar."""
     row = await db.scalar(select(PantryItem).where(PantryItem.id == item_id, PantryItem.user_id == user.id))
     if row is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Dolapta böyle bir malzeme yok")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kilerde böyle bir malzeme yok")
     if not quantity:
         await db.delete(row)
     else:
@@ -1274,9 +1291,9 @@ async def update_pantry_item(db: AsyncSession, user: User, item_id: int, quantit
 
 
 async def _record_stock(db: AsyncSession, user: User, plan: MealPlan, cost: CostOut) -> list[StockUse]:
-    """Plan ilk kez listeye aktarılırken: dolaptan kullanılanlar düşülür, alınacak paketlerden artanlar
-    (ör. 500 g'lık paketten 200 g kullanılırsa 300 g) son kullanma günüyle dolaba eklenir. Planın dolaptan
-    kullandıkları planda saklanır ki maliyeti sonra değişmesin. Tekrar aktarmada dolap değişmez."""
+    """Plan ilk kez listeye aktarılırken: kilerden kullanılanlar düşülür, alınacak paketlerden artanlar
+    (ör. 500 g'lık paketten 200 g kullanılırsa 300 g) son kullanma günüyle kilere eklenir. Planın kilerden
+    kullandıkları planda saklanır ki maliyeti sonra değişmesin. Tekrar aktarmada kiler değişmez."""
     needs = {(n.key, n.unit): n for n in _collect_needs(_uses(plan))}
     rows = {(r.key, r.unit): r for r in await _pantry_rows(db, user.id)}
     used = []
@@ -1369,10 +1386,11 @@ def daily_nutrition(plan: MealPlan) -> Nutrition | None:
 
 
 async def to_detail(
-    db: AsyncSession, plan: MealPlan, user_id: int, include_pantry: bool = False, swaps: int = 0
+    db: AsyncSession, plan: MealPlan, user_id: int, include_pantry: bool = False, swaps: int = 0,
+    origin: Origin | None = None,
 ) -> MealPlanDetail:
     liked = await liked_ids(db, user_id)
-    cost = await plan_cost(db, plan, user_id, include_pantry)
+    cost = await plan_cost(db, plan, user_id, include_pantry, origin)
     budget = None
     if plan.budget is not None:
         budget = BudgetOut(
@@ -1437,11 +1455,11 @@ def _add_packages(shopping_list: ShoppingList, user: User, cost: CostOut, note: 
 
 async def export_recipe_to_list(
     db: AsyncSession, user: User, recipe: Recipe, *, servings: int, list_id: int | None,
-    list_name: str | None, include_pantry: bool,
+    list_name: str | None, include_pantry: bool, origin: Origin | None = None,
 ) -> tuple[ShoppingList, int, list[str]]:
-    """Tek bir yemeğin malzemeleri listeye eklenir (plan kurmadan; dolap değişmez)."""
+    """Tek bir yemeğin malzemeleri listeye eklenir (plan kurmadan; kiler değişmez)."""
     cost = await compute_cost(
-        db, [(recipe, Decimal(servings) / recipe.servings)], servings, user.id, include_pantry
+        db, [(recipe, Decimal(servings) / recipe.servings)], servings, user.id, include_pantry, origin=origin
     )
     if list_id is not None:
         shopping_list = await list_svc.get_owned_list(db, user, list_id, editable=True)
@@ -1456,11 +1474,12 @@ async def export_recipe_to_list(
 
 
 async def export_to_list(
-    db: AsyncSession, user: User, plan: MealPlan, *, list_id: int | None, list_name: str | None, include_pantry: bool
+    db: AsyncSession, user: User, plan: MealPlan, *, list_id: int | None, list_name: str | None, include_pantry: bool,
+    origin: Origin | None = None,
 ) -> tuple[ShoppingList, int, list[str], list[StockUse]]:
     """Malzemeler (bulunan ürün grupları, paket adediyle) listeye eklenir. Grup listede zaten
     varsa yeni kalem açılmaz, miktarı artar (elle ürün eklemekle aynı kural)."""
-    cost = await plan_cost(db, plan, user.id, include_pantry)
+    cost = await plan_cost(db, plan, user.id, include_pantry, origin)
     stored: list[StockUse] = []
     if plan.stock_used is None:
         stored = await _record_stock(db, user, plan, cost)

@@ -249,16 +249,18 @@ async def search_groups(
     summaries = [group_summary(g, resolver, campaigns) for g in groups]
     if resolver.uses_stores:
         summaries = [s for s in summaries if s.min_price is not None]
-    if rank is not None and lat is not None and lon is not None:
+    if lat is not None and lon is not None:
         nearest = await _nearest_offers(db, groups, resolver, lat, lon)
         summaries = [_with_nearest(s, nearest) for s in summaries]
+    if rank is not None and lat is not None and lon is not None:
         # sort kararlı: aynı kademede ve uzaklıkta SQL'deki (kısa ad, ad) sırası korunur
         summaries.sort(key=lambda s: (ranks.get(s.id, 0), *_near_key(s)))
     return summaries[:limit]
 
 
 async def search_groups_many(
-    db: AsyncSession, queries: Sequence[str], limit: int, user_id: int | None = None
+    db: AsyncSession, queries: Sequence[str], limit: int, user_id: int | None = None,
+    lat: float | None = None, lon: float | None = None,
 ) -> dict[str, list[GroupSummary]]:
     """Her q için search_groups(q, None, limit, user_id) ile aynı sonuç, ama üyeler, şube fiyatları ve kampanya
     fiyatları tüm aramalar için tek seferde yüklenir (arama başına 5 yerine toplam ~5 sorgu + arama başına 1)."""
@@ -288,6 +290,10 @@ async def search_groups_many(
     resolver = await build_resolver(db, user_id, product_ids)
     campaigns = await campaign_prices(db, product_ids)
     summaries = {i: group_summary(g, resolver, campaigns) for i, g in groups.items()}
+    if lat is not None and lon is not None:
+        # Konum varsa her grubun en yakın şubesi ve oradaki fiyat (nearest_*) da dolar
+        nearest = await _nearest_offers(db, list(groups.values()), resolver, lat, lon)
+        summaries = {i: _with_nearest(s, nearest) for i, s in summaries.items()}
     result: dict[str, list[GroupSummary]] = {}
     for q, ids in ids_by_query.items():
         found = [summaries[i] for i in ids if i in summaries]  # arada silinen grup atlanır

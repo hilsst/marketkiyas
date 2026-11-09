@@ -92,7 +92,7 @@ async def register(body: RegisterRequest, db: DbSession) -> AuthResponse:
 
 @router.post("/guest", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def start_guest(request: Request, db: DbSession) -> AuthResponse:
-    """Hesapsız başla: e-postasız, şifresiz bir kullanıcı ve uzun süreli anahtar. Plan, liste ve dolap
+    """Hesapsız başla: e-postasız, şifresiz bir kullanıcı ve uzun süreli anahtar. Plan, liste ve kiler
     misafirde de çalışır; paylaşma ve aile gerçek hesap ister (/auth/upgrade)."""
     ip = request.client.host if request.client else "?"
     if settings.trust_forwarded_for and (fwd := request.headers.get("x-forwarded-for")):
@@ -108,7 +108,7 @@ async def start_guest(request: Request, db: DbSession) -> AuthResponse:
 
 @router.post("/upgrade", response_model=AuthResponse)
 async def upgrade_guest(body: UpgradeRequest, user: CurrentUser, db: DbSession) -> AuthResponse:
-    """Misafiri e-posta ve şifreyle gerçek hesaba çevirir; planları, listeleri, dolabı olduğu gibi kalır."""
+    """Misafiri e-posta ve şifreyle gerçek hesaba çevirir; planları, listeleri, kileri olduğu gibi kalır."""
     if not user.is_guest:
         raise HTTPException(status.HTTP_409_CONFLICT, "Zaten bir hesabın var")
     email = body.email.lower()

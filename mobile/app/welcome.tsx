@@ -72,7 +72,7 @@ export default function WelcomeScreen() {
           <Text style={{ color: t.text, fontSize: 22, fontWeight: '700', marginTop: 18 }}>{name ? `Hoş geldiniz ${name}!` : 'Hoş geldiniz!'}</Text>
           <Muted style={{ fontSize: 15 }}>Bugün ne yapmak istersiniz?</Muted>
         </View>
-        {option('coffee', 'Yemek Planı', '1-14 günlük menü: bütçenize, dolabınızdakilere göre; artan yemeği yarına saklayın. Maliyetini görün, alışveriş listenize aktarın.', meals, true)}
+        {option('coffee', 'Yemek Planı', '1-14 günlük menü: bütçenize, kilerinizdekilere göre; artan yemeği yarına saklayın. Maliyetini görün, alışveriş listenize aktarın.', meals, true)}
         {option('shopping-bag', 'Alışveriş', 'Ürün arayın, fiyatları karşılaştırın, listenizi en ucuz marketlere göre planlayın.', shopping, false)}
         {!user && <Muted style={{ textAlign: 'center', marginTop: 6 }}>Üye olmadan başlayabilirsiniz</Muted>}
       </View>

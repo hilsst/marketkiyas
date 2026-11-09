@@ -7,7 +7,7 @@ import { Button, Muted, useTheme } from '@/components/ui';
 import { formatSize, MealPlanExport } from '@/lib/api';
 import type { FoodGlyph } from '@/lib/icons';
 
-/** Dolaba kaydedilen malzemenin adından vektör simge (eşleşme yoksa paket simgesi) */
+/** Kilere kaydedilen malzemenin adından vektör simge (eşleşme yoksa paket simgesi) */
 const KEYWORDS: [RegExp, FoodGlyph][] = [
   [/un\b|bulgur|pirinç|makarna|nişasta|irmik|mercimek|nohut|fasulye/i, 'grain'],
   [/ekmek|pide|lavaş|yufka/i, 'baguette'],
@@ -20,7 +20,7 @@ const KEYWORDS: [RegExp, FoodGlyph][] = [
 const glyphFor = (name: string): FoodGlyph => KEYWORDS.find(([re]) => re.test(name))?.[1] ?? 'package-variant-closed';
 
 /**
- * Plan -> liste aktarımı bitince gösterilen başarı alt sayfası: eklenen ürün sayısı, dolaba kaydedilen
+ * Plan -> liste aktarımı bitince gösterilen başarı alt sayfası: eklenen ürün sayısı, kilere kaydedilen
  * artanlar ve eklenemeyen ürünler. "Listeyi aç" birincil, "Planda kal" ikincil eylemdir.
  */
 export default function ExportSuccessSheet({ result, onOpen, onClose }: {
@@ -50,7 +50,7 @@ export default function ExportSuccessSheet({ result, onOpen, onClose }: {
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Stat n={result.added} label="ürün eklendi" />
-              {stored.length > 0 && <Stat n={stored.length} label="artan dolaba girdi" />}
+              {stored.length > 0 && <Stat n={stored.length} label="artan kilere girdi" />}
             </View>
 
             {stored.length > 0 && (
@@ -58,7 +58,7 @@ export default function ExportSuccessSheet({ result, onOpen, onClose }: {
                 <View style={{ gap: 2 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Icon name="package" size={20} color={t.tintDark} />
-                    <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 15 }}>Dolabına kaydedildi</Text>
+                    <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 15 }}>Kilerine kaydedildi</Text>
                   </View>
                   <Muted>Sonraki planlar önce bunları kullanır.</Muted>
                 </View>
