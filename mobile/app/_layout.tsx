@@ -1,3 +1,5 @@
+import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -26,6 +28,10 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_700Bold,
+    Fraunces_700Bold,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
