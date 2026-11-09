@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.api.deps import CurrentUser, DbSession, OptionalUser
 from app.models import Allergen, CourseType, Diet, MealSlot
@@ -26,6 +26,16 @@ from app.services import deals_menu
 from app.services import lists as list_svc
 from app.services import meals as svc
 
+def _origin(
+    lat: Annotated[float | None, Query(ge=35, le=43)] = None,  # Türkiye sınırları (ürün aramasıyla aynı)
+    lon: Annotated[float | None, Query(ge=25, le=45)] = None,
+) -> tuple[float, float] | None:
+    return (lat, lon) if lat is not None and lon is not None else None
+
+
+# Kullanıcının konumu (lat/lon): verilirse malzeme fiyatları seçili marketlerin en yakınından alınır; saklanmaz
+Origin = Annotated[tuple[float, float] | None, Depends(_origin)]
+
 router = APIRouter(tags=["meals"])
 
 
@@ -45,24 +55,26 @@ async def list_recipes(
     q: Annotated[str | None, Query(max_length=100)] = None,
 ) -> list[RecipeSummary]:
     """En sevilen tarifler önce. diet=vegan&avoid=gluten: yalnız uyanlar. have=Nohut&have=Pirinç
-    ("Dolabımda ne var"): bu malzemeleri kullananlar, en az eksiği olan önce (eksikler `missing`'de).
+    ("Kilerimde ne var"): bu malzemeleri kullananlar, en az eksiği olan önce (eksikler `missing`'de).
     q=kofte: tarif adında ya da malzemesinde geçenler (aksan/büyük-küçük harf fark etmez); adı eşleşenler önce."""
     return await svc.list_recipes(db, cuisine, slot, course, diet, avoid, user.id if user else None, have, q)
 
 
 @router.get("/ingredients", response_model=list[IngredientChoice])
 async def list_ingredients(db: DbSession) -> list[IngredientChoice]:
-    """"Dolabımda ne var" seçicisi: tariflerde geçen malzemeler (tuz, baharat hariç)."""
+    """"Kilerimde ne var" seçicisi: tariflerde geçen malzemeler (tuz, baharat hariç)."""
     return await svc.ingredient_choices(db)
 
 
 @router.post("/recipes/{recipe_id}/to-list", response_model=ExportOut)
-async def export_recipe(recipe_id: int, body: RecipeExportRequest, user: CurrentUser, db: DbSession) -> ExportOut:
+async def export_recipe(
+    recipe_id: int, body: RecipeExportRequest, user: CurrentUser, db: DbSession, origin: Origin
+) -> ExportOut:
     """Tek bir yemeğin malzemelerini alışveriş listesine ekle (plan kurmadan)."""
     recipe = await svc.get_recipe(db, recipe_id)
     shopping_list, added, skipped = await svc.export_recipe_to_list(
         db, user, recipe, servings=body.servings or recipe.servings, list_id=body.list_id,
-        list_name=body.list_name, include_pantry=body.include_pantry,
+        list_name=body.list_name, include_pantry=body.include_pantry, origin=origin,
     )
     detail = list_svc.to_detail(await list_svc.get_owned_list(db, user, shopping_list.id))
     return ExportOut(list=detail, added=added, skipped=skipped, stored=[])
@@ -82,11 +94,12 @@ async def unlike_recipe(recipe_id: int, user: CurrentUser, db: DbSession) -> Res
 
 @router.get("/recipes/{recipe_id}", response_model=RecipeDetail)
 async def get_recipe(
-    recipe_id: int, db: DbSession, user: OptionalUser, servings: Annotated[int | None, Query(ge=1, le=12)] = None
+    recipe_id: int, db: DbSession, user: OptionalUser, origin: Origin,
+    servings: Annotated[int | None, Query(ge=1, le=12)] = None,
 ) -> RecipeDetail:
     """Tarif, malzemeler ve istenen kişi sayısı için tahmini maliyet (kullanıcının şubelerine göre)."""
     recipe = await svc.get_recipe(db, recipe_id)
-    return await svc.recipe_detail(db, recipe, servings or recipe.servings, user.id if user else None)
+    return await svc.recipe_detail(db, recipe, servings or recipe.servings, user.id if user else None, origin)
 
 
 @router.get("/meal-plans", response_model=list[MealPlanSummary])
@@ -95,12 +108,12 @@ async def list_plans(user: CurrentUser, db: DbSession) -> list[MealPlanSummary]:
 
 
 @router.post("/meal-plans", response_model=MealPlanDetail, status_code=status.HTTP_201_CREATED)
-async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) -> MealPlanDetail:
+async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession, origin: Origin) -> MealPlanDetail:
     """1-14 günlük plan (günlük, haftalık ya da ör. maaş gününe kadar 10 gün): seçilen mutfaklardan
     çeşitli yemekler öğünlere dağıtılır; her öğün tek mutfaktan gelir.
 
     weekdays: kullanılmaz (eski istemciler için kabul edilir, yok sayılır). budget: alışveriş tutarı hedefi. leftovers: bir pişir
-    iki ye. low_waste: malzemesi ortak tarifler. have: dolapta olanlar (maliyete girmez, öne çıkar)."""
+    iki ye. low_waste: malzemesi ortak tarifler. have: kilerde olanlar (maliyete girmez, öne çıkar)."""
     plan, swaps = await svc.create_plan(
         db, user, period=body.period, cuisine_slugs=body.cuisines or ([body.cuisine] if body.cuisine else []),
         servings=body.servings,
@@ -108,9 +121,9 @@ async def create_plan(body: MealPlanCreate, user: CurrentUser, db: DbSession) ->
         diets=body.diets, avoid=body.avoid_allergens, days=body.days, weekdays=body.weekdays,
         budget=body.budget, leftovers=body.leftovers, low_waste=body.low_waste, have=body.have,
         from_deals=body.from_deals,
-        prefer=body.prefer,
+        prefer=body.prefer, origin=origin,
     )
-    return await svc.to_detail(db, plan, user.id, swaps=swaps)
+    return await svc.to_detail(db, plan, user.id, swaps=swaps, origin=origin)
 
 
 @router.get("/meal-deals", response_model=DealMenuOut)
@@ -121,45 +134,47 @@ async def meal_deals(user: OptionalUser, db: DbSession) -> DealMenuOut:
 
 
 @router.get("/meal-plans/{plan_id}", response_model=MealPlanDetail)
-async def get_plan(plan_id: int, user: CurrentUser, db: DbSession, include_pantry: bool = False) -> MealPlanDetail:
+async def get_plan(
+    plan_id: int, user: CurrentUser, db: DbSession, origin: Origin, include_pantry: bool = False
+) -> MealPlanDetail:
     """Plan ve güncel fiyatlarla malzeme maliyeti. include_pantry: tuz, baharat gibi evde
     var sayılanlar da hesaba katılsın."""
-    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id, include_pantry)
+    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id, include_pantry, origin=origin)
 
 
 @router.patch("/meal-plans/{plan_id}", response_model=MealPlanDetail)
-async def update_plan(plan_id: int, body: MealPlanUpdate, user: CurrentUser, db: DbSession) -> MealPlanDetail:
+async def update_plan(plan_id: int, body: MealPlanUpdate, user: CurrentUser, db: DbSession, origin: Origin) -> MealPlanDetail:
     plan = await svc.get_plan(db, user, plan_id)
     for field, value in body.model_dump(exclude_unset=True, exclude_none=True).items():
         setattr(plan, field, value)
     await db.commit()
-    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id)
+    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id, origin=origin)
 
 
 @router.patch("/meal-plans/{plan_id}/entries/{entry_id}", response_model=MealPlanDetail)
 async def change_entry(
-    plan_id: int, entry_id: int, body: EntryUpdate, user: CurrentUser, db: DbSession
+    plan_id: int, entry_id: int, body: EntryUpdate, user: CurrentUser, db: DbSession, origin: Origin
 ) -> MealPlanDetail:
     """Öğünün yemeğini değiştir; recipe_id boşsa "Başka öner"."""
     plan = await svc.get_plan(db, user, plan_id)
     await svc.change_entry(db, user, plan, entry_id, body.recipe_id)
-    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id)
+    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id, origin=origin)
 
 
 @router.post("/meal-plans/{plan_id}/entries", response_model=MealPlanDetail, status_code=status.HTTP_201_CREATED)
-async def add_entry(plan_id: int, body: EntryCreate, user: CurrentUser, db: DbSession) -> MealPlanDetail:
+async def add_entry(plan_id: int, body: EntryCreate, user: CurrentUser, db: DbSession, origin: Origin) -> MealPlanDetail:
     """Öğüne yemek ekle (ör. kaldırılan çorbayı geri getir); tarif verilmezse uygun olan önerilir."""
     plan = await svc.get_plan(db, user, plan_id)
     await svc.add_entry(db, plan, body.day_index, body.slot, body.course, body.recipe_id)
-    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id)
+    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id, origin=origin)
 
 
 @router.delete("/meal-plans/{plan_id}/entries/{entry_id}", response_model=MealPlanDetail)
-async def remove_entry(plan_id: int, entry_id: int, user: CurrentUser, db: DbSession) -> MealPlanDetail:
+async def remove_entry(plan_id: int, entry_id: int, user: CurrentUser, db: DbSession, origin: Origin) -> MealPlanDetail:
     """O öğünde istenmeyen yemeği (ör. çorba) kaldır; maliyetten de çıkar."""
     plan = await svc.get_plan(db, user, plan_id)
     await svc.remove_entry(db, plan, entry_id)
-    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id)
+    return await svc.to_detail(db, await svc.get_plan(db, user, plan_id), user.id, origin=origin)
 
 
 @router.delete("/meal-plans/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -170,11 +185,12 @@ async def delete_plan(plan_id: int, user: CurrentUser, db: DbSession) -> Respons
 
 
 @router.post("/meal-plans/{plan_id}/to-list", response_model=ExportOut)
-async def export_plan(plan_id: int, body: ExportRequest, user: CurrentUser, db: DbSession) -> ExportOut:
+async def export_plan(plan_id: int, body: ExportRequest, user: CurrentUser, db: DbSession, origin: Origin) -> ExportOut:
     """"Alışveriş listesine aktar": malzemeler mevcut bir listeye ya da yeni listeye eklenir."""
     plan = await svc.get_plan(db, user, plan_id)
     shopping_list, added, skipped, stored = await svc.export_to_list(
-        db, user, plan, list_id=body.list_id, list_name=body.list_name, include_pantry=body.include_pantry
+        db, user, plan, list_id=body.list_id, list_name=body.list_name, include_pantry=body.include_pantry,
+        origin=origin,
     )
     detail = list_svc.to_detail(await list_svc.get_owned_list(db, user, shopping_list.id))
     return ExportOut(list=detail, added=added, skipped=skipped, stored=stored)
@@ -182,14 +198,14 @@ async def export_plan(plan_id: int, body: ExportRequest, user: CurrentUser, db: 
 
 @router.get("/pantry", response_model=list[PantryItemOut])
 async def get_pantry(user: CurrentUser, db: DbSession) -> list[PantryItemOut]:
-    """Dolabım: alınan paketlerden artanlar (plan listeye aktarılınca yazılır). Sonraki planlar önce
+    """Kilerim: alınan paketlerden artanlar (plan listeye aktarılınca yazılır). Sonraki planlar önce
     bunları kullanır. Son kullanma günü geçenler kendiliğinden çıkar."""
     return await svc.pantry(db, user)
 
 
 @router.patch("/pantry/{item_id}", response_model=list[PantryItemOut])
 async def update_pantry(item_id: int, body: PantryItemUpdate, user: CurrentUser, db: DbSession) -> list[PantryItemOut]:
-    """Miktarı düzelt (ör. 300 g kaldı sanıyordum, 100 g kalmış); 0 = dolaptan çıkar."""
+    """Miktarı düzelt (ör. 300 g kaldı sanıyordum, 100 g kalmış); 0 = kilerden çıkar."""
     await svc.update_pantry_item(db, user, item_id, body.quantity)
     return await svc.pantry(db, user)
 

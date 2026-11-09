@@ -9,7 +9,7 @@ import { api, formatSize, PantryItem } from '@/lib/api';
 const dateLabel = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
 
 /**
- * Dolabım: alınan paketlerden artanlar (ör. 500 g'lık mercimekten artan 300 g). Plan alışveriş
+ * Kilerim: alınan paketlerden artanlar (ör. 500 g'lık mercimekten artan 300 g). Plan alışveriş
  * listesine aktarılınca kendiliğinden yazılır; sonraki planlar önce bunları kullanır. Miktar elle
  * düzeltilebilir ya da malzeme çıkarılabilir.
  */
@@ -38,13 +38,13 @@ export default function PantryScreen() {
       <ScrollView keyboardShouldPersistTaps="handled">
         <View style={{ padding: 16, gap: 12 }}>
           <Muted>
-            “Dolabımda ne var”da seçtiklerin ve planı alışveriş listesine aktardığında paketlerden artacak miktarlar
+            “Kilerimde ne var”da seçtiklerin ve planı alışveriş listesine aktardığında paketlerden artacak miktarlar
             buraya yazılır. Yeni planlar önce bunları kullanır, yalnız eksik kısım listeye eklenir. Miktarı belirtilmeyen
             malzeme yeterince var sayılır. Bozulabilenler son günü geçince kendiliğinden çıkar.
           </Muted>
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
           {items === null ? <ActivityIndicator color={t.tint} /> : items.length === 0 ? (
-            <Card><Muted>Dolabın boş. Bir planı listeye aktardığında artanlar burada görünür.</Muted></Card>
+            <Card><Muted>Kilerin boş. Bir planı listeye aktardığında artanlar burada görünür.</Muted></Card>
           ) : items.map(item => (
             <Card key={item.id} style={{ gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

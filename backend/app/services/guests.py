@@ -1,7 +1,7 @@
 """Boş misafir hesaplarını temizleme.
 
 Uygulama her yeni kurulumda bir misafir açar; kaldırılan ya da hiç kullanılmayan kurulumlar veritabanında
-boş kullanıcı bırakır. Hiç liste, plan, dolap, şube, alarm ya da tasarruf kaydı olmayan ve belli bir süredir dokunulmamış
+boş kullanıcı bırakır. Hiç liste, plan, kiler, şube, alarm ya da tasarruf kaydı olmayan ve belli bir süredir dokunulmamış
 misafirler silinir. İçinde verisi olan misafire dokunulmaz (kullanıcı geri dönebilir)."""
 
 from datetime import datetime, timedelta, timezone

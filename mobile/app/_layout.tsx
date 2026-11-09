@@ -82,7 +82,7 @@ function RootLayoutNav() {
         <Stack.Screen name="meals/quick" options={{ title: 'Hızlı ama lezzetli yemekler' }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Yemek Planı' }} />
         <Stack.Screen name="meals/deals" options={{ title: 'İndirimden menü' }} />
-        <Stack.Screen name="meals/pantry" options={{ title: 'Dolabım' }} />
+        <Stack.Screen name="meals/pantry" options={{ title: 'Kilerim' }} />
         <Stack.Screen name="recipe/[id]" options={{ title: 'Tarif' }} />
         <Stack.Screen name="cook/[id]" options={{ title: 'Pişirme modu' }} />
       </Stack>

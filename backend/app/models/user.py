@@ -22,7 +22,7 @@ class User(TimestampMixin, Base):
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True)  # Google hesabının kalıcı kimliği
     apple_sub: Mapped[str | None] = mapped_column(String(255), unique=True)
     # Misafir: uygulama ilk açılışta hesapsız başlar; e-posta yer tutucudur, şifre yoktur. Kaydetme ya da
-    # paylaşma anında /auth/upgrade ile gerçek hesaba dönüşür, verileri (plan, liste, dolap) aynı kalır.
+    # paylaşma anında /auth/upgrade ile gerçek hesaba dönüşür, verileri (plan, liste, kiler) aynı kalır.
     is_guest: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     shopping_lists: Mapped[list["ShoppingList"]] = relationship(

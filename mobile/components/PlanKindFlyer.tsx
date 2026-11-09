@@ -8,7 +8,7 @@ export type PlanKind = 'quick' | 'cuisine' | 'pantry';
 
 /**
  * Karşılamada "Yemek Planı"na basınca ortada açılan kart: nasıl bir plan? Üstte öne çıkan "Hızlı ama lezzetli yemekler"
- * (30-45 dakikada biten, malzemesi marketten alınan yemekler), altında mutfak seçerek kurma ve dolaptakilerle plan.
+ * (30-45 dakikada biten, malzemesi marketten alınan yemekler), altında mutfak seçerek kurma ve kilerdekilerle plan.
  */
 export default function PlanKindFlyer({ quickCount, onPick, onCancel }: {
   quickCount: number; onPick: (kind: PlanKind) => void; onCancel: () => void;
@@ -62,7 +62,7 @@ export default function PlanKindFlyer({ quickCount, onPick, onCancel }: {
           </Pressable>
 
           {row('cuisine', 'globe', 'Mutfak seçerek kurun', 'Türk, İtalyan, Uzak Doğu, Meksika')}
-          {row('pantry', 'archive', 'Dolabımdakilerle', 'Evdekini önce kullanın, eksiği alın')}
+          {row('pantry', 'archive', 'Kilerimdekilerle', 'Evdekini önce kullanın, eksiği alın')}
         </Animated.View>
       </View>
     </Modal>
