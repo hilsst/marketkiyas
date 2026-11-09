@@ -26,12 +26,15 @@ export interface GroupSummary {
   id: number; name: string; category_id: number | null; subcategory_id?: number | null;
   quantity: Money | null; unit: Unit | null; image_url: string | null; min_price: Money | null;
   market_prices: MarketPrice[]; brands: string[];
+  // Konum açıksa: seçili şubeler arasında bu ürünü satan en yakın şube ve oradaki fiyat (min_price = en ucuz)
+  nearest_store_name?: string | null; nearest_market_id?: number | null; nearest_distance_km?: number | null; nearest_price?: Money | null;
 }
 export interface PricePoint { price: Money; recorded_at: string; }
 export interface GroupProduct {
   id: number; name: string; brand: string | null; market_id: number; price: Money | null; regular_price: Money | null;
   store_id: number | null; store_name: string | null; is_available: boolean; image_url: string | null;
-  price_history: PricePoint[]; price_updated_at: string | null; store_prices: { store_id: number; store_name: string; price: Money; updated_at: string | null }[];
+  price_history: PricePoint[]; price_updated_at: string | null; store_prices: { store_id: number; store_name: string; price: Money; updated_at: string | null; distance_km?: number | null }[];
+  distance_km?: number | null;
 }
 export interface GroupDetail extends GroupSummary { products: GroupProduct[]; }
 export type PlanType = 'single_market' | 'combination' | 'opportunist' | 'nearby';
@@ -283,9 +286,9 @@ export const api = {
   deleteAccount: (password?: string) => request<void>('DELETE', '/auth/me', { password: password || null }),
   markets: () => request<Market[]>('GET', '/markets'),
   categories: () => request<Category[]>('GET', '/categories'),
-  searchProducts: (q: string, categoryId?: number | null, opts: { sort?: 'name' | 'popular'; limit?: number; subcategoryId?: number | null } = {}) =>
+  searchProducts: (q: string, categoryId?: number | null, opts: { sort?: 'name' | 'popular'; limit?: number; subcategoryId?: number | null; at?: { lat: number; lon: number } | null } = {}) =>
     request<GroupSummary[]>('GET', '/products' + qs({
-      q, category_id: categoryId, subcategory_id: opts.subcategoryId, limit: opts.limit ?? 50, sort: opts.sort,
+      q, category_id: categoryId, subcategory_id: opts.subcategoryId, limit: opts.limit ?? 50, sort: opts.sort, lat: opts.at?.lat, lon: opts.at?.lon,
     })),
   savings: () => request<SavingsVault>('GET', '/savings'),
   lists: () => request<ListSummary[]>('GET', '/lists'),
@@ -309,7 +312,7 @@ export const api = {
   shareList: (listId: number) => request<{ share_code: string }>('POST', `/lists/${listId}/share`),
   joinList: (code: string) => request<ListDetail>('POST', '/lists/join', { code }),
   removeMember: (listId: number, userId: number) => request<void>('DELETE', `/lists/${listId}/members/${userId}`),
-  productGroup: (id: number) => request<GroupDetail>('GET', '/products/' + id),
+  productGroup: (id: number, at?: { lat: number; lon: number } | null) => request<GroupDetail>('GET', '/products/' + id + qs({ lat: at?.lat, lon: at?.lon })),
   // Muadiller, seçili şubelere göre (şube seçilmemişse boş)
   similarGroups: (id: number) => request<GroupSummary[]>('GET', '/products/' + id + '/similar'),
   reportPrice: (groupId: number, body: { product_id: number; store_id?: number | null; reported_price?: number | null; note?: string | null }) =>

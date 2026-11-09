@@ -95,7 +95,7 @@ async def test_prices_follow_selected_stores(client, auth_headers, db, fake):
     detail = (await client.get(f"/api/products/{group['id']}", headers=auth_headers)).json()
     pinar = next(p for p in detail["products"] if p["price"] is not None)
     assert pinar["store_name"] == "Kadıköy Rıhtım"
-    assert [{k: v for k, v in sp.items() if k != "updated_at"} for sp in pinar["store_prices"]] == [
+    assert [{k: v for k, v in sp.items() if k not in ("updated_at", "distance_km")} for sp in pinar["store_prices"]] == [
         {"store_id": rihtim, "store_name": "Kadıköy Rıhtım", "price": "35.25"}
     ]
     assert pinar["store_prices"][0]["updated_at"]

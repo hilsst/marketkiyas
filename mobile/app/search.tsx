@@ -11,6 +11,7 @@ import { Card, Chip, EmptyState, Muted, Screen, Segmented, useTheme } from '@/co
 import { api, COURSE_LABELS, CourseType, GroupSummary, num, RecipeSummary } from '@/lib/api';
 import { courseGlyph } from '@/lib/icons';
 import { useCatalog } from '@/lib/catalog';
+import { Coords, getCoords } from '@/lib/location';
 
 /** Ürün ve tarif araması (üstteki sekmeyle değişir). Ana sayfadaki arama çubuğu buraya açılır. */
 export default function SearchScreen() {
@@ -25,9 +26,12 @@ export default function SearchScreen() {
   const [error, setError] = useState<string | null>(null);
   const { markets } = useCatalog();
   const [market, setMarket] = useState<number | null>(null); // yalnız bu marketin fiyatları
-  const [cheapFirst, setCheapFirst] = useState(true);
+  // Konum varsa sunucu sonuçları seçili şubelerden en yakın olandan uzağa sıralar; yoksa kelime eşleşmesine ve ada göre
+  const [at, setAt] = useState<Coords | null | undefined>(undefined); // undefined = konum sorgulanıyor
+  useEffect(() => { getCoords().then(r => setAt(r.coords)); }, []);
 
   useEffect(() => {
+    if (at === undefined) return;
     const term = q.trim();
     let cancelled = false;
     const timer = setTimeout(() => {
@@ -39,22 +43,20 @@ export default function SearchScreen() {
         return;
       }
       if (!term) { setResults([]); return; }
-      api.searchProducts(term)
+      api.searchProducts(term, null, { at })
         .then(r => { if (!cancelled) { setResults(r); setError(null); } })
         .catch(e => { if (!cancelled) setError(e.message); });
     }, 300);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [q, mode]);
+  }, [q, mode, at]);
 
   const switchMode = (m: 'urun' | 'tarif') => { setMode(m); setError(null); setCourse(null); setRecipes(null); };
   const courses = Array.from(new Set((recipes ?? []).map(r => r.course_type)));
   const shownRecipes = (recipes ?? []).filter(r => course == null || r.course_type === course);
 
-  const cheapest = (prices: GroupSummary['market_prices']) => Math.min(...prices.map(m => num(m.min_price)));
   const visible = (results ?? [])
     .map(g => ({ g, prices: market == null ? g.market_prices : g.market_prices.filter(m => m.market_id === market) }))
-    .filter(x => x.prices.length > 0)
-    .sort((a, b) => (cheapFirst ? cheapest(a.prices) - cheapest(b.prices) : 0));
+    .filter(x => x.prices.length > 0); // sıra sunucudan: en yakın marketten uzağa (fiyata göre değil)
 
   return (
     <Screen safeTop={false}>
@@ -74,7 +76,6 @@ export default function SearchScreen() {
       {mode === 'urun' && q.trim() !== '' && results && results.length > 0 && (
         <>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18 }} contentContainerStyle={{ paddingHorizontal: 18, gap: 8 }}>
-            <Chip label="En ucuz" on={cheapFirst} onPress={() => setCheapFirst(v => !v)} />
             <Chip label="Tüm marketler" on={market == null} onPress={() => setMarket(null)} />
             {markets.map(m => <Chip key={m.id} label={m.name} on={market === m.id} onPress={() => setMarket(market === m.id ? null : m.id)} />)}
           </ScrollView>
