@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-nat
 import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { NEW_LOOK } from '@/constants/Look';
 import { courseGlyph } from '@/lib/icons';
 import { pickPhoto } from '@/lib/userPhotos';
 import FoodIcon from '@/components/FoodIcon';
@@ -104,13 +105,22 @@ export default function RecipeScreen() {
         <View style={{ padding: 16, gap: 16 }}>
           <View style={{ alignItems: 'center', gap: 6 }}>
             {recipe.image_url ? (
-              <RecipeImage uri={recipe.image_url} icon={courseGlyph(recipe.course_type)} width={320} height={400} radius={16} iconSize={60} />
+              NEW_LOOK ? (
+                // Eğik, beyaz çerçeveli fotoğraf kartı; "… tarafından eklendi" alt yazısı kartın içinde
+                <View style={{ backgroundColor: '#FFFFFF', padding: 10, paddingBottom: 12, borderRadius: 6, alignItems: 'center', gap: 6,
+                  transform: [{ rotate: '-2deg' }], shadowColor: '#000', shadowOpacity: 0.16, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 5 }}>
+                  <RecipeImage uri={recipe.image_url} icon={courseGlyph(recipe.course_type)} width={296} height={370} radius={3} iconSize={60} />
+                  {recipe.photo_credit && <Text style={{ color: '#B94E05', fontSize: 20, fontFamily: 'Caveat_600SemiBold' }}>{recipe.photo_credit}</Text>}
+                </View>
+              ) : (
+                <RecipeImage uri={recipe.image_url} icon={courseGlyph(recipe.course_type)} width={320} height={400} radius={16} iconSize={60} />
+              )
             ) : (
               <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
                 <FoodIcon name={courseGlyph(recipe.course_type)} size={60} />
               </View>
             )}
-            {recipe.photo_credit && <Muted style={{ fontSize: 13, fontStyle: 'italic' }}>{recipe.photo_credit}</Muted>}
+            {recipe.photo_credit && !(NEW_LOOK && recipe.image_url) && <Muted style={{ fontSize: 13, fontStyle: 'italic' }}>{recipe.photo_credit}</Muted>}
             <Pressable onPress={photoMenu} hitSlop={8} accessibilityLabel="Fotoğraf ekle"
               style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6 }}>
               <Icon name="camera" size={16} color={t.tint} />

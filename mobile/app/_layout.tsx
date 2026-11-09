@@ -1,4 +1,5 @@
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { Caveat_600SemiBold } from '@expo-google-fonts/caveat';
 import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, usePathname } from 'expo-router';
@@ -32,6 +33,7 @@ export default function RootLayout() {
     DMSans_500Medium,
     DMSans_700Bold,
     Fraunces_700Bold,
+    Caveat_600SemiBold,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
