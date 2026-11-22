@@ -4,16 +4,19 @@ import { Switch, View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import FamilySection from '@/components/FamilySection';
-import { Button, Card, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
+import { Button, Card, Chip, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
+import { FONT_SIZES, useFontScale } from '@/lib/fontScale';
 import { api, num, SavingsVault } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { accountRedirect } from '@/lib/guest';
 import { disableWeekly, enableWeekly, isWeeklyOn, weeklySupported } from '@/lib/weekly';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 export default function ProfileScreen() {
   const t = useTheme();
   const { user, logout, deleteAccount } = useAuth();
+  const { size, setSize } = useFontScale();
   const [vault, setVault] = useState<SavingsVault | null>(null);
   // Hesap silme: mağazaların zorunlu tuttuğu, geri alınamaz işlem; önce onay kutusu açılır
   const [deleting, setDeleting] = useState(false);
@@ -32,7 +35,7 @@ export default function ProfileScreen() {
         setWeekly(ok);
         if (!ok) setWeeklyNote('Bildirim izni verilmedi. Telefon ayarlarından Ucuzu için bildirimi açabilirsiniz.');
       } else { await disableWeekly(); setWeekly(false); }
-    } catch (e) { setWeeklyNote((e as Error).message); }
+    } catch (e) { setWeeklyNote(friendlyError(e)); }
   };
 
   useEffect(() => {
@@ -47,7 +50,7 @@ export default function ProfileScreen() {
       await deleteAccount(user?.has_password ? password : undefined);
       setDeleting(false);
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendlyError(e));
     } finally {
       setBusy(false);
     }
@@ -56,6 +59,14 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <Title>Hesabım</Title>
+      <Card style={{ gap: 10 }}>
+        <Text accessibilityRole="header" style={{ color: t.text, fontWeight: '700', fontSize: 17 }}>Yazı boyutu</Text>
+        <Muted>Telefonunuzun yazı boyutu ayarına ek olarak çalışır.</Muted>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {FONT_SIZES.map(f => <Chip key={f.key} label={f.label} on={size === f.key} onPress={() => setSize(f.key)} />)}
+        </View>
+        <Text style={{ color: t.text, fontSize: 16 }}>Önizleme: Pınar Süt 1L · 31,95 ₺</Text>
+      </Card>
       {!user ? <LoginPrompt what="Tasarrufunu ve marketlerini görmek" /> : (
         <>
           <Card style={{ gap: 4 }}>
@@ -70,9 +81,9 @@ export default function ProfileScreen() {
             </Card>
           )}
           <View style={{ backgroundColor: t.tint, borderRadius: 16, padding: 18, gap: 4 }}>
-            <Text style={{ color: t.onTint, fontSize: 13, fontWeight: '700' }}>TOPLAM TASARRUF</Text>
+            <Text style={{ color: t.onTint, fontSize: 14, fontWeight: '700' }}>TOPLAM TASARRUF</Text>
             <Text style={{ color: t.onTint, fontSize: 36, fontWeight: '900' }}>{formatTL(num(vault?.total_saved))} ₺</Text>
-            <Text style={{ color: t.onTint, fontSize: 13 }}>{vault?.record_count ?? 0} alışveriş</Text>
+            <Text style={{ color: t.onTint, fontSize: 14 }}>{vault?.record_count ?? 0} alışveriş</Text>
           </View>
           {weeklySupported && (
             <Card style={{ gap: 6 }}>

@@ -9,6 +9,7 @@ import ProductImage from '@/components/ProductImage';
 import { ActionBar, Button, Card, Muted, Screen, useTheme } from '@/components/ui';
 import { api, DealIngredient, num } from '@/lib/api';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 /**
  * İndirimden menü: şu an indirimdeki tarif malzemeleri (fırsatlar + aktüel). Seçilen malzemeyi kullanan
@@ -24,7 +25,7 @@ export default function DealMenuScreen() {
   useEffect(() => {
     api.dealIngredients()
       .then(d => { setItems(d); setPicked(new Set(d.filter(i => i.discount_percent > 0).slice(0, 8).map(i => i.name))); })
-      .catch(e => { setItems([]); setError((e as Error).message); });
+      .catch(e => { setItems([]); setError(friendlyError(e)); });
   }, []);
 
   const toggle = (name: string) => setPicked(prev => {
@@ -42,7 +43,7 @@ export default function DealMenuScreen() {
         prefer: Array.from(picked), name: 'İndirimden menü',
       });
       router.replace({ pathname: '/meals/[id]', params: { id: String(plan.id) } });
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
 
   return (
@@ -65,7 +66,7 @@ export default function DealMenuScreen() {
         const on = picked.has(i.name);
         return (
           <View key={i.name} style={{ gap: 8 }}>
-          {header && <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '800', marginTop: 8 }}>{header}</Text>}
+          {header && <Text style={{ color: t.textMuted, fontSize: 14, fontWeight: '800', marginTop: 8 }}>{header}</Text>}
           <Pressable onPress={() => toggle(i.name)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, borderWidth: 1,
               borderColor: on ? t.tint : t.border, backgroundColor: on ? t.tint + '18' : t.card }}>
@@ -78,9 +79,9 @@ export default function DealMenuScreen() {
                 {i.market_slug && <MarketBadge slug={i.market_slug} size={18} />}
                 <Text style={{ color: t.tint, fontWeight: '800' }}>{formatTL(num(i.price))} ₺</Text>
                 {i.previous_price && num(i.previous_price) > num(i.price) && (
-                  <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{formatTL(num(i.previous_price))} ₺</Text>
+                  <Text style={{ color: t.textMuted, fontSize: 14, textDecorationLine: 'line-through' }}>{formatTL(num(i.previous_price))} ₺</Text>
                 )}
-                {i.discount_percent > 0 && <Text style={{ color: '#c2410c', fontSize: 13, fontWeight: '800' }}>%{i.discount_percent}</Text>}
+                {i.discount_percent > 0 && <Text style={{ color: '#c2410c', fontSize: 14, fontWeight: '800' }}>%{i.discount_percent}</Text>}
               </View>
             </View>
             <Icon name={on ? 'check-square' : 'square'} size={24} color={on ? t.tint : t.textMuted} />

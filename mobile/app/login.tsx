@@ -6,6 +6,7 @@ import { Text } from '@/components/Text';
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { ACCOUNT_REASON_TEXT, AccountReason } from '@/lib/guest';
+import { friendlyError } from '@/lib/errors';
 
 /** Giriş ve üyelik tek ekranda. Google ile giriş, geliştirme sürümü (EAS) ve Google istemci kimliği gelince eklenir */
 export default function LoginScreen() {
@@ -35,7 +36,7 @@ export default function LoginScreen() {
       else await register(email, password, fullName);
       router.back();
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendlyError(e));
     } finally {
       setBusy(false);
     }

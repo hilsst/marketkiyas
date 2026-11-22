@@ -59,7 +59,7 @@ export default function ItemPicker({ item, onClose, onPick }: {
       <Icon name={selected ? 'check-circle' : 'circle'} size={20} color={selected ? t.tint : t.border} />
     </Pressable>
   );
-  const label = (text: string) => <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '800', letterSpacing: 0.4, marginTop: 4 }}>{text}</Text>;
+  const label = (text: string) => <Text style={{ color: t.textMuted, fontSize: 14, fontWeight: '800', letterSpacing: 0.4, marginTop: 4 }}>{text}</Text>;
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>

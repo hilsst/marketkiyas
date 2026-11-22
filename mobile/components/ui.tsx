@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import { ReactNode, useCallback, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,14 +14,24 @@ export function useTheme() {
 }
 
 /** Ekran kabuğu: güvenli alan + kaydırma + sayfa arka planı. Başlık çubuğu olan (yığındaki) ekranlarda safeTop={false} */
-export function Screen({ children, scroll = true, safeTop = true, footer }: {
+export function Screen({ children, scroll = true, safeTop = true, footer, onRefresh }: {
   children: ReactNode; scroll?: boolean; safeTop?: boolean; footer?: ReactNode;
+  /** Verilirse aşağı çekince yenilenir */
+  onRefresh?: () => Promise<unknown> | void;
 }) {
   const t = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
+  const pull = useCallback(async () => {
+    setRefreshing(true);
+    try { await onRefresh?.(); } catch { /* ekran kendi hatasını gösterir */ } finally { setRefreshing(false); }
+  }, [onRefresh]);
   const body = <View style={styles.body}>{children}</View>;
   return (
     <SafeAreaView edges={safeTop ? ['top'] : []} style={{ flex: 1, backgroundColor: t.background }}>
-      {scroll ? <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">{body}</ScrollView> : body}
+      {scroll ? (
+        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
+          refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={pull} tintColor={t.tint} /> : undefined}>{body}</ScrollView>
+      ) : body}
       {footer}
     </SafeAreaView>
   );
@@ -143,6 +153,17 @@ export function Segmented<K extends string>({ options, value, onChange }: {
         </Pressable>
       ))}
     </View>
+  );
+}
+
+/** Hata kutusu: sade cümle + isteğe bağlı büyük "Tekrar dene" düğmesi */
+export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const t = useTheme();
+  return (
+    <Card style={{ gap: 12, alignItems: 'center', borderWidth: 1, borderColor: t.danger }}>
+      <Text accessibilityRole="alert" style={{ color: t.text, fontSize: 16, textAlign: 'center' }}>{message}</Text>
+      {onRetry && <Button title="Tekrar dene" kind="secondary" onPress={onRetry} />}
+    </Card>
   );
 }
 

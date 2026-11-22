@@ -25,7 +25,7 @@ export default function SearchScreen() {
   const [q, setQ] = useState(params.q ?? '');
   const [results, setResults] = useState<GroupSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { markets } = useCatalog();
+  const { markets, categories } = useCatalog();
   const [market, setMarket] = useState<number | null>(null); // yalnız bu marketin fiyatları
   // Konum varsa sunucu sonuçları seçili şubelerden en yakın olandan uzağa sıralar; yoksa kelime eşleşmesine ve ada göre
   const [at, setAt] = useState<Coords | null | undefined>(undefined); // undefined = konum sorgulanıyor
@@ -86,6 +86,14 @@ export default function SearchScreen() {
       {error && <Text style={{ color: t.danger }}>{error}</Text>}
       {mode === 'urun' && results === null && q.trim() !== '' && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
       {mode === 'urun' && q.trim() === '' && <EmptyState icon="search" title="Ne arıyorsunuz?" text="Ürün adını yazın, yakınınızdaki marketlerin fiyatlarını karşılaştıralım." />}
+      {mode === 'urun' && q.trim() === '' && !params.listId && categories.length > 0 && (
+        <View style={{ gap: 10 }}>
+          <Text accessibilityRole="header" style={{ color: t.text, fontWeight: '800', fontSize: 18 }}>Kategoriler</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {categories.map(c => <Chip key={c.id} label={c.name} onPress={() => router.push({ pathname: '/category/[id]', params: { id: String(c.id) } })} />)}
+          </View>
+        </View>
+      )}
       {mode === 'urun' && q.trim() !== '' && results?.length === 0 && <EmptyState icon="search" title="Sonuç bulunamadı" text="Farklı bir yazım ya da daha kısa bir kelime deneyin." />}
       {/* Listeye ürün eklerken (listId) reklam gösterilmez: liste akışı temiz kalır */}
       {mode === 'urun' && interleaveAds(visible, AD_EVERY, !params.listId && adsEnabled()).map(r => r.kind === 'ad'

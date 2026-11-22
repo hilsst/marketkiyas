@@ -6,7 +6,7 @@ import ProductImage from '@/components/ProductImage';
 import { Muted, useTheme } from '@/components/ui';
 import { formatSize, GroupSummary, MarketPrice, num } from '@/lib/api';
 import { useCatalog } from '@/lib/catalog';
-import { formatTL } from '@/lib/format';
+import { formatTL, unitPriceLabel } from '@/lib/format';
 import { formatKm } from '@/lib/location';
 
 export const cheapestOf = (prices: MarketPrice[]) => [...prices].sort((a, b) => num(a.min_price) - num(b.min_price))[0];
@@ -27,6 +27,7 @@ export default function ProductRow({ group, prices, onPress }: {
     ? group : null;
   const marketId = near ? near.nearest_market_id! : cheapest?.market_id;
   const price = near ? num(near.nearest_price) : cheapest ? num(cheapest.min_price) : null;
+  const unitLabel = unitPriceLabel(price, group.quantity, group.unit);
   const regular = near ? shown.find(m => m.market_id === marketId)?.regular_price : cheapest?.regular_price;
   return (
     <Pressable onPress={onPress} accessibilityRole="button"
@@ -39,6 +40,7 @@ export default function ProductRow({ group, prices, onPress }: {
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={{ color: t.text, fontWeight: '700', fontSize: 15 }} numberOfLines={2}>{group.name}</Text>
         <Muted>{[formatSize(group.quantity, group.unit), shown.length + ' market'].filter(Boolean).join(' · ')}</Muted>
+        {unitLabel && <Text style={{ color: t.tintDark, fontSize: 14, fontWeight: '700' }}>{unitLabel}</Text>}
         {marketId != null && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <MarketBadge id={marketId} size={22} />
@@ -52,7 +54,7 @@ export default function ProductRow({ group, prices, onPress }: {
         <View style={{ alignItems: 'flex-end', gap: 4 }}>
           <Text style={{ color: t.tintDark, fontWeight: '800', fontSize: 18, fontVariant: ['tabular-nums'] }}>{formatTL(price)} ₺</Text>
           {regular && (
-            <Text style={{ fontSize: 12, color: '#fff', backgroundColor: t.accent, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>İNDİRİM</Text>
+            <Text style={{ fontSize: 13, color: '#fff', backgroundColor: t.accent, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>İNDİRİM</Text>
           )}
         </View>
       )}

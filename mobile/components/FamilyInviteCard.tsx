@@ -4,6 +4,7 @@ import { Text } from './Text';
 
 import { Button, Card, Muted, useTheme } from '@/components/ui';
 import { api, FamilyInvite, MyFamily } from '@/lib/api';
+import { friendlyError } from '@/lib/errors';
 
 /** E-postayla gelen aile daveti: kabul edince ailedeki herkesin listeleri görünür. */
 export default function FamilyInviteCard({ invite, onDone }: { invite: FamilyInvite; onDone: (f: MyFamily) => void }) {
@@ -21,7 +22,7 @@ export default function FamilyInviteCard({ invite, onDone }: { invite: FamilyInv
         onDone(await api.family());
       }
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendlyError(e));
     } finally {
       setBusy(null);
     }

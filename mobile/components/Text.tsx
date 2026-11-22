@@ -1,6 +1,7 @@
 import { StyleSheet, Text as RNText, TextProps } from 'react-native';
 
 import { NEW_LOOK } from '@/constants/Look';
+import { useFontScale } from '@/lib/fontScale';
 
 /** fontWeight'e göre DM Sans ailesi seçer (özel yazı tiplerinde fontWeight tek başına çalışmaz). */
 export function fontFor(weight?: string | number): string {
@@ -12,8 +13,12 @@ export function fontFor(weight?: string | number): string {
 
 /** react-native Text yerine kullanılır; NEW_LOOK kapalıysa sistem yazı tipi kalır. */
 export function Text({ style, ...rest }: TextProps) {
-  if (!NEW_LOOK) return <RNText style={style} {...rest} />;
+  const { scale } = useFontScale();
   const flat = StyleSheet.flatten(style) || {};
-  if (flat.fontFamily) return <RNText style={style} {...rest} />;
-  return <RNText style={[style, { fontFamily: fontFor(flat.fontWeight), fontWeight: undefined }]} {...rest} />;
+  // Uygulama içi "Yazı boyutu" ayarı: yazı ve satır yüksekliği birlikte büyür
+  const scaled = scale !== 1 && typeof flat.fontSize === 'number'
+    ? { fontSize: Math.round(flat.fontSize * scale), ...(typeof flat.lineHeight === 'number' ? { lineHeight: Math.round(flat.lineHeight * scale) } : {}) }
+    : null;
+  if (!NEW_LOOK || flat.fontFamily) return <RNText style={scaled ? [style, scaled] : style} {...rest} />;
+  return <RNText style={[style, scaled, { fontFamily: fontFor(flat.fontWeight), fontWeight: undefined }]} {...rest} />;
 }

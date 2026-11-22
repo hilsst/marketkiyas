@@ -4,12 +4,13 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import MarketBadge from '@/components/MarketBadge';
-import { Button, Card, EmptyState, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
+import { Button, Card, EmptyState, ErrorBox, Input, LoginPrompt, Muted, Screen, Title, useTheme } from '@/components/ui';
 import { api, ListSummary, num } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { accountRedirect } from '@/lib/guest';
 import { useCatalog } from '@/lib/catalog';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 export default function ListsScreen() {
   const t = useTheme();
@@ -21,10 +22,12 @@ export default function ListsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Liste ekranından dönünce toplamlar tazelensin
-  useFocusEffect(useCallback(() => {
-    if (!user) return;
-    api.lists().then(setLists).catch(e => setError(e.message));
-  }, [user]));
+  const load = useCallback(() => {
+    if (!user) return Promise.resolve();
+    setError(null);
+    return api.lists().then(setLists).catch(e => setError(friendlyError(e)));
+  }, [user]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   // Aile üyesinin paylaştığı listeye 8 haneli davet koduyla katılma
   const [joining, setJoining] = useState(false);
@@ -40,7 +43,7 @@ export default function ListsScreen() {
       setCode('');
       setJoining(false);
       router.push({ pathname: '/list/[id]', params: { id: String(joined.id) } });
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
 
   const create = async () => {
@@ -50,11 +53,11 @@ export default function ListsScreen() {
       const created = await api.createList(name.trim());
       setName('');
       router.push({ pathname: '/list/[id]', params: { id: String(created.id) } });
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
 
   return (
-    <Screen>
+    <Screen onRefresh={load}>
       <Title>Listelerim</Title>
       {!user ? <LoginPrompt what="Alışveriş listesi oluşturmak" /> : (
         <>
@@ -77,7 +80,7 @@ export default function ListsScreen() {
           ) : (
             <Text onPress={() => setJoining(true)} style={{ color: t.tint, fontWeight: '600' }}>Kodla ortak listeye katıl</Text>
           )}
-          {error && <Text style={{ color: t.danger }}>{error}</Text>}
+          {error && <ErrorBox message={error} onRetry={lists === null ? load : undefined} />}
           {lists === null && !error && <ActivityIndicator color={t.tint} />}
           {lists?.length === 0 && (
             <EmptyState icon="shopping-cart" title="Listeniz henüz boş" text="Bir menü planlayın, malzemeler otomatik gelsin; ya da yukarıdan ilk listenizi oluşturun."
@@ -93,8 +96,8 @@ export default function ListsScreen() {
                 {(l.member_count > 0 || l.owner_id !== user.id) && (
                   <Muted>Ortak liste{l.owner_id !== user.id && l.owner_name ? ` · sahibi ${l.owner_name}` : ''}</Muted>
                 )}
-                {l.status === 'completed' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 13 }}>Alışveriş tamamlandı</Text>}
-                {l.status === 'shopping' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 13 }}>Alışveriş sürüyor · {l.checked_count}/{l.item_count} alındı</Text>}
+                {l.status === 'completed' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 14 }}>Alışveriş tamamlandı</Text>}
+                {l.status === 'shopping' && <Text style={{ color: t.tint, fontWeight: '700', fontSize: 14 }}>Alışveriş sürüyor · {l.checked_count}/{l.item_count} alındı</Text>}
                 {l.estimated_total != null && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Muted>Tahmini: </Muted>

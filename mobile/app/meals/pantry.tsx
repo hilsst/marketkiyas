@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, Input, Muted, useTheme } from '@/components/ui';
 import { api, formatSize, PantryItem } from '@/lib/api';
+import { friendlyError } from '@/lib/errors';
 
 const dateLabel = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
 
@@ -22,16 +23,16 @@ export default function PantryScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useFocusEffect(useCallback(() => {
-    api.pantry().then(setItems).catch(e => setError((e as Error).message));
+    api.pantry().then(setItems).catch(e => setError(friendlyError(e)));
   }, []));
 
   const save = async (id: number) => {
     const qty = Number(value.replace(',', '.'));
     if (!(qty >= 0)) return;
-    try { setItems(await api.updatePantry(id, qty)); setEditing(null); } catch (e) { setError((e as Error).message); }
+    try { setItems(await api.updatePantry(id, qty)); setEditing(null); } catch (e) { setError(friendlyError(e)); }
   };
   const remove = async (id: number) => {
-    try { setItems(await api.deletePantry(id)); } catch (e) { setError((e as Error).message); }
+    try { setItems(await api.deletePantry(id)); } catch (e) { setError(friendlyError(e)); }
   };
 
   return (
@@ -51,7 +52,7 @@ export default function PantryScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: '700', fontSize: 16 }}>{item.name}</Text>
-                  <Muted style={{ fontSize: 13 }}>{item.expires_on ? `Son gün: ${dateLabel(item.expires_on)}` : 'Bozulmaz'}</Muted>
+                  <Muted style={{ fontSize: 14 }}>{item.expires_on ? `Son gün: ${dateLabel(item.expires_on)}` : 'Bozulmaz'}</Muted>
                 </View>
                 {item.quantity != null
                   ? <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>{formatSize(item.quantity, item.unit)}</Text>

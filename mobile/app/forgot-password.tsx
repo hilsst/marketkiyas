@@ -6,6 +6,7 @@ import { Text } from '@/components/Text';
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { friendlyError } from '@/lib/errors';
 
 /** Şifre sıfırlama: e-postaya 6 haneli kod gelir, kod + yeni şifre ile oturum açılır */
 export default function ForgotPasswordScreen() {
@@ -25,7 +26,7 @@ export default function ForgotPasswordScreen() {
     try {
       await api.requestPasswordReset(email.trim());
       setStep('code');
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
 
   const confirm = async () => {
@@ -38,7 +39,7 @@ export default function ForgotPasswordScreen() {
     try {
       await startSession(await api.confirmPasswordReset(email.trim(), code.trim(), password));
       router.dismissAll();
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
 
   return (

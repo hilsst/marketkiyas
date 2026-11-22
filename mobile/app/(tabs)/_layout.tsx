@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon, { IconName } from '@/components/Icon';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useFontScale } from '@/lib/fontScale';
 
 const icon = (name: IconName) => function TabIcon({ color }: { color: unknown }) {
   return <Icon name={name} size={24} color={color as string} />;
@@ -13,13 +14,14 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const c = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const { scale } = useFontScale();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: c.tabIconSelected,
         tabBarInactiveTintColor: c.tabIconDefault,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '700', lineHeight: 16 },
+        tabBarLabelStyle: { fontSize: Math.round(13 * Math.min(scale, 1.15)), fontWeight: '700', lineHeight: Math.round(17 * Math.min(scale, 1.15)) },
         // Sabit yükseklik gezinme çubuğu payını yutuyordu: alt boşluğu cihazdan alıyoruz
         tabBarStyle: { backgroundColor: c.card, borderTopColor: c.border, height: 68 + insets.bottom, paddingTop: 8, paddingBottom: 6 + insets.bottom },
         // Her ekran kendi başlığını çizer

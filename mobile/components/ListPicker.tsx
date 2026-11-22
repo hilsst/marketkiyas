@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { api, ListSummary } from '@/lib/api';
+import { friendlyError } from '@/lib/errors';
 
 /** "Listeye ekle": alttan açılan pencerede liste seçilir ya da yeni liste oluşturulur */
 export default function ListPicker({ visible, onClose, onPick }: {
@@ -25,7 +26,7 @@ export default function ListPicker({ visible, onClose, onPick }: {
   const pick = async (id: number) => {
     setBusy(true);
     setError(null);
-    try { await onPick(id); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    try { await onPick(id); } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
 
   const createAndPick = async () => {
@@ -35,7 +36,7 @@ export default function ListPicker({ visible, onClose, onPick }: {
       const created = await api.createList(name.trim());
       setName('');
       await onPick(created.id);
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
 
   return (
