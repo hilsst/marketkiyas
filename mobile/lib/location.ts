@@ -1,5 +1,8 @@
 import * as Location from 'expo-location';
 
+import { findCity } from '@/lib/cities';
+import { loadFlag, saveFlag } from '@/lib/session';
+
 export interface Coords { lat: number; lon: number }
 export type LocationResult = { coords: Coords; reason?: undefined } | { coords: null; reason: 'denied' | 'unavailable' | 'outside' };
 
@@ -12,11 +15,30 @@ export const inTurkey = (c: Coords) => c.lat >= 35 && c.lat <= 43 && c.lon >= 25
 const withTimeout = <T,>(p: Promise<T>, ms: number) =>
   Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
 
+const MANUAL_KEY = 'ucuzu.manualCity';
+let manualName: string | null | undefined; // undefined: henüz okunmadı
+
+/** Elle seçilmiş il (yoksa null) */
+export async function getManualCity() {
+  if (manualName === undefined) manualName = await loadFlag(MANUAL_KEY).catch(() => null);
+  return findCity(manualName);
+}
+
+/** İl seç; null verilirse elle seçim kalkar ve GPS'e dönülür */
+export async function setManualCity(name: string | null) {
+  manualName = name;
+  cached = null;
+  await saveFlag(MANUAL_KEY, name).catch(() => {});
+}
+
 /**
  * Kullanıcının konumunu verir; izin yoksa bir kez sorar. Yalnız "uygulama açıkken" iznidir, arka planda
  * konum izlenmez. Konum sunucuya yalnız Yakın Market planı hesaplanırken gönderilir, kaydedilmez.
  */
 export async function getCoords(): Promise<LocationResult> {
+  // GPS yerine elle seçilen il varsa o kullanılır (konum izni vermek istemeyenler için)
+  const city = await getManualCity();
+  if (city) return { coords: { lat: city.lat, lon: city.lon } };
   if (cached && Date.now() - cached.at < TTL_MS) return { coords: cached.coords };
   try {
     let perm = await Location.getForegroundPermissionsAsync();

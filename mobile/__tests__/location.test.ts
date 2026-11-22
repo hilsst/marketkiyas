@@ -1,7 +1,8 @@
 import * as Location from 'expo-location';
 
-import { distanceKm, formatKm, getCoords, inTurkey } from '@/lib/location';
+import { distanceKm, formatKm, getCoords, inTurkey, setManualCity } from '@/lib/location';
 
+jest.mock('@/lib/session', () => ({ loadFlag: async () => null, saveFlag: async () => undefined }));
 jest.mock('expo-location', () => ({
   getForegroundPermissionsAsync: jest.fn(),
   requestForegroundPermissionsAsync: jest.fn(),
@@ -12,7 +13,7 @@ jest.mock('expo-location', () => ({
 const mocked = Location as unknown as Record<string, jest.Mock>;
 
 describe('location', () => {
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(async () => { jest.resetAllMocks(); await setManualCity(null); });
 
   it('inTurkey sunucunun kabul ettiği sınırlarla aynı', () => {
     expect(inTurkey({ lat: 40.98, lon: 29.02 })).toBe(true);
@@ -47,5 +48,22 @@ describe('distanceKm', () => {
   it('biçimlendirir', () => {
     expect(formatKm(0.42)).toBe('0,4 km');
     expect(formatKm(12.4)).toBe('12 km');
+  });
+
+  it('elle il seçilmişse GPS sorulmaz, il merkezi döner; seçim kalkınca GPS\'e dönülür', async () => {
+    jest.resetAllMocks();
+    await setManualCity('Ankara');
+    const r = await getCoords();
+    expect(r.coords?.lat).toBeCloseTo(39.93, 1);
+    expect(mocked.getForegroundPermissionsAsync).not.toHaveBeenCalled();
+    await setManualCity(null);
+    mocked.getForegroundPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: false });
+    expect(await getCoords()).toEqual({ coords: null, reason: 'denied' });
+  });
+
+  it('il araması Türkçe harf farkına bakmaz', () => {
+    const { searchCities } = jest.requireActual('@/lib/cities');
+    expect(searchCities('istanbul').map((c: { name: string }) => c.name)).toContain('İstanbul');
+    expect(searchCities('canakkale')[0].name).toBe('Çanakkale');
   });
 });
