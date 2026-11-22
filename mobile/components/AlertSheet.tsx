@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Muted, useTheme } from '@/components/ui';
 import { api, num, PriceAlert } from '@/lib/api';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 /**
  * "Fiyatını takip et": fiyat düşünce ya da yazılan fiyatın altına inince Takip sekmesinde haber verilir.
@@ -31,12 +32,12 @@ export default function AlertSheet({ visible, onClose, groupId, groupName, cheap
       const all = await api.createAlert(groupId, withTarget ? value : null, product?.id ?? null);
       onChange(all.find(a => a.group_id === groupId) || null,
         withTarget ? `Fiyat ${formatTL(value)} ₺ altına inince haber vereceğiz` : 'Fiyat düşünce haber vereceğiz');
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
   const remove = async () => {
     if (!alert) return;
     setBusy(true);
-    try { await api.deleteAlert(alert.id); onChange(null, 'Takip bırakıldı'); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    try { await api.deleteAlert(alert.id); onChange(null, 'Takip bırakıldı'); } catch (e) { setError(friendlyError(e)); } finally { setBusy(false); }
   };
 
   return (

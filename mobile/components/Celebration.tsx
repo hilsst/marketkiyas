@@ -75,9 +75,9 @@ export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, 
                 {savedAmount > 0 ? 'Tebrikler! Tasarruf kasanıza eklendi' : 'Tebrikler! Bu alışverişteki kazancınız'}
               </Text>
               <Text style={{ color: '#fff', fontSize: 56, fontWeight: '900', marginVertical: 6 }}>{formatTL(amount)} ₺</Text>
-              {savedAmount <= 0 && <Text style={{ color: '#fff', fontSize: 13 }}>ortalama raf fiyatlarına göre</Text>}
+              {savedAmount <= 0 && <Text style={{ color: '#fff', fontSize: 14 }}>ortalama raf fiyatlarına göre</Text>}
               <Text style={{ color: '#fff', marginTop: 6 }}>Kasanızdaki toplam: {formatTL(vaultTotal)} ₺</Text>
-              <Text style={{ color: '#fff', fontSize: 13, marginTop: 4 }}>Bu tempoyla yılda yaklaşık {formatTL((amount * 52), 0)} ₺</Text>
+              <Text style={{ color: '#fff', fontSize: 14, marginTop: 4 }}>Bu tempoyla yılda yaklaşık {formatTL((amount * 52), 0)} ₺</Text>
             </>
           ) : (
             <>
@@ -85,9 +85,9 @@ export default function Celebration({ savedAmount, shoppingSavings, vaultTotal, 
               <Text style={{ color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 8 }}>Alışveriş tamamlandı</Text>
             </>
           )}
-          {note && <Text style={{ color: '#fff', fontSize: 13, marginTop: 10, textAlign: 'center' }}>{note}</Text>}
+          {note && <Text style={{ color: '#fff', fontSize: 14, marginTop: 10, textAlign: 'center' }}>{note}</Text>}
           <View style={{ height: 24 }} />
-          <Text style={{ color: '#fff', opacity: 0.6, fontSize: 13 }}>Ana sayfaya dönülüyor…</Text>
+          <Text style={{ color: '#fff', opacity: 0.6, fontSize: 14 }}>Ana sayfaya dönülüyor…</Text>
         </Animated.View>
       </Pressable>
     </Modal>

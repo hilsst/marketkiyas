@@ -75,7 +75,7 @@ export default function PantryPicker({ initial, onClose }: { initial: string[]; 
                   <View style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><FoodIcon name={courseGlyph(r.course_type)} size={22} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.text, fontWeight: '700' }}>{r.name}</Text>
-                    <Muted style={{ fontSize: 13 }}>
+                    <Muted style={{ fontSize: 14 }}>
                       {r.missing && r.missing.length ? `Eksik: ${r.missing.join(', ')}` : 'Hepsi evde var'}
                     </Muted>
                   </View>

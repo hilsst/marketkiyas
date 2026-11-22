@@ -65,7 +65,7 @@ export default function QuickMealScreen() {
                   <Pressable key={r.id} onPress={() => setIndex(i)}>
                     <Card style={{ width: 150, gap: 4, padding: 12 }}>
                       <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{r.name}</Text>
-                      <Muted style={{ fontSize: 13 }}>{minutes(r) > 0 ? `${minutes(r)} dk` : 'Hazır'}</Muted>
+                      <Muted style={{ fontSize: 14 }}>{minutes(r) > 0 ? `${minutes(r)} dk` : 'Hazır'}</Muted>
                     </Card>
                   </Pressable>
                 ))}

@@ -105,7 +105,7 @@ function Stat({ n, label }: { n: number; label: string }) {
   return (
     <View style={{ flex: 1, backgroundColor: t.background, borderRadius: 16, paddingVertical: 12, alignItems: 'center' }}>
       <Text style={{ color: t.tintDark, fontSize: 24, fontWeight: '800' }}>{n}</Text>
-      <Muted style={{ fontSize: 13 }}>{label}</Muted>
+      <Muted style={{ fontSize: 14 }}>{label}</Muted>
     </View>
   );
 }

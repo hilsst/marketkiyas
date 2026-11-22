@@ -17,6 +17,7 @@ import { ACCOUNT_REASON_TEXT, accountRedirect } from '@/lib/guest';
 import { rescheduleWeekly } from '@/lib/weekly';
 import { ALLERGEN_LABELS, api, COURSE_LABELS, formatSize, DIET_LABELS, MEAL_SLOT_LABELS, MealPlanDetail, MealPlanExport, MealSlot, SLOT_COURSES } from '@/lib/api';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 const ORDINALS = ['Birinci', 'İkinci', 'Üçüncü', 'Dördüncü', 'Beşinci', 'Altıncı', 'Yedinci', 'Sekizinci', 'Dokuzuncu', 'Onuncu',
   'On birinci', 'On ikinci', 'On üçüncü', 'On dördüncü'];
@@ -40,7 +41,7 @@ export default function MealPlanScreen() {
 
   const load = useCallback(() => api.mealPlan(planId, includePantry)
     .then(p => { setPlan(p); setError(null); })
-    .catch(e => setError((e as Error).message)), [planId, includePantry]);
+    .catch(e => setError(friendlyError(e))), [planId, includePantry]);
   useEffect(() => { load(); }, [load]);
   // Haftalık menü bildirimi açıksa, bildirimdeki tutar bu planın güncel maliyetine çekilir
   useEffect(() => { if (plan) void rescheduleWeekly(Number(plan.cost.purchase_total)).catch(() => {}); }, [plan]);
@@ -65,7 +66,7 @@ export default function MealPlanScreen() {
     try {
       await fn();
       await load();
-    } catch (e) { setError((e as Error).message); } finally { setChanging(null); }
+    } catch (e) { setError(friendlyError(e)); } finally { setChanging(null); }
   };
 
 
@@ -126,8 +127,8 @@ export default function MealPlanScreen() {
                 Bütçe {formatTL(Number(plan.budget_status.budget))} ₺ · Alışveriş {formatTL(Number(plan.budget_status.total))} ₺
                 {plan.budget_status.within ? '' : ` (${formatTL((Number(plan.budget_status.total) - Number(plan.budget_status.budget)))} ₺ fazla)`}
               </Muted>
-              {plan.budget_status.swaps > 0 && <Muted style={{ fontSize: 13 }}>Bütçe için {plan.budget_status.swaps} yemek daha ucuzuyla değiştirildi ya da çıkarıldı.</Muted>}
-              {!plan.budget_status.within && <Muted style={{ fontSize: 13 }}>Kişi sayısını azaltmayı ya da tatlı ve içeceği çıkarmayı deneyin.</Muted>}
+              {plan.budget_status.swaps > 0 && <Muted style={{ fontSize: 14 }}>Bütçe için {plan.budget_status.swaps} yemek daha ucuzuyla değiştirildi ya da çıkarıldı.</Muted>}
+              {!plan.budget_status.within && <Muted style={{ fontSize: 14 }}>Kişi sayısını azaltmayı ya da tatlı ve içeceği çıkarmayı deneyin.</Muted>}
             </Card>
           )}
           {error && <Text style={{ color: t.danger }}>{error}</Text>}
@@ -148,10 +149,10 @@ export default function MealPlanScreen() {
                           onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: String(e.recipe.id), servings: String(plan.servings) } })}>
                           <RecipeImage uri={e.recipe.image_url} icon={courseGlyph(e.course)} width={48} radius={10} iconSize={20} />
                           <View style={{ flex: 1 }}>
-                            <Muted style={{ fontSize: 13 }}>{COURSE_LABELS[e.course]}</Muted>
+                            <Muted style={{ fontSize: 14 }}>{COURSE_LABELS[e.course]}</Muted>
                             <Text style={{ color: t.text, fontWeight: '600' }}>{e.recipe.name}</Text>
-                            {e.leftover_of != null && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>Dünden kalan, pişirmek yok</Text>}
-                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '600' }}>İki kat pişirin, yarına kalsın</Text>}
+                            {e.leftover_of != null && <Text style={{ color: t.tint, fontSize: 14, fontWeight: '600' }}>Dünden kalan, pişirmek yok</Text>}
+                            {e.leftover_for.length > 0 && <Text style={{ color: t.tint, fontSize: 14, fontWeight: '600' }}>İki kat pişirin, yarına kalsın</Text>}
                           </View>
                         </Pressable>
                         {changing === 'e' + e.id ? <ActivityIndicator color={t.tint} /> : (
@@ -178,7 +179,7 @@ export default function MealPlanScreen() {
                             onPress={() => run(`a${day}${slot}${c}`, () => api.addMealEntry(planId, day, slot, c))}
                             style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderStyle: 'dashed', borderColor: t.border }}>
                             {changing === `a${day}${slot}${c}` ? <ActivityIndicator color={t.tint} />
-                              : <Text style={{ color: t.textMuted, fontSize: 13 }}>+ {COURSE_LABELS[c]}</Text>}
+                              : <Text style={{ color: t.textMuted, fontSize: 14 }}>+ {COURSE_LABELS[c]}</Text>}
                           </Pressable>
                         ))}
                       </View>

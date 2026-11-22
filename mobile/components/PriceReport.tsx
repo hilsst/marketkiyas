@@ -6,6 +6,7 @@ import { Button, Card, Input, Muted, useTheme } from '@/components/ui';
 import { api, GroupProduct } from '@/lib/api';
 import { parseReportedPrice } from '@/lib/trust';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 /**
  * "Bu fiyat yanlış": kasada ya da rafta farklı fiyat görüldüyse bildirilir. Gösterilen fiyatı sunucu kendi
@@ -28,7 +29,7 @@ export default function PriceReport({ groupId, product, storeId, shown, onClose 
         product_id: product.id, store_id: storeId, reported_price: parseReportedPrice(price), note: note.trim() || null,
       });
       setMsg({ ok: true, text: r.detail });
-    } catch (e) { setMsg({ ok: false, text: (e as Error).message }); } finally { setBusy(false); }
+    } catch (e) { setMsg({ ok: false, text: friendlyError(e) }); } finally { setBusy(false); }
   };
 
   return (

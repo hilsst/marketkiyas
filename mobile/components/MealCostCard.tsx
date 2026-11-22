@@ -24,7 +24,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
 
   const chip = (key: string, name: string, amount?: string) => (
     <View key={key} style={{ backgroundColor: t.card, borderWidth: 1, borderColor: t.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
-      <Text style={{ color: t.text, fontSize: 13 }}>{name}{amount ? <Text style={{ color: t.textMuted }}> {amount}</Text> : null}</Text>
+      <Text style={{ color: t.text, fontSize: 14 }}>{name}{amount ? <Text style={{ color: t.textMuted }}> {amount}</Text> : null}</Text>
     </View>
   );
   const shownStock = allChips ? stock : stock.slice(0, CHIPS_SHOWN);
@@ -41,11 +41,11 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
       <Text style={{ color: t.text, fontWeight: '800', fontSize: 18, letterSpacing: -0.3 }}>{title}</Text>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1, backgroundColor: t.tint, borderRadius: 18, padding: 14, gap: 2 }}>
-          <Text style={{ color: t.onTint, fontSize: 13, fontWeight: '700' }}>ALIŞVERİŞ TUTARI</Text>
+          <Text style={{ color: t.onTint, fontSize: 14, fontWeight: '700' }}>ALIŞVERİŞ TUTARI</Text>
           <Text style={{ color: t.onTint, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>{tl(cost.purchase_total)}</Text>
         </View>
         <View style={{ flex: 1, borderRadius: 18, padding: 14, gap: 2, backgroundColor: t.background }}>
-          <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '700' }}>KİŞİ BAŞI ÖĞÜN</Text>
+          <Text style={{ color: t.textMuted, fontSize: 14, fontWeight: '700' }}>KİŞİ BAŞI ÖĞÜN</Text>
           <Text style={{ color: t.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>{cost.per_serving ? tl(cost.per_serving) : '—'}</Text>
         </View>
       </View>
@@ -62,7 +62,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
             <Icon name="package" size={18} color={t.tintDark} />
             <Text style={{ color: t.tintDark, fontWeight: '700', fontSize: 14, flex: 1 }}>Kilerinizden kullanılanlar</Text>
             <View style={{ backgroundColor: t.card, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 1 }}>
-              <Text style={{ color: t.tintDark, fontSize: 13, fontWeight: '700' }}>{homeCount}</Text>
+              <Text style={{ color: t.tintDark, fontSize: 14, fontWeight: '700' }}>{homeCount}</Text>
             </View>
             <Icon name={open ? 'chevron-up' : 'chevron-down'} size={18} color={t.tintDark} />
           </Pressable>
@@ -70,13 +70,13 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
             <View style={{ gap: 10 }}>
               {stock.length > 0 && (
                 <View style={{ gap: 6 }}>
-                  <Muted style={{ fontSize: 13 }}>Önceki alışverişten artan</Muted>
+                  <Muted style={{ fontSize: 14 }}>Önceki alışverişten artan</Muted>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                     {shownStock.map((s, i) => chip(`s${i}`, s.name, formatSize(s.quantity, s.unit)))}
                     {!allChips && stock.length > CHIPS_SHOWN && (
                       <Pressable onPress={() => setAllChips(true)}
                         style={{ backgroundColor: t.card, borderWidth: 1, borderColor: t.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
-                        <Text style={{ color: t.tint, fontSize: 13, fontWeight: '700' }}>+ {stock.length - CHIPS_SHOWN} tane daha</Text>
+                        <Text style={{ color: t.tint, fontSize: 14, fontWeight: '700' }}>+ {stock.length - CHIPS_SHOWN} tane daha</Text>
                       </Pressable>
                     )}
                   </View>
@@ -84,13 +84,13 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
               )}
               {have.length > 0 && (
                 <View style={{ gap: 6 }}>
-                  <Muted style={{ fontSize: 13 }}>Kilerinizde olduğu için alınmayacak</Muted>
+                  <Muted style={{ fontSize: 14 }}>Kilerinizde olduğu için alınmayacak</Muted>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{have.map((h, i) => chip(`h${i}`, h))}</View>
                 </View>
               )}
               {cost.pantry.length > 0 && (
                 <View style={{ gap: 6 }}>
-                  <Muted style={{ fontSize: 13 }}>Evde olduğu varsayılanlar</Muted>
+                  <Muted style={{ fontSize: 14 }}>Evde olduğu varsayılanlar</Muted>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{cost.pantry.map((p, i) => chip(`p${i}`, p))}</View>
                 </View>
               )}
@@ -109,7 +109,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
       )}
 
       {cost.lines.length > 0 && (
-        <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '800', letterSpacing: 0.4, marginBottom: -4 }}>ALINACAKLAR</Text>
+        <Text style={{ color: t.textMuted, fontSize: 14, fontWeight: '800', letterSpacing: 0.4, marginBottom: -4 }}>ALINACAKLAR</Text>
       )}
       {cost.lines.map((line, i) => (
         <View key={`${line.name}-${line.unit}-${i}`}
@@ -132,7 +132,7 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
           </Text>
         </View>
       ))}
-      <Text style={{ color: t.textMuted, fontSize: 13 }}>Alışveriş tutarı, paket fiyatlarının toplamıdır.</Text>
+      <Text style={{ color: t.textMuted, fontSize: 14 }}>Alışveriş tutarı, paket fiyatlarının toplamıdır.</Text>
     </Card>
   );
 }

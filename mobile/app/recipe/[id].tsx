@@ -18,6 +18,7 @@ import { ALLERGEN_LABELS, api, DIET_LABELS, MEAL_SLOT_LABELS, RecipeDetail } fro
 import { scaleAmount } from '@/lib/amount';
 import { useAuth } from '@/lib/auth';
 import { accountRedirect } from '@/lib/guest';
+import { friendlyError } from '@/lib/errors';
 
 /** Tarif: malzemeler, yapılışı ve seçilen kişi sayısına göre maliyet */
 export default function RecipeScreen() {
@@ -31,7 +32,7 @@ export default function RecipeScreen() {
   useEffect(() => {
     api.recipe(Number(params.id), servings ?? undefined)
       .then(r => { setRecipe(r); setError(null); })
-      .catch(e => setError((e as Error).message));
+      .catch(e => setError(friendlyError(e)));
   }, [params.id, servings]);
 
   if (!recipe) {
@@ -50,12 +51,12 @@ export default function RecipeScreen() {
     setRecipe({ ...recipe, liked: like, like_count: recipe.like_count + (like ? 1 : -1) });
     try { await api.likeRecipe(recipe.id, like); } catch (e) {
       setRecipe(recipe);
-      setError((e as Error).message);
+      setError(friendlyError(e));
     }
   };
   const badge = (key: string, label: string, color: string) => (
     <View key={key} style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: color }}>
-      <Text style={{ color, fontSize: 13, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color, fontSize: 14, fontWeight: '700' }}>{label}</Text>
     </View>
   );
 
@@ -120,7 +121,7 @@ export default function RecipeScreen() {
                 <FoodIcon name={courseGlyph(recipe.course_type)} size={60} />
               </View>
             )}
-            {recipe.photo_credit && !(NEW_LOOK && recipe.image_url) && <Muted style={{ fontSize: 13, fontStyle: 'italic' }}>{recipe.photo_credit}</Muted>}
+            {recipe.photo_credit && !(NEW_LOOK && recipe.image_url) && <Muted style={{ fontSize: 14, fontStyle: 'italic' }}>{recipe.photo_credit}</Muted>}
             <Pressable onPress={photoMenu} hitSlop={8} accessibilityLabel="Fotoğraf ekle"
               style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6 }}>
               <Icon name="camera" size={16} color={t.tint} />

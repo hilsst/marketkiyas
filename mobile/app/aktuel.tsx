@@ -7,9 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import FoodIcon from '@/components/FoodIcon';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
-import { Button, Card, Muted, useTheme } from '@/components/ui';
+import { Button, Card, ErrorBox, Muted, useTheme } from '@/components/ui';
 import { AktuelItem, AktuelResponse, api, num } from '@/lib/api';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 // Bir bölümde ilk bu kadar ürün görünür, gerisi "Tümünü göster" ile açılır (yüzlerce ürün tek seferde çizilmesin)
 const PREVIEW = 6;
@@ -39,7 +40,7 @@ export default function AktuelScreen() {
 
   const load = useCallback(() => api.aktuel()
     .then(d => { setData(d); setError(null); })
-    .catch(e => setError((e as Error).message)), []);
+    .catch(e => setError(friendlyError(e))), []);
   useEffect(() => { load(); }, [load]);
 
   const nameOf = useCallback((slug: string) => data?.sources.find(s => s.slug === slug)?.name || slug, [data]);
@@ -83,7 +84,7 @@ export default function AktuelScreen() {
             </ScrollView>
           )}
 
-          {error && <Card><Text style={{ color: t.danger }}>Aktüeller yüklenemedi: {error}</Text></Card>}
+          {error && <ErrorBox message={error} onRetry={load} />}
           {data === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
           {data && sections.length === 0 && (
             <Card style={{ alignItems: 'center', gap: 6, padding: 24 }}>
@@ -102,7 +103,7 @@ export default function AktuelScreen() {
                   <MarketBadge slug={section.slug} name={nameOf(section.slug)} size={30} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>{nameOf(section.slug)} · {section.label}</Text>
-                    <Text style={{ color: section.upcoming ? '#7c3aed' : t.textMuted, fontSize: 13, fontWeight: section.upcoming ? '700' : '400' }}>
+                    <Text style={{ color: section.upcoming ? '#7c3aed' : t.textMuted, fontSize: 14, fontWeight: section.upcoming ? '700' : '400' }}>
                       {section.note} · {section.items.length} ürün
                     </Text>
                   </View>
@@ -113,16 +114,16 @@ export default function AktuelScreen() {
                       <Card style={{ gap: 6, padding: 12, flex: 1 }}>
                         {item.old_price && (
                           <Text style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, backgroundColor: '#ef4444', color: '#fff',
-                            fontSize: 13, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>
+                            fontSize: 14, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>
                             %{Math.round((1 - num(item.price) / num(item.old_price)) * 100)}
                           </Text>
                         )}
                         <View style={{ alignItems: 'center' }}><ProductImage uri={item.image_url} icon="newspaper-variant-outline" size={96} /></View>
-                        {item.brand && <Text style={{ color: t.textMuted, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>{item.brand}</Text>}
+                        {item.brand && <Text style={{ color: t.textMuted, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>{item.brand}</Text>}
                         <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{item.title}</Text>
-                        {item.quantity_text && <Text style={{ color: t.textMuted, fontSize: 13 }}>{item.quantity_text}</Text>}
+                        {item.quantity_text && <Text style={{ color: t.textMuted, fontSize: 14 }}>{item.quantity_text}</Text>}
                         <View style={{ marginTop: 'auto', gap: 2 }}>
-                          {item.old_price && <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{tl(item.old_price)}</Text>}
+                          {item.old_price && <Text style={{ color: t.textMuted, fontSize: 14, textDecorationLine: 'line-through' }}>{tl(item.old_price)}</Text>}
                           <Text style={{ color: t.tint, fontWeight: '800', fontSize: 15 }}>{tl(item.price)}</Text>
                         </View>
                       </Card>

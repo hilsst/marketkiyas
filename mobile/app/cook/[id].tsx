@@ -14,6 +14,7 @@ import { courseGlyph } from '@/lib/icons';
 import { Muted, useTheme } from '@/components/ui';
 import { scaleAmount } from '@/lib/amount';
 import { api, RecipeDetail } from '@/lib/api';
+import { friendlyError } from '@/lib/errors';
 
 /**
  * Adımda gerçekten beklenen süreler (saniye): "15 dakika", "20-25 dakika" (üst sınır), "1 saat", "30 saniye".
@@ -82,7 +83,7 @@ export default function CookScreen() {
 
   useEffect(() => {
     api.recipe(Number(params.id), params.servings ? Number(params.servings) : undefined)
-      .then(setRecipe).catch(e => setError((e as Error).message));
+      .then(setRecipe).catch(e => setError(friendlyError(e)));
   }, [params.id, params.servings]);
 
   const play = (player: typeof tick) => {
@@ -177,7 +178,7 @@ export default function CookScreen() {
               <Text style={{ color: run.done ? '#fff' : t.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 {run.done ? 'Bitti!' : clock(run.endsAt - now)}
               </Text>
-              <Text style={{ color: run.done ? '#fff' : t.textMuted, fontSize: 13 }}>Adım {key.split(':')[0]}</Text>
+              <Text style={{ color: run.done ? '#fff' : t.textMuted, fontSize: 14 }}>Adım {key.split(':')[0]}</Text>
             </Pressable>
           ))}
         </View>

@@ -6,11 +6,12 @@ import { Text } from '@/components/Text';
 import FoodIcon from '@/components/FoodIcon';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
-import { Card, EmptyState, Muted, Screen, Title, useTheme } from '@/components/ui';
+import { Card, EmptyState, ErrorBox, Muted, Screen, Title, useTheme } from '@/components/ui';
 import { api, Deal, formatSize, num } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 /** Fırsatlar: son 30 güne göre ucuzlayan ya da kampanyadaki ürünler; market ve kategoriye göre süzülür. */
 export default function DealsScreen() {
@@ -22,10 +23,12 @@ export default function DealsScreen() {
   const [market, setMarket] = useState<number | null>(null); // null = tüm marketler
   const [cat, setCat] = useState<number | null>(null);
 
-  useFocusEffect(useCallback(() => {
-    api.deals().then(d => { setDeals(d); setError(null); }).catch(e => setError((e as Error).message));
+  const load = useCallback(() => {
+    setError(null);
+    return api.deals().then(d => { setDeals(d); setError(null); }).catch(e => setError(friendlyError(e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- giriş yapınca seçili marketlere göre yeniden yüklenir
-  }, [user]));
+  }, [user]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const marketIds = useMemo(() => Array.from(new Set((deals || []).map(d => d.market_id))), [deals]);
   const catIds = useMemo(() => new Set((deals || []).map(d => d.category_id)), [deals]);
@@ -40,7 +43,7 @@ export default function DealsScreen() {
   const chipText = (active: boolean, text: string) => <Text style={{ color: active ? t.onTint : t.text, fontSize: 14, fontWeight: '600' }}>{text}</Text>;
 
   return (
-    <Screen>
+    <Screen onRefresh={load}>
       <Title>Fırsatlar</Title>
       <Muted>{user ? 'Seçtiğin marketlerde' : 'Marketlerde'} son 30 güne göre ucuzlayan ve kampanyadaki ürünler.</Muted>
 
@@ -70,7 +73,7 @@ export default function DealsScreen() {
         </ScrollView>
       )}
 
-      {error && <Card><Text style={{ color: t.danger }}>Fırsatlar yüklenemedi: {error}</Text></Card>}
+      {error && <ErrorBox message={error} onRetry={load} />}
       {deals === null && !error && <ActivityIndicator color={t.tint} style={{ marginTop: 24 }} />}
       {deals?.length === 0 && (
         <EmptyState icon="tag" title="Şu an indirimde ürün yok" text="Fiyatlar her güncellendiğinde bu sayfa yenilenir." />
@@ -82,17 +85,17 @@ export default function DealsScreen() {
             onPress={() => router.push({ pathname: '/product/[id]', params: { id: String(d.group_id) } })}>
             <Card style={{ gap: 6, padding: 12, flex: 1 }}>
               <Text style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, backgroundColor: '#ef4444', color: '#fff',
-                fontSize: 13, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>%{d.discount_percent}</Text>
+                fontSize: 14, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>%{d.discount_percent}</Text>
               <View style={{ alignItems: 'center' }}><ProductImage uri={d.image_url} icon={categoryIcon(d.category_id)} size={70} /></View>
               <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{d.group_name}</Text>
-              <Text style={{ color: t.textMuted, fontSize: 13 }} numberOfLines={1}>{[d.brand, formatSize(d.quantity, d.unit)].filter(Boolean).join(' · ')}</Text>
+              <Text style={{ color: t.textMuted, fontSize: 14 }} numberOfLines={1}>{[d.brand, formatSize(d.quantity, d.unit)].filter(Boolean).join(' · ')}</Text>
               <View style={{ marginTop: 'auto', gap: 2 }}>
-                <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{formatTL(num(d.previous_price))} ₺</Text>
+                <Text style={{ color: t.textMuted, fontSize: 14, textDecorationLine: 'line-through' }}>{formatTL(num(d.previous_price))} ₺</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <MarketBadge id={d.market_id} size={18} />
                   <Text style={{ color: t.tint, fontWeight: '800', fontSize: 15 }}>{formatTL(num(d.price))} ₺</Text>
                 </View>
-                {d.is_campaign && <Text style={{ color: '#ea580c', fontSize: 12, fontWeight: '700' }}>KAMPANYA</Text>}
+                {d.is_campaign && <Text style={{ color: '#ea580c', fontSize: 13, fontWeight: '700' }}>KAMPANYA</Text>}
               </View>
             </Card>
           </Pressable>

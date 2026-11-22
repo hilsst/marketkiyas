@@ -54,9 +54,9 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: t.text, fontWeight: '800', fontSize: 16 }}>{c.name}</Text>
                     {empty ? (
-                      <Muted style={{ fontSize: 13 }}>Şu an marketlerde malzemesi bulunan tarif yok</Muted>
+                      <Muted style={{ fontSize: 14 }}>Şu an marketlerde malzemesi bulunan tarif yok</Muted>
                     ) : (
-                      <Muted style={{ fontSize: 13 }}>
+                      <Muted style={{ fontSize: 14 }}>
                         {c.recipe_count} tarif{c.examples.length ? ` · ${c.examples.join(', ')}` : ''}
                       </Muted>
                     )}
@@ -68,7 +68,7 @@ export default function CuisinePicker({ cuisines, initial, days, busy, error, on
                 </Pressable>
               );
             })}
-            <Muted style={{ fontSize: 13 }}>Malzemelerinden biri uygulamadaki marketlerde bulunmayan tarifler listede yer almaz.</Muted>
+            <Muted style={{ fontSize: 14 }}>Malzemelerinden biri uygulamadaki marketlerde bulunmayan tarifler listede yer almaz.</Muted>
             {error && <Text style={{ color: t.danger }}>{error}</Text>}
           </ScrollView>
 

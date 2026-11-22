@@ -10,6 +10,7 @@ import { api, formatSize, num, PriceAlert } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useCatalog } from '@/lib/catalog';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 /**
  * Takip ettiğim ürünler: fiyatı düşenler üstte. Sekme açılınca yeni düşüşler "görüldü" sayılır.
@@ -30,14 +31,14 @@ export default function AlertsScreen() {
         setError(null);
         if (all.some(a => a.unread)) api.markAlertsSeen().catch(() => {});
       })
-      .catch(e => setError((e as Error).message));
+      .catch(e => setError(friendlyError(e)));
   }, [user]));
 
   const remove = async (id: number) => {
     try {
       await api.deleteAlert(id);
       setAlerts(prev => prev?.filter(a => a.id !== id) ?? null);
-    } catch (e) { setError((e as Error).message); }
+    } catch (e) { setError(friendlyError(e)); }
   };
 
   return (
@@ -60,7 +61,7 @@ export default function AlertsScreen() {
                 <Card style={{ flexDirection: 'row', gap: 12, alignItems: 'center', borderColor: a.triggered ? t.tint : t.border, borderWidth: a.triggered ? 2 : 1 }}>
                   <ProductImage uri={a.image_url} icon={categoryIcon(a.category_id)} size={56} />
                   <View style={{ flex: 1, gap: 3 }}>
-                    {a.triggered && <Text style={{ color: t.tint, fontSize: 13, fontWeight: '800' }}>FİYATI DÜŞTÜ{a.unread ? ' · YENİ' : ''}</Text>}
+                    {a.triggered && <Text style={{ color: t.tint, fontSize: 14, fontWeight: '800' }}>FİYATI DÜŞTÜ{a.unread ? ' · YENİ' : ''}</Text>}
                     <Text style={{ color: t.text, fontWeight: '700' }} numberOfLines={2}>{a.group_name}</Text>
                     {a.product_id != null && <Muted>{a.brand || a.product_name}{a.current_market_id != null ? ` · ${marketById(a.current_market_id)?.name ?? ''}` : ''}</Muted>}
                     <Muted>

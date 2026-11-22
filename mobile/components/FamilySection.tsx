@@ -7,6 +7,7 @@ import FamilyInviteCard from '@/components/FamilyInviteCard';
 import { Button, Card, Input, Muted, useTheme } from '@/components/ui';
 import { api, MyFamily, num, User } from '@/lib/api';
 import { formatTL } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
 /**
  * Profil > Ailem. Aile üyeleri birbirinin bütün listelerini kod paylaşmadan görür ve düzenler.
@@ -37,7 +38,7 @@ export default function FamilySection({ user }: { user: User }) {
       setText('');
       if (done) setInfo(done);
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendlyError(e));
     } finally {
       setBusy(false);
     }

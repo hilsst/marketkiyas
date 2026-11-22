@@ -53,7 +53,7 @@ export default function PlanKindFlyer({ quickCount, onPick, onCancel }: {
                 <Icon name="clock" size={26} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800', letterSpacing: 0.6 }}>HIZLI AMA LEZZETLİ YEMEKLER</Text>
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.6 }}>HIZLI AMA LEZZETLİ YEMEKLER</Text>
                 <Text style={{ color: '#fff', fontSize: 19, fontWeight: '800', letterSpacing: -0.3 }}>Restoran gibi sofra, market fiyatına.</Text>
               </View>
             </View>

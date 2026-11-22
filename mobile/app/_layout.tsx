@@ -11,6 +11,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { screenName, startAnalytics, track } from '@/lib/analytics';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { CatalogProvider } from '@/lib/catalog';
+import { FontScaleProvider } from '@/lib/fontScale';
 import { listenWeeklyTaps } from '@/lib/weekly';
 
 export {
@@ -48,7 +49,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <CatalogProvider>
-        <RootLayoutNav />
+        <FontScaleProvider>
+          <RootLayoutNav />
+        </FontScaleProvider>
       </CatalogProvider>
     </AuthProvider>
   );

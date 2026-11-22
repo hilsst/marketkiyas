@@ -3,8 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
-import { categoryGlyph } from '@/lib/icons';
-import FoodIcon from '@/components/FoodIcon';
 import AdSlot from '@/components/AdSlot';
 import MarketBadge from '@/components/MarketBadge';
 import ProductImage from '@/components/ProductImage';
@@ -13,7 +11,7 @@ import FamilyInviteCard from '@/components/FamilyInviteCard';
 import { HEADING_FONT, NEW_LOOK } from '@/constants/Look';
 import Icon from '@/components/Icon';
 import { Card, Muted, Screen, SectionHeader, Title, useTheme } from '@/components/ui';
-import { AktuelItem, api, MyFamily, num, SavingsVault, Store } from '@/lib/api';
+import { api, MyFamily, num, SavingsVault, Store } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { loadFlag, saveFlag } from '@/lib/session';
 import { formatKm } from '@/lib/location';
@@ -24,10 +22,10 @@ type ShowcaseItem = { id: number; name: string; image: string | null; categoryId
   marketId: number | null; price: number | null; previous: number | null; badge: string | null };
 
 /**
- * Ana sayfa, Kemal'in sırasıyla: arama, bu ayki tasarruf, hızlı erişim, kategoriler, fırsat ürünleri (yatay),
- * aktüel ürünler (yatay), yakındaki marketler. Tek reklam yeri: üst barın altı (ürün listelerinde ayrıca her 8 üründe bir).
+ * Ana sayfa (sade): arama, bu ayki tasarruf, iki ana giriş, fırsat ürünleri (yatay), yakındaki marketler.
+ * Kategoriler Arama ekranında, aktüeller Fırsatlar sekmesinde. Tek reklam yeri: üst barın altı (ürün listelerinde ayrıca her 8 üründe bir).
  */
-// Karşılama ekranı yalnız ilk kurulumda gösterilir (sonra Profil'den ya da üstteki düğmeyle açılır)
+// Karşılama ekranı yalnız ilk kurulumda gösterilir (sonra Profil'den açılır)
 let welcomed = false;
 const WELCOME_KEY = 'ucuzu.welcomed';
 
@@ -43,13 +41,12 @@ export default function HomeScreen() {
     }).catch(() => router.push('/welcome'));
   }, []);
   const { user } = useAuth();
-  const { categories, categoryIcon } = useCatalog();
+  const { categoryIcon } = useCatalog();
   const [vault, setVault] = useState<SavingsVault | null>(null);
   const [stores, setStores] = useState<Store[] | null>(null);
   const [showcase, setShowcase] = useState<{ title: string; items: ShowcaseItem[] } | null>(null);
 
   const [family, setFamily] = useState<MyFamily | null>(null);
-  const [aktuel, setAktuel] = useState<AktuelItem[]>([]);
 
   // Sekmeye her dönüşte: ailedeki biri alışverişi bitirmiş ya da davet gelmiş olabilir
   const refresh = useCallback(() => {
@@ -63,20 +60,6 @@ export default function HomeScreen() {
     if (!user) return;
     api.myStores().then(setStores).catch(() => setStores([]));
   }, [user]);
-
-  // Satışta olan aktüellerden marketler sırayla (BİM, Şok, BİM...) en fazla 15; "Yakında"lar aktüel ekranında
-  useEffect(() => {
-    api.aktuel().then(d => {
-      const byMarket = new Map<string, AktuelItem[]>();
-      for (const i of d.items) if (!i.upcoming) byMarket.set(i.market_slug, [...(byMarket.get(i.market_slug) || []), i]);
-      const queues = Array.from(byMarket.values());
-      const mixed: AktuelItem[] = [];
-      for (let k = 0; mixed.length < 15 && queues.some(q => k < q.length); k++) {
-        for (const q of queues) if (k < q.length && mixed.length < 15) mixed.push(q[k]);
-      }
-      setAktuel(mixed);
-    }).catch(() => setAktuel([]));
-  }, []);
 
   // Fırsat varsa fırsatlar, yoksa en çok markette/markada bulunan temel ürünler
   useEffect(() => {
@@ -118,11 +101,6 @@ export default function HomeScreen() {
           <Title>{user?.full_name?.split(' ')[0] || 'Ucuzu'}</Title>
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Pressable onPress={() => router.push('/welcome')} accessibilityRole="button" accessibilityLabel="Ana menü"
-          style={{ width: 46, height: 46, borderRadius: 16, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center',
-            shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
-          <Icon name="grid" size={22} />
-        </Pressable>
         <Pressable onPress={() => router.push('/alerts')} accessibilityRole="button" accessibilityLabel="Fiyat takibi"
           style={{ width: 46, height: 46, borderRadius: 16, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center',
             shadowColor: t.shadow, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
@@ -147,7 +125,7 @@ export default function HomeScreen() {
       {user ? (
         <Pressable onPress={() => router.push('/profile')} style={{ backgroundColor: t.sage, borderRadius: 26, padding: 18, gap: 6 }}>
           <View style={{ alignSelf: 'flex-start', backgroundColor: NEW_LOOK ? t.card : 'rgba(255,255,255,0.2)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ color: NEW_LOOK ? t.sageText : t.onTint, fontSize: 11, fontWeight: '700' }}>{monthName.toLocaleUpperCase('tr-TR')} AYI</Text>
+            <Text style={{ color: NEW_LOOK ? t.sageText : t.onTint, fontSize: 13, fontWeight: '700' }}>{monthName.toLocaleUpperCase('tr-TR')} AYI</Text>
           </View>
           <Text style={{ color: NEW_LOOK ? t.text : t.onTint, fontSize: 24, fontFamily: HEADING_FONT, fontWeight: HEADING_FONT ? undefined : '800' }}>Tasarrufunuz {formatTL(monthSaved)} ₺</Text>
           <Text style={{ color: t.sageText, fontSize: 14 }}>
@@ -205,10 +183,10 @@ export default function HomeScreen() {
                 <Card style={{ width: 140, gap: 6, padding: 12 }}>
                   {it.badge && (
                     <Text style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, backgroundColor: t.accent, color: '#fff',
-                      fontSize: 12, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>{it.badge}</Text>
+                      fontSize: 13, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>{it.badge}</Text>
                   )}
                   <View style={{ alignItems: 'center' }}><ProductImage uri={it.image} icon={categoryIcon(it.categoryId)} size={70} /></View>
-                  <Text style={{ color: t.text, fontSize: 13, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{it.name}</Text>
+                  <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{it.name}</Text>
                   {it.price != null && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       {it.marketId != null && <MarketBadge id={it.marketId} size={18} />}
@@ -216,46 +194,8 @@ export default function HomeScreen() {
                     </View>
                   )}
                   {it.previous != null && it.previous > (it.price ?? 0) && (
-                    <Text style={{ color: t.textMuted, fontSize: 13, textDecorationLine: 'line-through' }}>{formatTL(it.previous)} ₺</Text>
+                    <Text style={{ color: t.textMuted, fontSize: 14, textDecorationLine: 'line-through' }}>{formatTL(it.previous)} ₺</Text>
                   )}
-                </Card>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* 4) Kategoriler */}
-      <View style={{ gap: 12 }}>
-        <SectionHeader title="Kategoriler" />
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {categories.map(c => (
-            <Pressable key={c.id} onPress={() => router.push({ pathname: '/category/[id]', params: { id: String(c.id) } })}
-              style={{ width: '23%', flexGrow: 1 }}>
-              <Card style={{ alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, gap: 6 }}>
-                <FoodIcon name={categoryGlyph(c.slug)} size={28} />
-                <Text style={{ color: t.text, fontSize: 13, textAlign: 'center' }} numberOfLines={2}>{c.name}</Text>
-              </Card>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      {/* 6) Marketlerin aktüelleri (yatay) */}
-      {aktuel.length > 0 && (
-        <View style={{ gap: 10 }}>
-          <SectionHeader title="Aktüel Ürünler" action="Tümü" onAction={() => router.push('/aktuel')} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
-            {aktuel.map(it => (
-              <Pressable key={it.id} onPress={() => router.push({ pathname: '/aktuel', params: { market: it.market_slug } })}>
-                <Card style={{ width: 140, gap: 6, padding: 12 }}>
-                  <View style={{ alignItems: 'center' }}><ProductImage uri={it.image_url} icon="newspaper-variant-outline" size={70} /></View>
-                  <Text style={{ color: t.text, fontSize: 13, fontWeight: '600', minHeight: 40 }} numberOfLines={2}>{it.title}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <MarketBadge slug={it.market_slug} size={18} />
-                    <Text style={{ color: t.tint, fontWeight: '800' }}>{formatTL(num(it.price))} ₺</Text>
-                  </View>
-                  <Text style={{ color: t.textMuted, fontSize: 12 }} numberOfLines={1}>{it.period_label}</Text>
                 </Card>
               </Pressable>
             ))}
