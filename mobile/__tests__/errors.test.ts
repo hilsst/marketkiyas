@@ -8,7 +8,7 @@ describe('friendlyError', () => {
   });
   it('sunucu hatası ve teknik kod sade cümleye döner', () => {
     expect(friendlyError(new ApiError('İstek başarısız (500)', 500))).toBe(GENERIC_ERROR);
-    expect(friendlyError(new ApiError('Internal server error occurred', 400))).toBe(GENERIC_ERROR);
+    expect(friendlyError(new ApiError('Internal server error occurred', 404))).toBe(GENERIC_ERROR);
     expect(friendlyError(new Error('Network request failed'))).toBe(GENERIC_ERROR);
   });
   it('Türkçe 503 korunur, 422 doğrulama sade cümle olur', () => {
