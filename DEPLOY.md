@@ -37,3 +37,21 @@ Yalnız VPS'te ve test verisi için: bkz. `backend/loadtest/README.md`. Gerçek 
 
 ## Bilinen eksikler
 Merkezi izleme/Sentry yok; web (Next.js) arayüzü bu yığına dahil değil (ürün mobil uygulama); scraper (Playwright) yok, A101 kapalı.
+
+
+## Instagram'da fotoğraf yayını (isteğe bağlı)
+
+Yönetici, onayladığı ve yükleyenin Instagram paylaşımına izin verdiği fotoğrafı uygulamadaki
+Profil -> "Fotoğraf onayı" -> "Onaylı" sekmesinden elle yayınlar. Otomatik yayın yoktur.
+
+1. Instagram hesabı **Business/Creator** olmalı; Meta geliştirici uygulaması açılıp içerik yayınlama izni
+   (`instagram_content_publish`; Instagram Login yolunda `instagram_business_content_publish`) alınmalı (App Review gerekebilir).
+2. Uzun ömürlü erişim anahtarı (yaklaşık 60 gün geçerli, süre dolmadan yenilenmeli) ve Instagram hesap kimliğini `.env.prod` içine yazın:
+   `INSTAGRAM_ENABLED=true`, `INSTAGRAM_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`, `PUBLIC_BASE_URL=https://alan-adiniz`.
+   Instagram Login kullanılıyorsa `INSTAGRAM_GRAPH_HOST=https://graph.instagram.com`.
+3. Görsel, Meta'nın sunucusundan `PUBLIC_BASE_URL/api/recipe-photos/<id>/image` adresinden çekilir; adres internetten
+   açık olmalı (giriş, yönlendirme, bot koruması olmamalı).
+4. Yeniden başlatın; yönetici ekranının üstünde "Instagram bağlı: @hesap" görünmelidir.
+
+Not: Meta istek biçimleri bu geliştirme ortamında resmi dokümandan doğrulanamadı; ilk gerçek yayında kontrol edin.
+Instagram'da yayınlanmış bir gönderi API ile silinemez; yükleyen silme isterse profilden elle kaldırın.

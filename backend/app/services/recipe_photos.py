@@ -34,7 +34,8 @@ def credit_text(name: str | None) -> str:
     return f"{name} tarafından eklendi" if name else "Bir kullanıcı tarafından eklendi"
 
 
-async def upload_photo(db: AsyncSession, user: User, recipe: Recipe, data: bytes, share_name: bool) -> RecipePhoto:
+async def upload_photo(db: AsyncSession, user: User, recipe: Recipe, data: bytes, share_name: bool,
+                       instagram_consent: bool = False) -> RecipePhoto:
     since = datetime.now(timezone.utc) - timedelta(days=1)
     recent = (await db.scalar(select(func.count()).select_from(RecipePhoto)
               .where(RecipePhoto.user_id == user.id, RecipePhoto.created_at >= since))) or 0
@@ -48,7 +49,8 @@ async def upload_photo(db: AsyncSession, user: User, recipe: Recipe, data: bytes
     name = None
     if share_name and user.full_name and user.full_name.strip():
         name = user.full_name.strip().split()[0][:60]
-    photo = RecipePhoto(recipe_id=recipe.id, user_id=user.id, credit_name=name, status=PHOTO_PENDING)
+    photo = RecipePhoto(recipe_id=recipe.id, user_id=user.id, credit_name=name, status=PHOTO_PENDING,
+                       ig_consent=instagram_consent, ig_consent_at=datetime.now(timezone.utc) if instagram_consent else None)
     db.add(photo)
     await db.flush()
     ENHANCED_DIR.mkdir(parents=True, exist_ok=True)
@@ -85,7 +87,11 @@ async def review_photo(db: AsyncSession, photo_id: int, approve: bool, reason: s
 
 async def delete_photo(db: AsyncSession, photo: RecipePhoto) -> None:
     recipe_id = photo.recipe_id
-    await db.delete(photo)
+    if photo.ig_status == "published":
+        # Instagram'da yayında kalan gönderi yöneticinin elle kaldırması için izlenir: satırı silme, gizle
+        photo.status, photo.reject_reason, photo.reviewed_at = PHOTO_REJECTED, "Kullanıcı sildi", datetime.now(timezone.utc)
+    else:
+        await db.delete(photo)
     await db.flush()
     for p in (enhanced_path(photo.id), original_path(photo.id)):
         p.unlink(missing_ok=True)

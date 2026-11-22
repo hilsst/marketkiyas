@@ -49,6 +49,14 @@ services:
       DATABASE_URL: postgresql+asyncpg://marketkiyas:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}@db:5432/marketkiyas
       TRUST_FORWARDED_FOR: "true"  # Caddy arkasında istemci IP'si X-Forwarded-For'dan okunur
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}  # yemek fotoğraflarını onaylayacak yöneticiler (virgülle)
+      # Instagram'da yayın (kapalı gelir; ayrıntı: DEPLOY.md "Instagram")
+      INSTAGRAM_ENABLED: ${INSTAGRAM_ENABLED:-false}
+      INSTAGRAM_ACCESS_TOKEN: ${INSTAGRAM_ACCESS_TOKEN:-}
+      INSTAGRAM_USER_ID: ${INSTAGRAM_USER_ID:-}
+      INSTAGRAM_GRAPH_HOST: ${INSTAGRAM_GRAPH_HOST:-https://graph.facebook.com}
+      INSTAGRAM_API_VERSION: ${INSTAGRAM_API_VERSION:-v21.0}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      INSTAGRAM_HASHTAGS: ${INSTAGRAM_HASHTAGS:-#ucuzu #yemektarifi #tarif #evyemekleri #menü}
     volumes:  # üye fotoğrafları kalıcı olmalı
       - photos:/app/media/recipe-photos
       - photos_original:/app/media/recipe-photos-original

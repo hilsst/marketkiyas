@@ -66,12 +66,12 @@ export default function RecipeScreen() {
     </Pressable>
   );
 
-  const upload = async (from: 'camera' | 'library', shareName: boolean) => {
+  const upload = async (from: 'camera' | 'library', shareName: boolean, instagram: boolean) => {
     try {
       const picked = await pickPhoto(from);
       if (picked === 'cancel') return;
       if (picked === 'denied') { Alert.alert('Kamera izni gerekli', 'Fotoğraf çekmek için ayarlardan kamera iznini açabilirsiniz. Galeriden seçmek için izin gerekmez.'); return; }
-      await api.uploadRecipePhoto(recipe.id, picked.uri, shareName);
+      await api.uploadRecipePhoto(recipe.id, picked.uri, shareName, instagram);
       Alert.alert('Teşekkürler!', 'Fotoğrafınız yöneticiye gönderildi. Onaylanınca bu tarifte herkese görünecek.');
     } catch (e) {
       Alert.alert('Fotoğraf eklenemedi', e instanceof Error ? e.message : 'Lütfen tekrar deneyin.');
@@ -87,8 +87,14 @@ export default function RecipeScreen() {
     }
     const withName = (from: 'camera' | 'library') => Alert.alert('Adınız görünsün mü?',
       'Fotoğraf onaylanınca tüm kullanıcılara görünür. Altına adınız yazılabilir ("' + (user.full_name?.split(' ')[0] || 'Adınız') + ' tarafından eklendi"); istemezseniz "Bir kullanıcı tarafından eklendi" yazar. Fotoğrafın konum bilgisi silinir. Sonraki ekranda fotoğrafı seçip sağ üstteki KIRP\'a dokunduğunuzda fotoğraf gönderilir.', [
-        { text: 'Adım görünsün', onPress: () => upload(from, true) },
-        { text: 'Adsız ekle', onPress: () => upload(from, false) },
+        { text: 'Adım görünsün', onPress: () => withInstagram(from, true) },
+        { text: 'Adsız ekle', onPress: () => withInstagram(from, false) },
+        { text: 'Vazgeç', style: 'cancel' },
+      ]);
+    const withInstagram = (from: 'camera' | 'library', shareName: boolean) => Alert.alert('Instagram\'da paylaşılabilir mi?',
+      'Onaylanan fotoğrafınız, isterseniz Ucuzu\'nun Instagram hesabında da yayınlanabilir. İzin vermezseniz yalnız uygulamada görünür. İzni istediğiniz zaman fotoğrafı silerek geri alabilirsiniz (Instagram\'da yayınlanmışsa kaldırılması için bize yazın).', [
+        { text: 'Evet, paylaşılabilir', onPress: () => upload(from, shareName, true) },
+        { text: 'Hayır, yalnız uygulamada', onPress: () => upload(from, shareName, false) },
         { text: 'Vazgeç', style: 'cancel' },
       ]);
     Alert.alert('Yemek fotoğrafı ekle', 'Fotoğrafınız otomatik düzeltilir ve yönetici onayından sonra herkese görünür.', [
