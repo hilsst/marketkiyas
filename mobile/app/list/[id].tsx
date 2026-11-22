@@ -385,12 +385,15 @@ export default function ListScreen() {
                   </Text>
                   <Muted>
                     {loc === 'ready'
-                      ? 'Profil sayfanızdan "çevremdeki marketler"i seçin; En yakın market planı seçtiğiniz şubelerin mesafesine göre hazırlanır.'
+                      ? '"Marketlerim" ekranından çevrenizdeki şubeleri seçin; En yakın market planı seçtiğiniz şubelerin mesafesine göre hazırlanır.'
                       : 'En yakın market planı, size en yakın marketten başlamak için konumunuzu kullanır. Konumunuz kaydedilmez.'}
                   </Muted>
                   {loc === 'asking' || loc === 'idle' ? <ActivityIndicator color={t.tint} /> : loc !== 'ready' && (
                     <Button title={loc === 'denied' ? 'Ayarlardan izin ver' : 'Tekrar dene'}
                       onPress={() => (loc === 'denied' && Platform.OS !== 'web' ? Linking.openSettings() : askLocation())} />
+                  )}
+                  {loc !== 'ready' && loc !== 'asking' && loc !== 'idle' && (
+                    <Button title="İlimi kendim seçeceğim" kind="secondary" onPress={() => router.push('/stores')} />
                   )}
                 </Card>
               )}

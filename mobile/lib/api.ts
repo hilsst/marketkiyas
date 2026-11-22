@@ -330,6 +330,8 @@ export const api = {
   deals: () => request<Deal[]>('GET', '/products/deals'),
   aktuel: (market?: string | null) => request<AktuelResponse>('GET', '/aktuel' + qs({ market })),
   myStores: () => request<Store[]>('GET', '/me/stores'),
+  nearbyStores: (at: { lat: number; lon: number }, distance = 5) => request<Store[]>('GET', '/stores/nearby' + qs({ lat: at.lat, lon: at.lon, distance })),
+  selectStores: (storeIds: number[]) => request<Store[]>('PUT', '/me/stores', { store_ids: storeIds }),
   alerts: () => request<PriceAlert[]>('GET', '/alerts'),
   createAlert: (groupId: number, targetPrice?: number | null, productId?: number | null) =>
     request<PriceAlert[]>('POST', '/alerts', { group_id: groupId, target_price: targetPrice ?? null, product_id: productId ?? null }),
