@@ -17,7 +17,9 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${devHost}:300
 export type Money = string; // sunucu Decimal'leri metin gönderir: "32.50"
 export type Unit = 'ml' | 'g' | 'adet';
 
-export interface RecipePhotoInfo { id: number; recipe_id: number; recipe_name: string | null; status: 'pending' | 'approved' | 'rejected'; credit: string; reject_reason: string | null; }
+export interface RecipePhotoInfo { id: number; recipe_id: number; recipe_name: string | null; status: 'pending' | 'approved' | 'rejected'; credit: string; reject_reason: string | null;
+  ig_consent?: boolean; ig_status?: 'publishing' | 'published' | 'failed' | null; ig_permalink?: string | null; ig_error?: string | null; ig_needs_removal?: boolean; }
+export interface InstagramStatus { enabled: boolean; configured: boolean; username: string | null; error: string | null; }
 export interface User { id: number; email: string | null; full_name: string | null; has_password: boolean; is_guest: boolean; is_admin?: boolean; }
 export interface AuthResponse { access_token: string; token_type: string; expires_in: number; user: User; }
 export interface Market { id: number; slug: string; name: string; color: string | null; logo_url: string | null; }
@@ -359,10 +361,11 @@ export const api = {
   /** Tarif arama: ad ya da malzemede geçenler (aksan/büyük-küçük harf fark etmez), adı eşleşenler önce */
   searchRecipes: (q: string) => request<RecipeSummary[]>('GET', '/recipes' + qs({ q })),
   /** Üye fotoğrafı: sunucu düzeltir ve yönetici onayına düşer */
-  uploadRecipePhoto: async (id: number, fileUri: string, shareName: boolean): Promise<RecipePhotoInfo> => {
+  uploadRecipePhoto: async (id: number, fileUri: string, shareName: boolean, instagramConsent = false): Promise<RecipePhotoInfo> => {
     const form = new FormData();
     form.append('file', { uri: fileUri, name: 'yemek.jpg', type: 'image/jpeg' } as unknown as Blob);
     form.append('share_name', String(shareName));
+    form.append('instagram_consent', String(instagramConsent));
     // Expo'nun fetch'i {uri,name,type} dosya biçimini desteklemez ("Unsupported FormDataPart"); XHR destekler
     return new Promise<RecipePhotoInfo>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -380,9 +383,16 @@ export const api = {
       xhr.send(form);
     });
   },
-  adminRecipePhotos: () => request<RecipePhotoInfo[]>('GET', '/admin/recipe-photos'),
+  adminRecipePhotos: (status: 'pending' | 'approved' | 'rejected' = 'pending') =>
+    request<RecipePhotoInfo[]>('GET', '/admin/recipe-photos' + qs({ status })),
+  instagramStatus: () => request<InstagramStatus>('GET', '/admin/instagram/status'),
+  instagramCaption: (id: number) => request<{ caption: string }>('GET', `/admin/instagram/caption/${id}`),
+  publishToInstagram: (id: number, caption?: string) =>
+    request<RecipePhotoInfo>('POST', `/admin/recipe-photos/${id}/instagram`, { caption: caption ?? null }),
   reviewRecipePhoto: (id: number, approve: boolean, reason?: string) =>
     request<RecipePhotoInfo>('POST', `/admin/recipe-photos/${id}/${approve ? 'approve' : 'reject'}`, approve ? undefined : { reason: reason ?? null }),
+  resolveInstagram: (id: number, published: boolean, permalink?: string) =>
+    request<RecipePhotoInfo>('POST', `/admin/recipe-photos/${id}/instagram/resolve`, { published, permalink: permalink ?? null }),
   likeRecipe: (id: number, like: boolean) => request<void>(like ? 'PUT' : 'DELETE', `/recipes/${id}/like`),
   recipe: async (id: number, servings?: number) => request<RecipeDetail>('GET', await withAt('/recipes/' + id + qs({ servings }))),
   mealPlans: () => request<MealPlanSummary[]>('GET', '/meal-plans'),

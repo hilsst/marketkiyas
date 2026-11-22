@@ -11,6 +11,7 @@ from app.models import Recipe, RecipePhoto
 from app.models.recipe_photo import PHOTO_APPROVED, PHOTO_PENDING
 from app.services import meals as meals_svc
 from app.services.photo_enhance import MAX_BYTES
+from app.services import instagram as ig_svc
 from app.services import recipe_photos as svc
 
 router = APIRouter(tags=["recipe-photos"])
@@ -23,6 +24,21 @@ class PhotoOut(BaseModel):
     status: str
     credit: str
     reject_reason: str | None = None
+    ig_consent: bool = False
+    ig_status: str | None = None
+    ig_permalink: str | None = None
+    ig_error: str | None = None
+    # Reddedilen/silinen ama Instagram'da yayında kalmış: profilden elle kaldırılmalı
+    ig_needs_removal: bool = False
+
+
+class InstagramPublishBody(BaseModel):
+    caption: str | None = None
+
+
+class InstagramResolveBody(BaseModel):
+    published: bool
+    permalink: str | None = None
 
 
 class RejectBody(BaseModel):
@@ -31,7 +47,9 @@ class RejectBody(BaseModel):
 
 def _out(p: RecipePhoto, recipe_name: str | None = None) -> PhotoOut:
     return PhotoOut(id=p.id, recipe_id=p.recipe_id, recipe_name=recipe_name, status=p.status,
-                    credit=svc.credit_text(p.credit_name), reject_reason=p.reject_reason)
+                    credit=svc.credit_text(p.credit_name), reject_reason=p.reject_reason,
+                    ig_consent=p.ig_consent, ig_status=p.ig_status, ig_permalink=p.ig_permalink, ig_error=p.ig_error,
+                    ig_needs_removal=p.ig_status == "published" and p.status != PHOTO_APPROVED)
 
 
 def _is_admin(user) -> bool:
@@ -40,11 +58,12 @@ def _is_admin(user) -> bool:
 
 @router.post("/recipes/{recipe_id}/photos", response_model=PhotoOut, status_code=status.HTTP_201_CREATED)
 async def upload_recipe_photo(recipe_id: int, user: AccountUser, db: DbSession, file: Annotated[UploadFile, File()],
-                              share_name: Annotated[bool, Form()] = False):
+                              share_name: Annotated[bool, Form()] = False,
+                              instagram_consent: Annotated[bool, Form()] = False):
     """Yalnız üyeler. Fotoğraf otomatik düzeltilir ve yönetici onayına düşer; onaylanana kadar kimse görmez."""
     recipe = await meals_svc.get_recipe(db, recipe_id)
     data = await file.read(MAX_BYTES + 1)
-    return _out(await svc.upload_photo(db, user, recipe, data, share_name), recipe.name)
+    return _out(await svc.upload_photo(db, user, recipe, data, share_name, instagram_consent), recipe.name)
 
 
 @router.get("/recipes/{recipe_id}/photos/mine", response_model=list[PhotoOut])
@@ -85,6 +104,33 @@ async def admin_list(_: AdminUser, db: DbSession, status_: Annotated[str, Query(
     rows = (await db.execute(select(RecipePhoto, Recipe.name).join(Recipe, Recipe.id == RecipePhoto.recipe_id)
                              .where(RecipePhoto.status == status_).order_by(RecipePhoto.id).limit(limit))).all()
     return [_out(p, name) for p, name in rows]
+
+
+@router.get("/admin/instagram/status")
+async def admin_instagram_status(_: AdminUser):
+    return await ig_svc.account_status()
+
+
+@router.get("/admin/instagram/caption/{photo_id}")
+async def admin_instagram_caption(photo_id: int, _: AdminUser, db: DbSession):
+    """Yayın öncesi önerilen altyazı (yönetici düzenleyebilir)"""
+    row = (await db.execute(select(RecipePhoto, Recipe.name).join(Recipe, Recipe.id == RecipePhoto.recipe_id)
+                            .where(RecipePhoto.id == photo_id))).first()
+    if row is None:
+        raise HTTPException(404, "Fotoğraf bulunamadı")
+    return {"caption": ig_svc.build_caption(row[1], row[0].credit_name)}
+
+
+@router.post("/admin/recipe-photos/{photo_id}/instagram", response_model=PhotoOut)
+async def admin_instagram_publish(photo_id: int, body: InstagramPublishBody, admin: AdminUser, db: DbSession):
+    """Onaylı + yükleyenin izin verdiği fotoğrafı Instagram'da yayınlar. Otomatik yayın yok: her seferinde yönetici basar."""
+    return _out(await ig_svc.publish_photo(db, photo_id, admin.id, body.caption))
+
+
+@router.post("/admin/recipe-photos/{photo_id}/instagram/resolve", response_model=PhotoOut)
+async def admin_instagram_resolve(photo_id: int, body: InstagramResolveBody, admin: AdminUser, db: DbSession):
+    """Belirsiz kalan yayını elle çöz: 'yayınlandı' işaretle ya da sıfırlayıp yeniden denemeye aç"""
+    return _out(await ig_svc.resolve_unconfirmed(db, photo_id, admin.id, body.published, body.permalink))
 
 
 @router.post("/admin/recipe-photos/{photo_id}/approve", response_model=PhotoOut)

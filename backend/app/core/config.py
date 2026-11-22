@@ -40,6 +40,16 @@ class Settings(BaseSettings):
     # Yönetici e-postaları (virgülle): yemek fotoğraflarını onaylayabilir
     admin_emails: str = ""
 
+    # Instagram'a yayın (Instagram Graph API). Kapalı gelir; anahtarlar yalnız ortam değişkeninden okunur
+    instagram_enabled: bool = False
+    instagram_access_token: str = ""
+    instagram_user_id: str = ""  # Instagram profesyonel hesap kimliği (IG user id)
+    instagram_graph_host: str = "https://graph.facebook.com"  # Instagram Login ile: https://graph.instagram.com
+    instagram_api_version: str = "v21.0"
+    # Görsel adresi Instagram'ın sunucusundan çekilir: halka açık https adresi (örn. https://ucuzu.app)
+    public_base_url: str = ""
+    instagram_hashtags: str = "#ucuzu #yemektarifi #tarif #evyemekleri #menü"
+
     # Next.js frontend adresleri, virgülle ayrılmış
     cors_origins: str = "http://localhost:3000"
 
