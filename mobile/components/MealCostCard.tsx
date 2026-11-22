@@ -20,6 +20,8 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
   const stock = cost.from_stock ?? [];
   const have = cost.have ?? [];
   const leftover = num(cost.leftover_value ?? 0);
+  const savings = num(cost.savings ?? 0);
+  const extra = num(cost.nearby_extra ?? 0);
   const homeCount = stock.length + have.length + cost.pantry.length;
 
   const chip = (key: string, name: string, amount?: string) => (
@@ -52,6 +54,9 @@ export default function MealCostCard({ cost, title = 'Malzeme maliyeti' }: { cos
 
       <View style={{ gap: 6 }}>
         {row(`Yemeklerde kullanılan · ${cost.portions} porsiyon`, tl(cost.used_total))}
+        {cost.nearest_priced && cost.nearest_store && row('Fiyatlar en yakın şubeden', cost.nearest_store)}
+        {savings > 0 && row('Ortalama market fiyatına göre tasarruf', `~${tl(savings)}`)}
+        {cost.nearest_priced && extra > 0 && row('En ucuz şubeye göre fark', `+${tl(extra)}`)}
         {leftover > 0 && row('Paketlerden artan (evde kalır)', `~${tl(leftover)}`)}
       </View>
 

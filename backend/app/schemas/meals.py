@@ -108,6 +108,11 @@ class CostOut(BaseModel):
     from_stock: list[StockUse] = []
     # Alınan paketlerden yemeklere girmeyip artan kısmın değeri (alışveriş - kullanılan)
     leftover_value: Decimal = Decimal(0)
+    # Menü en yakın şubelerden fiyatlanır: şube adı, ortalama market fiyatına göre tasarruf ve en ucuza göre fark
+    nearest_store: str | None = None
+    nearest_priced: bool = False
+    savings: Decimal = Decimal(0)
+    nearby_extra: Decimal | None = None
 
 
 class IngredientChoice(BaseModel):

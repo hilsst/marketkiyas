@@ -334,6 +334,9 @@ class _Pick:
     purchase_cost: Decimal
     used_cost: Decimal
     approximate: bool
+    cheapest_cost: Decimal | None = None  # aynı paketlerin seçili marketlerdeki en ucuz fiyatla tutarı
+    average_cost: Decimal | None = None  # ... marketlerin ortalama fiyatıyla tutarı
+    store_name: str | None = None  # en yakın şubenin adı (konum varsa)
 
 
 def _cheapest_market(group: GroupSummary) -> tuple[Decimal, int | None] | None:
@@ -360,7 +363,16 @@ def _price_for(group: GroupSummary, need: _Need) -> _Pick | None:
     else:
         # Paket birimi tarifle uyuşmuyor (ör. adetle satılan ürün, gramla tarif): 1 paket say
         packages, used, approximate = 1, price, True
-    return _Pick(group, price, market_id, packages, _money(price * packages), _money(used), approximate)
+    cheapest = average = None
+    prices = [m.min_price for m in group.market_prices]
+    if prices:
+        cheapest = _money(min(prices) * packages)
+        average = _money(sum(prices, Decimal(0)) / len(prices) * packages)
+    store = group.nearest_store_name if group.nearest_price is not None else None
+    return _Pick(
+        group, price, market_id, packages, _money(price * packages), _money(used), approximate,
+        cheapest, average, store,
+    )
 
 
 # Bu kategorilerdeki ürünler hiçbir tarif malzemesi olamaz (ör. "Zeytinyağlı Sıvı Sabun")
@@ -472,6 +484,7 @@ async def compute_cost(
     pantry: list[str] = []
     at_home: list[str] = []
     from_stock: list[StockUse] = []
+    picks: list[_Pick] = []
     stock = dict(stock or {})
     if categories is None:
         categories = await _category_ids(db)
@@ -506,6 +519,8 @@ async def compute_cost(
             if need.quantity <= 0:
                 continue
         pick = await _match(db, need, user_id, categories, cache, origin)
+        if pick is not None:
+            picks.append(pick)
         lines.append(
             CostLine(
                 name=need.name,
@@ -530,6 +545,7 @@ async def compute_cost(
             )
         )
     purchase = sum((line.purchase_cost for line in lines if line.purchase_cost is not None), Decimal(0))
+    savings = _meal_savings(picks, origin is not None)
     used = sum((line.used_cost for line in lines if line.used_cost is not None), Decimal(0))
     return CostOut(
         purchase_total=_money(purchase),
@@ -543,7 +559,27 @@ async def compute_cost(
         have=at_home,
         from_stock=from_stock,
         leftover_value=_money(max(purchase - used, Decimal(0))),
+        **savings,
     )
+
+
+def _meal_savings(picks: list[_Pick], located: bool) -> dict:
+    """Yemek alışverişi tasarrufu (liste kartındaki mantıkla): ortalama market fiyatına göre ödenecek tutar
+    - seçilen (en yakın şube) tutarı. nearby_extra: en yakın şubenin, her kalemde en ucuz şubeye göre fazlası.
+    Karşılaştırılacak market fiyatı olmayan kalemler iki tarafta da hariç tutulur."""
+    rows = [p for p in picks if p.average_cost is not None and p.cheapest_cost is not None]
+    if not rows:
+        return {}
+    chosen = sum((p.purchase_cost for p in rows), Decimal(0))
+    average = sum((p.average_cost for p in rows), Decimal(0))
+    cheapest = sum((p.cheapest_cost for p in rows), Decimal(0))
+    stores = Counter(p.store_name for p in picks if p.store_name)
+    return {
+        "nearest_store": stores.most_common(1)[0][0] if stores else None,
+        "nearest_priced": located and bool(stores),
+        "savings": _money(max(average - chosen, Decimal(0))),
+        "nearby_extra": _money(max(chosen - cheapest, Decimal(0))) if stores else None,
+    }
 
 
 # --- Bulunabilirlik -------------------------------------------------------------------------
