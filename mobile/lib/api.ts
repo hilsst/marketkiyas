@@ -157,6 +157,10 @@ export interface MealCost {
   /** kilerimde var denen, maliyete girmeyenler */ have?: string[];
   /** önceki alışverişlerden artan, kilerden kullanılanlar */ from_stock?: StockUse[];
   /** alınan paketlerden artan kısmın değeri */ leftover_value?: Money;
+  /** menü en yakın şubelerden fiyatlandıysa en sık geçen şube */ nearest_store?: string | null;
+  nearest_priced?: boolean;
+  /** ortalama market fiyatına göre tasarruf */ savings?: Money;
+  /** en yakın şubenin en ucuza göre fazlası */ nearby_extra?: Money | null;
 }
 export interface RecipeDetail extends RecipeSummary {
   steps: string[]; ingredients: { name: string; amount_text: string; quantity: Money; unit: Unit; is_pantry: boolean }[]; cost: MealCost;
