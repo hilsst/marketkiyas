@@ -25,7 +25,6 @@ export default function AdminPhotos() {
   const [editing, setEditing] = useState<{ id: number; caption: string } | null>(null);
 
   const load = useCallback(() => {
-    setItems(null); setError(null);
     api.adminRecipePhotos(tab).then(setItems).catch(e => setError(e instanceof Error ? e.message : 'Yüklenemedi'));
   }, [tab]);
   useEffect(load, [load]);
@@ -89,17 +88,17 @@ export default function AdminPhotos() {
 
   const igBlock = (p: RecipePhotoInfo) => {
     if (p.status !== 'approved') {
-      return p.ig_needs_removal ? <Text style={{ color: t.danger }}>Instagram'da yayında; profilden elle kaldırın.</Text> : null;
+      return p.ig_needs_removal ? <Text style={{ color: t.danger }}>Instagram&apos;da yayında; profilden elle kaldırın.</Text> : null;
     }
     if (p.ig_status === 'published') {
       return (
         <View style={{ gap: 6 }}>
-          <Text style={{ color: t.tint, fontWeight: '700' }}>Instagram'da yayınlandı</Text>
+          <Text style={{ color: t.tint, fontWeight: '700' }}>Instagram&apos;da yayınlandı</Text>
           {p.ig_permalink && <Button title="Gönderiyi aç" kind="secondary" onPress={() => Linking.openURL(p.ig_permalink!)} />}
         </View>
       );
     }
-    if (!p.ig_consent) return <Muted>Yükleyen Instagram'da paylaşılmasına izin vermedi.</Muted>;
+    if (!p.ig_consent) return <Muted>Yükleyen Instagram&apos;da paylaşılmasına izin vermedi.</Muted>;
     return (
       <View style={{ gap: 8 }}>
         {p.ig_status === 'failed' && <Text style={{ color: t.danger }}>Son deneme başarısız: {p.ig_error}</Text>}
@@ -132,7 +131,7 @@ export default function AdminPhotos() {
         {banner && <Text style={{ color: banner.ok ? t.tint : t.textMuted, fontWeight: '600' }}>{banner.text}</Text>}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {TABS.map(x => (
-            <Pressable key={x.key} onPress={() => setTab(x.key)} accessibilityRole="tab" accessibilityState={{ selected: tab === x.key }}
+            <Pressable key={x.key} onPress={() => { setItems(null); setError(null); setTab(x.key); }} accessibilityRole="tab" accessibilityState={{ selected: tab === x.key }}
               style={{ flex: 1, paddingVertical: 10, borderRadius: 999, borderWidth: 1, alignItems: 'center',
                 borderColor: tab === x.key ? t.tint : t.border, backgroundColor: tab === x.key ? t.tintSoft : 'transparent' }}>
               <Text style={{ color: tab === x.key ? t.tint : t.text, fontWeight: '700' }}>{x.label}</Text>
